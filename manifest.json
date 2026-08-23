@@ -1,7 +1,7 @@
 {
   "name": "Saved for Someday",
   "short_name": "Someday",
-  "id": "saved-for-someday-pwa-v10",
+  "id": "saved-for-someday-pwa-v11",
   "description": "Turn Instagram event posts into a calendar queue.",
   "start_url": "index.html",
   "scope": "./",
@@ -23,19 +23,12 @@
     }
   ],
   "share_target": {
-    "action": "share-target",
-    "method": "POST",
-    "enctype": "multipart/form-data",
+    "action": "index.html",
+    "method": "GET",
     "params": {
       "title": "title",
       "text": "text",
-      "url": "url",
-      "files": [
-        {
-          "name": "images",
-          "accept": ["image/*"]
-        }
-      ]
+      "url": "url"
     }
   }
 }
