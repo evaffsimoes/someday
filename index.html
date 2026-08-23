@@ -952,8 +952,7 @@
         }
 
         const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        const clean = text.replace(/```json|```/g, '').trim();
-        const parsed = JSON.parse(clean);
+        const parsed = parseGeminiJson(text);
         parsed.image = `data:${mediaType};base64,${base64}`;
         renderAiParsedSuccess(parsed);
       } catch (e) {
@@ -1254,6 +1253,19 @@
         : '/.netlify/functions/gemini';
     }
 
+    function parseGeminiJson(text) {
+      if (!text) return {};
+      const match = text.match(/\{[\s\S]*\}/);
+      if (match) {
+        try { return JSON.parse(match[0]); } catch(e) {}
+      }
+      try {
+        const clean = text.replace(/```json|```/g, '').trim();
+        return JSON.parse(clean);
+      } catch(e) {}
+      return {};
+    }
+
     async function handleSharedText(sharedText) {
       switchTab('add');
       renderAiParsingState();
@@ -1273,8 +1285,7 @@
         }
 
         const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        const clean = text.replace(/```json|```/g, '').trim();
-        const parsed = JSON.parse(clean);
+        const parsed = parseGeminiJson(text);
         if (data._extractedImage) {
           parsed.image = data._extractedImage;
         }

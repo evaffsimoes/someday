@@ -1,8 +1,8 @@
 {
   "name": "cue",
   "short_name": "cue",
-  "id": "cue-app-v12",
-  "description": "Save Instagram event posts & screenshots into your calendar queue.",
+  "id": "cue-app-v13",
+  "description": "Never miss your cue. Save Instagram event posts & screenshots into your calendar queue.",
   "start_url": "index.html",
   "scope": "./",
   "display": "standalone",
@@ -23,12 +23,19 @@
     }
   ],
   "share_target": {
-    "action": "index.html",
-    "method": "GET",
+    "action": "share-target",
+    "method": "POST",
+    "enctype": "multipart/form-data",
     "params": {
       "title": "title",
       "text": "text",
-      "url": "url"
+      "url": "url",
+      "files": [
+        {
+          "name": "images",
+          "accept": ["image/*"]
+        }
+      ]
     }
   }
 }
