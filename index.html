@@ -278,6 +278,18 @@
       border: 1px solid rgba(168, 85, 247, 0.3);
     }
 
+    .category-pill-festival {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border-color: rgba(245, 158, 11, 0.3);
+    }
+
+    .category-pill-other {
+      background: rgba(20, 184, 166, 0.15);
+      color: #2dd4bf;
+      border-color: rgba(20, 184, 166, 0.3);
+    }
+
     /* Section Titles */
     .section-title {
       font-size: 11px;
@@ -1052,7 +1064,7 @@
               <span class="spotlight-label">NEXT UP</span>
               <div class="spotlight-title">${escapeHtml(next.artist || 'Untitled event')}</div>
               ${dateStr ? `<div class="spotlight-detail-row">📅 <span>${escapeHtml(dateStr)}</span></div>` : ''}
-              ${timeStr ? `<div class="spotlight-detail-row">� <span>${escapeHtml(timeStr)}</span></div>` : ''}
+              ${timeStr ? `<div class="spotlight-detail-row"><span style="font-size:11px;color:var(--text-muted);font-weight:600;">AT</span> <span>${escapeHtml(timeStr)}</span></div>` : ''}
               ${locStr ? `<div class="spotlight-detail-row">📍 <span>${escapeHtml(locStr)}</span></div>` : ''}
               <div class="spotlight-footer">
                 ${dl !== null && dl >= 0 ? `<span class="days-left-badge">${dl === 0 ? 'Today!' : dl + ' day' + (dl !== 1 ? 's' : '') + ' left'}</span>` : '<span></span>'}
@@ -1094,7 +1106,13 @@
     }
 
     function queueItemHTML(ev) {
-      const dateStr = fmtDate(ev.startDate);
+      // Date range: show "28 Aug – 29 Aug" if endDate differs from startDate
+      let dateStr;
+      if (ev.endDate && ev.endDate !== ev.startDate) {
+        dateStr = `${fmtDate(ev.startDate)} – ${fmtDate(ev.endDate)}`;
+      } else {
+        dateStr = fmtDate(ev.startDate);
+      }
       const timeStr = ev.time ? ` · ${ev.time}` : '';
       const locStr = [ev.venue, ev.city].filter(Boolean).join(', ');
 
@@ -1109,9 +1127,17 @@
             <div class="queue-artist">${escapeHtml(ev.artist || 'Untitled event')}</div>
             <div class="queue-date-row">📅 ${dateStr}${timeStr}</div>
             ${locStr ? `<div class="queue-loc-row">📍 ${escapeHtml(locStr)}</div>` : ''}
-            <span class="category-pill" style="margin-top:4px;">${escapeHtml(ev.category || 'Concert')}</span>
+            ${categoryPillHTML(ev.category)}
           </div>
         </div>`;
+    }
+
+    function categoryPillHTML(cat) {
+      const c = cat || 'Concert';
+      let cls = 'category-pill';
+      if (c === 'Festival') cls += ' category-pill-festival';
+      else if (c === 'Other') cls += ' category-pill-other';
+      return `<span class="${cls}">${escapeHtml(c)}</span>`;
     }
 
     function escapeHtml(s) {
@@ -1305,12 +1331,20 @@
     }
 
     function openReview(prefill) {
+      const isEditing = !!(prefill && prefill.id);
+      // Show/hide add option cards depending on mode
+      ['btnOptionScreenshot', 'btnOptionLink', 'btnOptionManual'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = isEditing ? 'none' : '';
+      });
+      const addSub = document.querySelector('.add-screen-sub');
+      if (addSub) addSub.style.display = isEditing ? 'none' : '';
       reviewSlot.innerHTML = `
         <div class="review">
           <input type="hidden" id="f_image" value="${escapeAttr(prefill.image || '')}">
           <h3>Confirm event details</h3>
           <div class="field"><label>Artist / Event Name</label><input id="f_artist" value="${escapeAttr(prefill.artist || prefill.name || '')}" placeholder="e.g. Branko, Slow J, Festival X"></div>
-          <div class="field"><label>Going with 👥</label><input id="f_company" value="${escapeAttr(prefill.company || '')}" placeholder="e.g. João, Maria, ..."></div>
+          <div class="field"><label>Going with</label><input id="f_company" value="${escapeAttr(prefill.company || '')}" placeholder="e.g. João, Maria, ..."></div>
 
           <div class="review-row">
             <div class="field"><label>Start Date</label><input id="f_start" type="date" value="${prefill.startDate || ''}"></div>
@@ -1365,6 +1399,7 @@
         }
         await saveEvents();
         reviewSlot.innerHTML = '';
+        restoreAddOptions();
         statusEl.textContent = 'Added to cue ✓';
         fileInput.value = '';
         render();
@@ -1373,6 +1408,15 @@
         setTimeout(() => { if (statusEl.textContent === 'Added to cue ✓') statusEl.textContent = ''; }, 2500);
       };
       reviewSlot.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function restoreAddOptions() {
+      ['btnOptionScreenshot', 'btnOptionLink', 'btnOptionManual'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = '';
+      });
+      const addSub = document.querySelector('.add-screen-sub');
+      if (addSub) addSub.style.display = '';
     }
 
     function openDetailModal(ev) {
@@ -1384,9 +1428,9 @@
 
       content.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-          <span class="category-pill">${escapeHtml(ev.category || 'Concert')}</span>
+          ${categoryPillHTML(ev.category)}
           <div style="display:flex; align-items:center; gap:8px;">
-            <button class="icon-btn" id="editFromModalBtn" style="font-size:18px;" title="Edit">✏️</button>
+            <button class="icon-btn" id="editFromModalBtn" style="font-size:18px; display:flex; align-items:center; justify-content:center;" title="Edit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
             <button class="icon-btn" id="closeModalBtn" style="font-size:18px; color:var(--text-muted);">✕</button>
           </div>
         </div>
@@ -1461,8 +1505,12 @@
         });
 
         if (dayEvents.length > 0) {
+          // Use color of first event's category
+          const firstCat = dayEvents[0].category || 'Concert';
+          const dotColor = firstCat === 'Festival' ? '#fbbf24' : firstCat === 'Other' ? '#2dd4bf' : '#a855f7';
           const dot = document.createElement('div');
           dot.className = 'cal-dot';
+          dot.style.background = dotColor;
           cell.appendChild(dot);
         }
 
@@ -1512,6 +1560,13 @@
 
     loadEvents();
     checkForSharedData();
+
+    // Also catch share params when PWA resumes from background (bfcache/pageshow)
+    window.addEventListener('pageshow', (e) => {
+      if (e.persisted || window.location.search.includes('text=') || window.location.search.includes('shared=')) {
+        checkForSharedData();
+      }
+    });
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js').catch(err => console.warn('SW registration failed', err));
