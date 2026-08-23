@@ -393,6 +393,53 @@
       font-weight: 500;
     }
 
+    /* Fixed Modal Overlay for Event Details */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      padding: 16px;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      width: 100%;
+      max-width: 500px;
+      padding: 24px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+      animation: modalFadeIn 0.2s ease-out;
+    }
+
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: scale(0.96); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .full-modal-img {
+      width: 100%;
+      max-height: 280px;
+      object-fit: cover;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+
     /* Forms & Modal */
     .review {
       margin-top: 16px;
@@ -1076,37 +1123,46 @@
       const dateStr = fmtDate(ev.startDate);
       const timeStr = ev.time ? ` · ${ev.time}` : '';
       const locStr = [ev.venue, ev.city].filter(Boolean).join(' · ');
+      const overlay = document.getElementById('eventModalOverlay');
+      const content = document.getElementById('eventModalContent');
 
-      reviewSlot.innerHTML = `
-        <div class="review detail-modal">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-            <span class="category-pill">${escapeHtml(ev.category || 'Concert')}</span>
-            <button class="stub-btn" id="closeModalBtn" style="font-weight:600; font-size:13px;">✕ Close</button>
-          </div>
-          ${ev.image ? `<img src="${ev.image}" class="full-modal-img" alt="Poster">` : ''}
-          <h2 style="margin: 10px 0 6px; font-weight:700; font-size:22px; color:#ffffff;">${escapeHtml(ev.artist || 'Untitled event')}</h2>
-          <div style="font-size:14px; color:var(--text-muted); margin-bottom:6px;">📅 ${dateStr}${timeStr}</div>
-          ${locStr ? `<div style="font-size:14px; color:var(--text-muted); margin-bottom:14px;">📍 ${escapeHtml(locStr)}</div>` : ''}
-          ${ev.description ? `<div style="background:#09090b; padding:14px; border-radius:8px; border:1px solid var(--border); font-size:13px; margin-bottom:20px; white-space:pre-wrap;"><strong>Note:</strong><br>${escapeHtml(ev.description)}</div>` : ''}
-          
-          <div class="btn-row">
-            <button class="btn btn-ghost" id="btnDelFromModal" style="color:var(--danger);">Delete</button>
-            <button class="btn btn-ghost" id="editFromModalBtn">Edit</button>
-            <button class="btn btn-primary" id="gcalFromModalBtn">Add to Google Cal</button>
-          </div>
+      content.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+          <span class="category-pill">${escapeHtml(ev.category || 'Concert')}</span>
+          <button class="icon-btn" id="closeModalBtn" style="font-size:18px; color:var(--text-muted);">✕</button>
+        </div>
+        ${ev.image ? `<img src="${ev.image}" class="full-modal-img" alt="Poster">` : ''}
+        <h2 style="margin: 8px 0 6px; font-weight:700; font-size:22px; color:#ffffff;">${escapeHtml(ev.artist || 'Untitled event')}</h2>
+        <div style="font-size:14px; color:var(--text-muted); margin-bottom:6px;">📅 ${dateStr}${timeStr}</div>
+        ${locStr ? `<div style="font-size:14px; color:var(--text-muted); margin-bottom:16px;">📍 ${escapeHtml(locStr)}</div>` : ''}
+        ${ev.description ? `<div style="background:#09090b; padding:14px; border-radius:10px; border:1px solid var(--border); font-size:13px; margin-bottom:20px; white-space:pre-wrap; color:var(--text-main);"><strong>Note:</strong><br>${escapeHtml(ev.description)}</div>` : ''}
+        
+        <div class="btn-row">
+          <button class="btn btn-ghost" id="editFromModalBtn">✏️ Edit</button>
+          <button class="btn btn-primary" id="gcalFromModalBtn">📅 Add to Google Cal</button>
+        </div>
+        <div class="btn-row" style="margin-top: 10px;">
+          <button class="btn btn-ghost" id="icsFromModalBtn">📥 Download .ics</button>
+          <button class="btn btn-ghost" id="btnDelFromModal" style="color:var(--danger); border-color:rgba(239,68,68,0.3);">🗑️ Delete</button>
         </div>`;
 
-      document.getElementById('closeModalBtn').onclick = () => { reviewSlot.innerHTML = ''; };
+      overlay.classList.add('active');
+
+      const closeModal = () => overlay.classList.remove('active');
+      document.getElementById('closeModalBtn').onclick = closeModal;
+      overlay.onclick = (e) => { if (e.target === overlay) closeModal(); };
+
       document.getElementById('btnDelFromModal').onclick = async () => {
+        closeModal();
         await deleteEvent(ev.id);
-        reviewSlot.innerHTML = '';
       };
       document.getElementById('editFromModalBtn').onclick = () => {
+        closeModal();
         switchTab('add');
         openReview(ev);
       };
       document.getElementById('gcalFromModalBtn').onclick = () => { window.open(gcalUrl(ev), '_blank'); };
-      reviewSlot.scrollIntoView({ behavior: 'smooth' });
+      document.getElementById('icsFromModalBtn').onclick = () => { downloadIcs(ev); };
     }
 
     function escapeAttr(s) { return escapeHtml(s).replace(/"/g, '&quot;'); }
@@ -1298,7 +1354,10 @@
         openReview({});
       }
     }
-  </script>
+  <!-- Dedicated Event Detail Modal Overlay -->
+  <div id="eventModalOverlay" class="modal-overlay">
+    <div class="modal-content" id="eventModalContent"></div>
+  </div>
 </body>
 
 </html>
