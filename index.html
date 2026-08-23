@@ -1161,24 +1161,26 @@
     }
 
     async function checkForSharedData() {
-      const href = window.location.href;
+      const fullUrl = window.location.href;
+      
       const searchParams = new URLSearchParams(window.location.search);
       const hashParams = new URLSearchParams(window.location.hash.replace('#', '?'));
 
       let sharedText = searchParams.get('text') || searchParams.get('url') || searchParams.get('title') ||
                         hashParams.get('text') || hashParams.get('url') || hashParams.get('title');
 
-      if (!sharedText) {
-        const urlMatch = href.match(/(https?:\/\/[^\s&"']+)/i);
-        if (urlMatch && !urlMatch[0].includes(window.location.hostname)) {
-          sharedText = urlMatch[0];
+      if (!sharedText && fullUrl.includes('?')) {
+        const queryPart = fullUrl.split('?')[1] || '';
+        const match = queryPart.match(/(?:text|url|title)=([^&]+)/i);
+        if (match && match[1]) {
+          try { sharedText = decodeURIComponent(match[1]); } catch(e) { sharedText = match[1]; }
         }
       }
 
       if (sharedText && searchParams.get('shared') !== '1') {
         window.history.replaceState({}, '', window.location.pathname);
         switchTab('add');
-        handleSharedText(decodeURIComponent(sharedText));
+        handleSharedText(sharedText);
         return;
       }
 
