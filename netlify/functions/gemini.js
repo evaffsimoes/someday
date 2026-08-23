@@ -20,43 +20,52 @@ exports.handler = async function(event, context) {
         const urlMatch = body.sharedUrl.match(/https?:\/\/[^\s]+/);
         let targetUrl = urlMatch ? urlMatch[0] : body.sharedUrl;
         
-        // If it's an Instagram post / reel / tv link, use Instagram's public embed endpoint!
-        const igMatch = targetUrl.match(/instagram\.com\/(?:p|reel|tv)\/([A-Za-z0-9_-]+)/);
-        if (igMatch && igMatch[1]) {
-          targetUrl = `https://www.instagram.com/p/${igMatch[1]}/embed/captioned/`;
-        }
+        let fetchedTitle = '';
+        let fetchedDesc = '';
+        let imageBase64 = null;
 
-        const pageRes = await fetch(targetUrl, {
-          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
-        });
-        const html = await pageRes.text();
+        try {
+          const igMatch = targetUrl.match(/instagram\.com\/(?:p|reel|tv)\/([A-Za-z0-9_-]+)/);
+          let fetchUrl = targetUrl;
+          if (igMatch && igMatch[1]) {
+            fetchUrl = `https://www.instagram.com/p/${igMatch[1]}/embed/captioned/`;
+          }
 
-        let caption = (html.match(/<div class="Caption"[^>]*>([\s\S]*?)<\/div>/i) || [])[1] || '';
-        caption = caption.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+          const pageRes = await fetch(fetchUrl, {
+            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
+          });
+          const html = await pageRes.text();
 
-        const ogTitle = (html.match(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']+)["']/i) || [])[1] || '';
-        const ogDesc = (html.match(/<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']+)["']/i) || [])[1] || '';
-        let ogImage = (html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i) || [])[1] || '';
-        if (!ogImage) {
-          ogImage = (html.match(/<img[^>]*class=["'][^"']*EmbeddedMediaImage[^"']*["'][^>]*src=["']([^"']+)["']/i) || [])[1] || '';
-        }
+          fetchedTitle = (html.match(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']+)["']/i) || [])[1] || '';
+          fetchedDesc = (html.match(/<meta[^>]*property=["']og:description["'][^>]*content=["']([^"']+)["']/i) || [])[1] || '';
+          let ogImage = (html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i) || [])[1] || '';
+          
+          if (ogImage) {
+            try {
+              const imgRes = await fetch(ogImage);
+              const imgBuf = await imgRes.arrayBuffer();
+              const b64 = Buffer.from(imgBuf).toString('base64');
+              const mime = imgRes.headers.get('content-type') || 'image/jpeg';
+              imageBase64 = `data:${mime};base64,${b64}`;
+            } catch(e) {}
+          }
+        } catch(e) {}
 
-        const fullPostText = [caption, ogTitle, ogDesc, body.sharedUrl].filter(Boolean).join('\n');
+        const combinedPromptText = [
+          `Original Shared Text/URL: ${body.sharedUrl}`,
+          fetchedTitle ? `Extracted Title: ${fetchedTitle}` : '',
+          fetchedDesc ? `Extracted Description: ${fetchedDesc}` : ''
+        ].filter(Boolean).join('\n');
 
         const parts = [
-          { text: `Today's date is ${new Date().toISOString().slice(0,10)}. Extract event details from this shared Instagram post:\n${fullPostText}\n\nRespond ONLY with a JSON object in this shape: {"name": string, "startDate": "YYYY-MM-DD" or "", "endDate": "YYYY-MM-DD" or "", "time": "HH:MM" (24h) or "", "location": string, "description": string (one short sentence)}. The events are in Portugal, so format city names properly.` }
+          { text: `Today's date is ${new Date().toISOString().slice(0,10)}. Extract event details from this shared event link / post string:\n${combinedPromptText}\n\nRespond ONLY with a JSON object in this shape: {"name": string, "startDate": "YYYY-MM-DD" or "", "endDate": "YYYY-MM-DD" or "", "time": "HH:MM" (24h) or "", "location": string, "description": string (one short sentence)}. The events are in Portugal, so format city names properly.` }
         ];
 
-        let imageBase64 = null;
-        if (ogImage) {
-          try {
-            const imgRes = await fetch(ogImage);
-            const imgBuf = await imgRes.arrayBuffer();
-            const b64 = Buffer.from(imgBuf).toString('base64');
-            const mime = imgRes.headers.get('content-type') || 'image/jpeg';
-            parts.push({ inlineData: { mimeType: mime, data: b64 } });
-            imageBase64 = `data:${mime};base64,${b64}`;
-          } catch(e) {}
+        if (imageBase64) {
+          const mimeMatch = imageBase64.match(/data:([^;]+);base64,(.+)/);
+          if (mimeMatch) {
+            parts.push({ inlineData: { mimeType: mimeMatch[1], data: mimeMatch[2] } });
+          }
         }
 
         body.contents = [{ parts }];

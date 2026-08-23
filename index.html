@@ -4,9 +4,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Saved for Someday</title>
+  <title>cue — Event Queue</title>
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#111111">
+  <meta name="theme-color" content="#000000">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -15,29 +15,29 @@
   <link rel="shortcut icon" type="image/png" href="icon-192.png">
   <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
     :root {
       --bg: #ffffff;
-      --text-main: #111111;
-      --text-muted: #888888;
-      --border: #eaeaea;
-      --accent: #000000;
+      --text-main: #09090b;
+      --text-muted: #71717a;
+      --border: #e4e4e7;
+      --accent: #a855f7;
       --surface: #fafafa;
-      --danger: #ff4444;
-      --pink: #ff1493;
+      --danger: #ef4444;
+      --purple: #a855f7;
     }
 
     @media (prefers-color-scheme: dark) {
       :root {
-        --bg: #111111;
+        --bg: #09090b;
         --text-main: #ffffff;
-        --text-muted: #888888;
-        --border: #333333;
-        --accent: #ffffff;
-        --surface: #1a1a1a;
-        --danger: #ff5555;
-        --pink: #ff2a85;
+        --text-muted: #a1a1aa;
+        --border: #27272a;
+        --accent: #c084fc;
+        --surface: #18181b;
+        --danger: #ef4444;
+        --purple: #c084fc;
       }
     }
 
@@ -67,18 +67,19 @@
 
     .eyebrow {
       font-size: 12px;
-      font-weight: 500;
-      letter-spacing: 0.05em;
+      font-weight: 700;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
-      color: var(--text-muted);
+      color: var(--purple);
       margin-bottom: 4px;
     }
 
     h1 {
-      font-weight: 600;
-      font-size: 28px;
+      font-weight: 700;
+      font-size: 32px;
       margin: 0 0 6px;
-      letter-spacing: -0.02em;
+      letter-spacing: -0.03em;
+      color: var(--text-main);
     }
 
     header p {
@@ -119,7 +120,7 @@
     }
 
     .nav-btn.active {
-      color: var(--pink);
+      color: var(--purple);
     }
 
     .nav-btn .nav-icon {
@@ -147,7 +148,7 @@
 
     .dropzone:hover,
     .dropzone.drag {
-      border-color: var(--text-main);
+      border-color: var(--purple);
       background: var(--surface);
     }
 
@@ -211,7 +212,7 @@
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      color: var(--pink);
+      color: var(--purple);
       margin-bottom: 8px;
       display: block;
     }
@@ -259,7 +260,7 @@
     .field input:focus,
     .field textarea:focus {
       outline: none;
-      border-color: var(--text-main);
+      border-color: var(--purple);
     }
 
     .field textarea {
@@ -295,8 +296,8 @@
     }
 
     .btn-primary {
-      background: var(--text-main);
-      color: var(--bg);
+      background: var(--purple);
+      color: #ffffff;
     }
 
     .btn-primary:hover {
@@ -500,7 +501,7 @@
     }
 
     .cal-cell:hover {
-      border-color: var(--text-main);
+      border-color: var(--purple);
     }
 
     .cal-cell.empty-cell {
@@ -510,20 +511,20 @@
     }
 
     .cal-cell.today {
-      border-color: var(--pink);
+      border-color: var(--purple);
       font-weight: 600;
     }
 
     .cal-cell.selected {
-      background: var(--text-main);
-      color: var(--bg);
+      background: var(--purple);
+      color: #ffffff;
     }
 
     .cal-dot {
       width: 6px;
       height: 6px;
       border-radius: 50%;
-      background: var(--pink);
+      background: var(--purple);
       position: absolute;
       bottom: 4px;
     }
@@ -556,9 +557,9 @@
 <body>
   <div class="wrap">
     <header>
-      <div class="eyebrow">Someday, Maybe</div>
-      <h1>Saved for Someday</h1>
-      <p>Turn Instagram event screenshots and posts into your calendar queue.</p>
+      <div class="eyebrow">cue 🎟️</div>
+      <h1>Your Event Queue</h1>
+      <p>Save Instagram event screenshots & posts into your calendar queue.</p>
     </header>
 
     <!-- SCREEN 1: EVENTS (HOME) -->
@@ -578,7 +579,7 @@
         <span>Tap to choose, or drag an image here</span>
         <input type="file" id="fileInput" accept="image/*">
       </div>
-      <span class="manual-link" id="pasteLink" style="margin-top: 16px; font-weight: 600; color: var(--pink);">📋 Paste copied Instagram link</span>
+      <span class="manual-link" id="pasteLink" style="margin-top: 16px; font-weight: 600; color: var(--purple);">📋 Paste copied Instagram link / caption</span>
       <span class="manual-link" id="manualLink" style="margin-top: 10px;">...or add an event by hand</span>
       <div class="status" id="status"></div>
       <div id="reviewSlot"></div>
@@ -882,8 +883,8 @@
 
       const fmt = d => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
       const ics = [
-        'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//SavedForSomeday//EN', 'BEGIN:VEVENT',
-        `UID:${ev.id}@savedforsomeday`,
+        'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//cue//EN', 'BEGIN:VEVENT',
+        `UID:${ev.id}@cue-app`,
         `DTSTAMP:${fmt(new Date())}`,
         `DTSTART:${fmt(startDate)}`,
         `DTEND:${fmt(endDate)}`,
@@ -923,10 +924,10 @@
         if (text) {
           handleSharedText(text);
         } else {
-          statusEl.textContent = 'Clipboard is empty — copy an Instagram link first!';
+          statusEl.textContent = 'Clipboard is empty — copy an Instagram link or caption first!';
         }
       } catch (e) {
-        const url = prompt('Paste Instagram link here:');
+        const url = prompt('Paste Instagram link or caption here:');
         if (url) handleSharedText(url);
       }
     });
@@ -947,7 +948,7 @@
         const mediaType = file.type || 'image/jpeg';
         const today = new Date().toISOString().slice(0, 10);
 
-        const response = await fetch('/.netlify/functions/gemini', {
+        const response = await fetch(getApiEndpoint(), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -999,7 +1000,7 @@
           <div class="field"><label>Note</label><textarea id="f_desc" placeholder="Anything worth remembering">${escapeHtml(prefill.description || '')}</textarea></div>
           <div class="btn-row">
             <button class="btn btn-ghost" id="cancelBtn">Cancel</button>
-            <button class="btn btn-primary" id="saveBtn">Save to Someday</button>
+            <button class="btn btn-primary" id="saveBtn">Save to cue</button>
           </div>
         </div>`;
       document.getElementById('cancelBtn').onclick = () => { reviewSlot.innerHTML = ''; statusEl.textContent = ''; };
@@ -1161,17 +1162,28 @@
     }
 
     async function checkForSharedData() {
-      const params = new URLSearchParams(window.location.search);
-      const sharedText = params.get('text') || params.get('url') || params.get('title');
+      const href = window.location.href;
+      const searchParams = new URLSearchParams(window.location.search);
+      const hashParams = new URLSearchParams(window.location.hash.replace('#', '?'));
 
-      if (sharedText && params.get('shared') !== '1') {
+      let sharedText = searchParams.get('text') || searchParams.get('url') || searchParams.get('title') ||
+                        hashParams.get('text') || hashParams.get('url') || hashParams.get('title');
+
+      if (!sharedText) {
+        const urlMatch = href.match(/(https?:\/\/[^\s&"']+)/i);
+        if (urlMatch && !urlMatch[0].includes(window.location.hostname)) {
+          sharedText = urlMatch[0];
+        }
+      }
+
+      if (sharedText && searchParams.get('shared') !== '1') {
         window.history.replaceState({}, '', window.location.pathname);
         switchTab('add');
-        handleSharedText(sharedText);
+        handleSharedText(decodeURIComponent(sharedText));
         return;
       }
 
-      if (params.get('shared') === '1') {
+      if (searchParams.get('shared') === '1') {
         window.history.replaceState({}, '', window.location.pathname);
         switchTab('add');
         try {
@@ -1196,50 +1208,9 @@
         : '/.netlify/functions/gemini';
     }
 
-    async function handleFile(file) {
-      statusEl.textContent = 'Reading poster screenshot…';
-      try {
-        const base64 = await fileToBase64(file);
-        const mediaType = file.type || 'image/jpeg';
-        const today = new Date().toISOString().slice(0, 10);
-
-        const response = await fetch(getApiEndpoint(), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{
-              parts: [
-                { text: `Today's date is ${today}. This image is a screenshot of an Instagram post advertising an event. Extract the event details and respond with ONLY a JSON object, no markdown, no preamble, in this exact shape: {"name": string, "startDate": "YYYY-MM-DD" or "", "endDate": "YYYY-MM-DD" or "", "time": "HH:MM" (24h) or "", "location": string, "description": string (one short sentence)}. If the year isn't shown, assume the next upcoming occurrence of that date after today. The events are in Portugal, so format city names properly. If a field truly can't be determined, use an empty string.` },
-                { inlineData: { mimeType: mediaType, data: base64 } }
-              ]
-            }]
-          })
-        });
-
-        const textRes = await response.text();
-        let data;
-        try { data = JSON.parse(textRes); } catch (e) { }
-
-        if (!response.ok) {
-          throw new Error(data?.error?.message || data?.error || textRes.slice(0, 100) || 'Unknown API error');
-        }
-
-        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        const clean = text.replace(/```json|```/g, '').trim();
-        const parsed = JSON.parse(clean);
-        parsed.image = `data:${mediaType};base64,${base64}`;
-        statusEl.textContent = 'Got it — check the details below.';
-        openReview(parsed);
-      } catch (e) {
-        console.error(e);
-        statusEl.textContent = "Error: " + e.message + " — add the details by hand below.";
-        openReview({});
-      }
-    }
-
     async function handleSharedText(sharedText) {
       switchTab('add');
-      statusEl.textContent = 'Scanning shared post...';
+      statusEl.textContent = 'Scanning shared post link...';
       try {
         const response = await fetch(getApiEndpoint(), {
           method: 'POST',
