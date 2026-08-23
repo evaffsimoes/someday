@@ -40,6 +40,9 @@ async function handleShareTarget(event) {
   try {
     const formData = await event.request.formData();
     const file = formData.get('images');
+    const text = formData.get('text') || '';
+    const urlParam = formData.get('url') || '';
+    const title = formData.get('title') || '';
     const base = event.request.url.split('share-target')[0];
 
     if (file && file.size > 0) {
@@ -47,6 +50,12 @@ async function handleShareTarget(event) {
       await cache.put('shared-image', new Response(file));
       return Response.redirect(base + 'index.html?shared=1', 303);
     }
+
+    const combinedText = [title, text, urlParam].filter(Boolean).join(' ');
+    if (combinedText) {
+      return Response.redirect(base + 'index.html?text=' + encodeURIComponent(combinedText), 303);
+    }
+
     return Response.redirect(base + 'index.html', 303);
   } catch (err) {
     const base = event.request.url.split('share-target')[0];
