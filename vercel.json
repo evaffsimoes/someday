@@ -1,5 +1,12 @@
 {
   "rewrites": [
-    { "source": "/.netlify/functions/gemini", "destination": "/api/gemini" }
+    {
+      "source": "/.netlify/functions/gemini",
+      "destination": "/api/gemini"
+    },
+    {
+      "source": "/share-target",
+      "destination": "/index.html"
+    }
   ]
 }
