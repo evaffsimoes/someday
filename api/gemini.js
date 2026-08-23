@@ -12,8 +12,10 @@ export default async function handler(req, res) {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
 
     if (body.sharedUrl) {
+      const sharedUrlStr = body.sharedUrl;
+      delete body.sharedUrl;
       const parts = [
-        { text: `Today's date is ${new Date().toISOString().slice(0,10)}. A user shared this event post link or text from Instagram: "${body.sharedUrl}".
+        { text: `Today's date is ${new Date().toISOString().slice(0,10)}. A user shared this event post link or text from Instagram: "${sharedUrlStr}".
 Search for this post or event link on Google / Web to find the event title, start date (YYYY-MM-DD), end date (YYYY-MM-DD or empty), time (HH:MM 24h or empty), location/city in Portugal, and a 1-sentence note.
 
 Respond ONLY with a JSON object in this exact shape: {"name": string, "startDate": "YYYY-MM-DD" or "", "endDate": "YYYY-MM-DD" or "", "time": "HH:MM" (24h) or "", "location": string, "description": string}.` }
