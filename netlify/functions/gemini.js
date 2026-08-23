@@ -20,12 +20,11 @@ exports.handler = async function(event, context) {
       delete body.sharedUrl;
       const parts = [
         { text: `Today's date is ${new Date().toISOString().slice(0,10)}. A user shared this event post link or text from Instagram: "${sharedUrlStr}".
-Search for this post or event link on Google / Web to find the event title, start date (YYYY-MM-DD), end date (YYYY-MM-DD or empty), time (HH:MM 24h or empty), location/city in Portugal, and a 1-sentence note.
+If the text contains event details, caption, or event title, extract the event details.
 
 Respond ONLY with a JSON object in this exact shape: {"name": string, "startDate": "YYYY-MM-DD" or "", "endDate": "YYYY-MM-DD" or "", "time": "HH:MM" (24h) or "", "location": string, "description": string}.` }
       ];
       body.contents = [{ parts }];
-      body.tools = [{ googleSearch: {} }];
     }
 
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`, {
