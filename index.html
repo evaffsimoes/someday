@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>cue — Event Queue</title>
+  <title>cue — Never miss your cue.</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#000000">
   <meta name="mobile-web-app-capable" content="yes">
@@ -15,30 +15,20 @@
   <link rel="shortcut icon" type="image/png" href="icon-192.png">
   <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
     :root {
-      --bg: #ffffff;
-      --text-main: #09090b;
-      --text-muted: #71717a;
-      --border: #e4e4e7;
-      --accent: #a855f7;
-      --surface: #fafafa;
-      --danger: #ef4444;
+      --bg: #000000;
+      --surface: #121214;
+      --surface-card: #18181b;
+      --border: #27272a;
+      --text-main: #ffffff;
+      --text-muted: #a1a1aa;
       --purple: #a855f7;
-    }
-
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #09090b;
-        --text-main: #ffffff;
-        --text-muted: #a1a1aa;
-        --border: #27272a;
-        --accent: #c084fc;
-        --surface: #18181b;
-        --danger: #ef4444;
-        --purple: #c084fc;
-      }
+      --purple-dark: #7e22ce;
+      --purple-light: #c084fc;
+      --purple-glow: rgba(168, 85, 247, 0.25);
+      --danger: #ef4444;
     }
 
     * {
@@ -51,12 +41,12 @@
       color: var(--text-main);
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       min-height: 100vh;
-      padding: 30px 20px 100px;
+      padding: 24px 16px 100px;
       line-height: 1.5;
     }
 
     .wrap {
-      max-width: 600px;
+      max-width: 540px;
       margin: 0 auto;
     }
 
@@ -65,43 +55,35 @@
       text-align: center;
     }
 
-    .eyebrow {
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--purple);
-      margin-bottom: 4px;
+    .logo-img {
+      height: 44px;
+      width: auto;
+      margin: 0 auto 8px;
+      display: block;
     }
 
-    h1 {
-      font-weight: 700;
-      font-size: 32px;
-      margin: 0 0 6px;
-      letter-spacing: -0.03em;
-      color: var(--text-main);
-    }
-
-    header p {
+    .tagline {
+      font-size: 13px;
       color: var(--text-muted);
-      font-size: 14px;
       margin: 0;
-      font-weight: 300;
+      font-weight: 400;
+      letter-spacing: -0.01em;
     }
 
-    /* Screen Tabs Navigation */
+    /* Sticky Bottom Navigation Bar */
     .bottom-nav {
       position: fixed;
       bottom: 0;
       left: 0;
       right: 0;
       height: 64px;
-      background: var(--bg);
+      background: #09090b;
       border-top: 1px solid var(--border);
       display: flex;
       justify-content: space-around;
       align-items: center;
       z-index: 1000;
+      padding: 0 16px;
     }
 
     .nav-btn {
@@ -116,15 +98,35 @@
       font-weight: 500;
       cursor: pointer;
       padding: 8px 16px;
-      transition: color 0.2s;
+      transition: all 0.2s ease;
+      flex: 1;
     }
 
     .nav-btn.active {
-      color: var(--purple);
+      color: var(--purple-light);
     }
 
-    .nav-btn .nav-icon {
-      font-size: 20px;
+    .nav-btn-center {
+      background: var(--purple);
+      color: #ffffff;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 0 16px var(--purple-glow);
+      transition: transform 0.2s ease, background 0.2s ease;
+      flex: none;
+      margin: 0 8px;
+    }
+
+    .nav-btn-center:hover {
+      transform: scale(1.06);
+      background: var(--purple-light);
     }
 
     .tab-screen {
@@ -135,129 +137,301 @@
       display: block;
     }
 
-    .dropzone {
-      margin-top: 16px;
-      border: 1px dashed var(--border);
-      border-radius: 12px;
-      padding: 40px 20px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      background: var(--bg);
-    }
-
-    .dropzone:hover,
-    .dropzone.drag {
-      border-color: var(--purple);
-      background: var(--surface);
-    }
-
-    .dropzone .icon {
-      font-size: 32px;
-      margin-bottom: 12px;
-      display: block;
-    }
-
-    .dropzone strong {
-      font-size: 15px;
-      font-weight: 500;
-      display: block;
-    }
-
-    .dropzone span {
-      display: block;
-      color: var(--text-muted);
-      font-size: 13px;
-      margin-top: 4px;
-    }
-
-    input[type=file] {
-      display: none;
-    }
-
-    .manual-link {
-      display: block;
-      text-align: center;
-      margin-top: 16px;
-      font-size: 13px;
-      color: var(--text-muted);
-      cursor: pointer;
-      text-decoration: none;
-      transition: color 0.2s;
-    }
-
-    .manual-link:hover {
-      color: var(--text-main);
-    }
-
-    .status {
-      text-align: center;
-      font-size: 13px;
-      color: var(--text-main);
-      margin-top: 16px;
-      min-height: 20px;
-    }
-
-    /* Spotlight Card */
+    /* NEXT UP Spotlight Card */
     .spotlight-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 20px;
+      background: linear-gradient(135deg, #1e112a 0%, #121214 100%);
+      border: 1px solid var(--purple-glow);
+      border-radius: 16px;
+      padding: 18px 20px;
       margin-bottom: 24px;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
     }
 
-    .spotlight-badge {
-      font-size: 11px;
+    .spotlight-card::after {
+      content: '';
+      position: absolute;
+      top: -20px;
+      right: -20px;
+      width: 100px;
+      height: 100px;
+      background: radial-gradient(circle, var(--purple-glow) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .spotlight-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--purple-light);
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .spotlight-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin: 0 0 6px;
+      letter-spacing: -0.02em;
+      color: #ffffff;
+    }
+
+    .spotlight-meta {
+      font-size: 13px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .category-pill {
+      display: inline-block;
+      font-size: 10px;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      color: var(--purple);
-      margin-bottom: 8px;
-      display: block;
+      padding: 3px 8px;
+      border-radius: 20px;
+      background: rgba(168, 85, 247, 0.15);
+      color: var(--purple-light);
+      border: 1px solid rgba(168, 85, 247, 0.3);
     }
 
-    /* Review / edit card */
-    .review {
-      margin-top: 24px;
+    /* Section Titles */
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin: 24px 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* Compact Event Card in Queue */
+    .queue-item {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 20px;
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+      transition: border-color 0.2s ease, background 0.2s ease;
     }
 
-    .review h3 {
-      margin: 0 0 16px;
-      font-size: 18px;
+    .queue-item:hover {
+      border-color: #3f3f46;
+      background: var(--surface-card);
+    }
+
+    .queue-img {
+      width: 54px;
+      height: 54px;
+      object-fit: cover;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .queue-img-placeholder {
+      width: 54px;
+      height: 54px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #1f1f23;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .queue-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .queue-artist {
+      font-size: 15px;
+      font-weight: 600;
+      margin: 0 0 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: #ffffff;
+    }
+
+    .queue-details {
+      font-size: 12px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .queue-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .icon-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      padding: 6px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: color 0.2s;
+      font-size: 14px;
+    }
+
+    .icon-btn:hover {
+      color: var(--text-main);
+    }
+
+    /* Add Event Options Card */
+    .add-option-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .add-option-card:hover {
+      border-color: var(--purple-light);
+      background: var(--surface-card);
+    }
+
+    .add-icon {
+      font-size: 24px;
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      background: #27272a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .add-text strong {
+      font-size: 15px;
+      font-weight: 600;
+      display: block;
+      color: #ffffff;
+    }
+
+    .add-text span {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Magic AI Parsing Card */
+    .ai-parsing-card {
+      background: linear-gradient(135deg, #181124 0%, #121214 100%);
+      border: 1px solid var(--purple-glow);
+      border-radius: 16px;
+      padding: 20px;
+      margin-top: 16px;
+    }
+
+    .parsing-status-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      font-size: 15px;
+      color: var(--purple-light);
+      margin-bottom: 16px;
+    }
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(192, 132, 252, 0.2);
+      border-top-color: var(--purple-light);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .parsed-field {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      display: flex;
+      gap: 8px;
+    }
+
+    .parsed-field strong {
+      color: #ffffff;
       font-weight: 500;
     }
 
+    /* Forms & Modal */
+    .review {
+      margin-top: 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+    }
+
     .field {
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
 
     .field label {
       display: block;
-      font-size: 12px;
-      font-weight: 500;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
       color: var(--text-muted);
       margin-bottom: 6px;
     }
 
     .field input,
+    .field select,
     .field textarea {
       width: 100%;
       padding: 10px 12px;
       border: 1px solid var(--border);
-      border-radius: 6px;
+      border-radius: 8px;
       font-family: inherit;
       font-size: 14px;
-      background: var(--bg);
+      background: #09090b;
       color: var(--text-main);
       transition: border-color 0.2s;
     }
 
     .field input:focus,
+    .field select:focus,
     .field textarea:focus {
       outline: none;
       border-color: var(--purple);
@@ -270,7 +444,7 @@
 
     .review-row {
       display: flex;
-      gap: 12px;
+      gap: 10px;
     }
 
     .review-row .field {
@@ -279,18 +453,18 @@
 
     .btn-row {
       display: flex;
-      gap: 12px;
-      margin-top: 24px;
+      gap: 10px;
+      margin-top: 20px;
     }
 
     .btn {
       flex: 1;
       border: none;
       padding: 12px 16px;
-      border-radius: 6px;
+      border-radius: 8px;
       font-family: inherit;
-      font-weight: 500;
-      font-size: 14px;
+      font-weight: 600;
+      font-size: 13px;
       cursor: pointer;
       transition: all 0.2s;
     }
@@ -311,158 +485,10 @@
     }
 
     .btn-ghost:hover {
-      background: var(--surface);
+      background: var(--surface-card);
     }
 
-    /* Section Titles */
-    .section-title {
-      font-size: 12px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-      margin: 32px 0 16px;
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 8px;
-    }
-
-    .empty {
-      padding: 24px 0;
-      color: var(--text-muted);
-      font-size: 14px;
-      text-align: center;
-    }
-
-    .ticket {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      padding: 16px 0;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .ticket-main {
-      flex: 1;
-      padding-right: 16px;
-    }
-
-    .ticket-date {
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--text-muted);
-      margin-bottom: 4px;
-    }
-
-    .ticket-name {
-      font-weight: 500;
-      font-size: 16px;
-      margin: 0 0 4px;
-    }
-
-    .ticket-meta {
-      font-size: 13px;
-      color: var(--text-muted);
-      margin-bottom: 6px;
-    }
-
-    .ticket-stub {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      min-width: 90px;
-      align-items: flex-end;
-    }
-
-    .stub-btn {
-      background: none;
-      border: none;
-      padding: 0;
-      font-size: 12px;
-      color: var(--text-muted);
-      cursor: pointer;
-      text-align: right;
-      transition: color 0.2s;
-    }
-
-    .stub-btn:hover {
-      color: var(--text-main);
-    }
-
-    .stub-btn.del:hover {
-      color: var(--danger);
-    }
-
-    .ticket-body {
-      display: flex;
-      gap: 14px;
-      align-items: flex-start;
-      flex: 1;
-      padding-right: 16px;
-    }
-
-    .ticket-img {
-      width: 64px;
-      height: 64px;
-      object-fit: cover;
-      border-radius: 6px;
-      border: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-
-    .company-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 12px;
-      font-weight: 500;
-      padding: 3px 8px;
-      border-radius: 12px;
-      margin-top: 4px;
-    }
-
-    .badge-yes {
-      background: rgba(46, 204, 113, 0.15);
-      color: #2ecc71;
-      border: 1px solid rgba(46, 204, 113, 0.3);
-    }
-
-    .badge-no {
-      background: rgba(231, 76, 60, 0.15);
-      color: #e74c3c;
-      border: 1px solid rgba(231, 76, 60, 0.3);
-    }
-
-    .ticket-img-placeholder {
-      width: 64px;
-      height: 64px;
-      border-radius: 6px;
-      border: 1px solid var(--border);
-      background: var(--surface);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-      flex-shrink: 0;
-    }
-
-    .full-modal-img {
-      width: 100%;
-      max-height: 320px;
-      object-fit: contain;
-      border-radius: 8px;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      margin-bottom: 12px;
-    }
-
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-
-    /* Interactive Visual Calendar Styles */
+    /* Interactive Calendar Component */
     .cal-header {
       display: flex;
       justify-content: space-between;
@@ -478,7 +504,7 @@
     }
 
     .cal-day-label {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
       color: var(--text-muted);
       padding-bottom: 6px;
@@ -511,8 +537,8 @@
     }
 
     .cal-cell.today {
-      border-color: var(--purple);
-      font-weight: 600;
+      border-color: var(--purple-light);
+      font-weight: 700;
     }
 
     .cal-cell.selected {
@@ -521,35 +547,19 @@
     }
 
     .cal-dot {
-      width: 6px;
-      height: 6px;
+      width: 5px;
+      height: 5px;
       border-radius: 50%;
-      background: var(--purple);
+      background: var(--purple-light);
       position: absolute;
       bottom: 4px;
     }
 
-    @media (max-width: 420px) {
-      .ticket {
-        flex-direction: column;
-        gap: 12px;
-      }
-
-      .ticket-body {
-        padding-right: 0;
-      }
-
-      .ticket-stub {
-        flex-direction: row;
-        align-items: center;
-        width: 100%;
-        justify-content: flex-start;
-        gap: 16px;
-      }
-
-      .stub-btn {
-        text-align: left;
-      }
+    .empty {
+      padding: 32px 0;
+      color: var(--text-muted);
+      font-size: 13px;
+      text-align: center;
     }
   </style>
 </head>
@@ -557,39 +567,59 @@
 <body>
   <div class="wrap">
     <header>
-      <img src="icon-512.png" alt="cue logo" style="height: 52px; width: auto; margin: 0 auto 12px; display: block;">
-      <p>Save Instagram event screenshots & posts into your calendar queue.</p>
+      <img src="icon-512.png" alt="cue logo" class="logo-img">
+      <p class="tagline">Never miss your cue.</p>
     </header>
 
-    <!-- SCREEN 1: EVENTS (HOME) -->
-    <div id="screen-events" class="tab-screen active">
+    <!-- TAB 1: QUEUE (HOME) -->
+    <div id="screen-queue" class="tab-screen active">
       <div id="spotlightSlot"></div>
-      <div class="section-title">Upcoming Queue</div>
+      <div class="section-title">UPCOMING QUEUE</div>
       <div id="upcomingList"></div>
-      <div class="section-title">Past / Done</div>
+      <div class="section-title">PAST QUEUE</div>
       <div id="pastList"></div>
     </div>
 
-    <!-- SCREEN 2: ADD EVENT -->
+    <!-- TAB 2: ADD TO CUE (+) -->
     <div id="screen-add" class="tab-screen">
-      <div class="dropzone" id="dropzone">
-        <span class="icon">🎟️</span>
-        <strong>Upload a screenshot</strong>
-        <span>Tap to choose, or drag an image here</span>
-        <input type="file" id="fileInput" accept="image/*">
+      <h2 style="font-size: 20px; font-weight:700; margin: 0 0 16px;">Add to cue</h2>
+
+      <div class="add-option-card" id="btnOptionScreenshot">
+        <div class="add-icon">📸</div>
+        <div class="add-text">
+          <strong>Screenshot</strong>
+          <span>Upload an Instagram poster or story photo</span>
+        </div>
       </div>
-      <span class="manual-link" id="pasteLink" style="margin-top: 16px; font-weight: 600; color: var(--purple);">📋 Paste copied Instagram link / caption</span>
-      <span class="manual-link" id="manualLink" style="margin-top: 10px;">...or add an event by hand</span>
+      <input type="file" id="fileInput" accept="image/*">
+
+      <div class="add-option-card" id="btnOptionLink">
+        <div class="add-icon">🔗</div>
+        <div class="add-text">
+          <strong>Instagram link</strong>
+          <span>Paste a copied link or post caption</span>
+        </div>
+      </div>
+
+      <div class="add-option-card" id="btnOptionManual">
+        <div class="add-icon">✍️</div>
+        <div class="add-text">
+          <strong>Add manually</strong>
+          <span>Type event details by hand</span>
+        </div>
+      </div>
+
       <div class="status" id="status"></div>
+      <div id="aiParsingSlot"></div>
       <div id="reviewSlot"></div>
     </div>
 
-    <!-- SCREEN 3: CALENDAR -->
+    <!-- TAB 3: CALENDAR -->
     <div id="screen-calendar" class="tab-screen">
       <div class="cal-header">
-        <button class="btn btn-ghost" id="calPrevBtn" style="padding: 6px 12px; font-size:12px;">← Prev</button>
-        <h3 id="calMonthTitle" style="margin:0; font-size:16px; font-weight:600;"></h3>
-        <button class="btn btn-ghost" id="calNextBtn" style="padding: 6px 12px; font-size:12px;">Next →</button>
+        <button class="btn btn-ghost" id="calPrevBtn" style="padding: 6px 12px; font-size:12px; flex:none;">← Prev</button>
+        <h3 id="calMonthTitle" style="margin:0; font-size:16px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em;"></h3>
+        <button class="btn btn-ghost" id="calNextBtn" style="padding: 6px 12px; font-size:12px; flex:none;">Next →</button>
       </div>
       <div class="cal-grid" id="calDaysHeader">
         <div class="cal-day-label">Sun</div>
@@ -601,53 +631,47 @@
         <div class="cal-day-label">Sat</div>
       </div>
       <div class="cal-grid" id="calGrid" style="margin-top: 8px;"></div>
-      <div class="section-title" id="calSelectedTitle" style="margin-top:32px;">Events on Selected Date</div>
+      
+      <div class="section-title" id="calSelectedTitle" style="margin-top:32px;">YOUR EVENTS</div>
       <div id="calSelectedList"></div>
     </div>
 
     <datalist id="pt-cities">
-      <option value="Lisbon">
       <option value="Porto">
+      <option value="Lisbon">
       <option value="Vila Nova de Gaia">
-      <option value="Amadora">
       <option value="Braga">
       <option value="Coimbra">
-      <option value="Funchal">
-      <option value="Almada">
-      <option value="Setúbal">
       <option value="Faro">
       <option value="Aveiro">
-      <option value="Évora">
-      <option value="Leiria">
-      <option value="Guimarães">
       <option value="Cascais">
-      <option value="Sintra">
+      <option value="Guimarães">
+      <option value="Leiria">
     </datalist>
   </div>
 
-  <!-- STICKY BOTTOM NAVIGATION BAR -->
+  <!-- STICKY BOTTOM NAVIGATION BAR (Queue | + | Calendar) -->
   <nav class="bottom-nav">
-    <button class="nav-btn active" data-tab="events">
-      <span class="nav-icon">🎟️</span>
-      <span>Events</span>
+    <button class="nav-btn active" data-tab="queue">
+      <span style="font-size: 18px;">🎟️</span>
+      <span>Queue</span>
     </button>
-    <button class="nav-btn" data-tab="add">
-      <span class="nav-icon">➕</span>
-      <span>Add Event</span>
+    <button class="nav-btn-center" id="navBtnPlus" data-tab="add" title="Add to cue">
+      <span>+</span>
     </button>
     <button class="nav-btn" data-tab="calendar">
-      <span class="nav-icon">📅</span>
+      <span style="font-size: 18px;">📅</span>
       <span>Calendar</span>
     </button>
   </nav>
 
   <script>
-    const STORE_KEY = 'someday-events';
+    const STORE_KEY = 'cue-events-v12';
     let events = [];
     let calCurrentDate = new Date();
     let calSelectedDateStr = null;
 
-    function uid() { return 'ev_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8); }
+    function uid() { return 'cue_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8); }
 
     function getStorageItem(key) {
       try {
@@ -670,10 +694,12 @@
 
     async function loadEvents() {
       try {
-        const raw = await getStorageItem(STORE_KEY);
+        const raw = await getStorageItem(STORE_KEY) || await getStorageItem('someday-events');
         events = raw ? JSON.parse(raw) : [];
         events = events.map(e => {
-          if (e.date && !e.startDate) { e.startDate = e.date; delete e.date; }
+          if (e.name && !e.artist) e.artist = e.name;
+          if (e.location && !e.venue) e.venue = e.location;
+          if (!e.category) e.category = 'Concert';
           return e;
         });
       } catch (e) { events = []; }
@@ -686,18 +712,11 @@
       catch (e) { console.error('save failed', e); }
     }
 
-    function fmtDateRangeBadge(start, end) {
-      const fmt = dStr => {
-        if (!dStr) return null;
-        const d = new Date(dStr + 'T00:00:00');
-        if (isNaN(d)) return dStr;
-        return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-      };
-      const s = fmt(start);
-      const e = fmt(end);
-      if (s && e && s !== e) return `${s} - ${e}`;
-      if (s) return s;
-      return 'Date unknown';
+    function fmtDate(dStr) {
+      if (!dStr) return 'Date unknown';
+      const d = new Date(dStr + 'T00:00:00');
+      if (isNaN(d)) return dStr;
+      return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
     }
 
     function isPast(ev) {
@@ -720,7 +739,7 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    document.querySelectorAll('.nav-btn').forEach(btn => {
+    document.querySelectorAll('.nav-btn, .nav-btn-center').forEach(btn => {
       btn.onclick = () => switchTab(btn.getAttribute('data-tab'));
     });
 
@@ -728,28 +747,34 @@
       const upcoming = events.filter(e => !isPast(e)).sort((a, b) => (a.startDate || '9999').localeCompare(b.startDate || '9999'));
       const past = events.filter(e => isPast(e)).sort((a, b) => (b.startDate || '').localeCompare(a.startDate || ''));
 
-      // Next Event Spotlight Card
+      // NEXT UP Spotlight Card
       const spotlightSlot = document.getElementById('spotlightSlot');
       if (upcoming.length > 0) {
         const next = upcoming[0];
+        const dateStr = fmtDate(next.startDate);
+        const timeStr = next.time ? ` · ${next.time}` : '';
+        const locStr = [next.venue, next.city].filter(Boolean).join(' · ');
+
         spotlightSlot.innerHTML = `
-          <div class="spotlight-card" data-view="${next.id}" style="cursor: pointer;">
-            <span class="spotlight-badge">★ Next Event Spotlight</span>
-            <h3 style="margin:0 0 6px; font-weight:600;">${escapeHtml(next.name || 'Untitled event')}</h3>
-            <div class="ticket-date" style="font-size:13px; margin-bottom:6px;">📅 ${fmtDateRangeBadge(next.startDate, next.endDate)}</div>
-            ${next.location ? `<div class="ticket-meta" style="font-size:13px; margin-bottom:8px;">📍 ${escapeHtml(next.location)}</div>` : ''}
-            ${next.company ? `<div class="company-badge badge-yes">👥 With ${escapeHtml(next.company)}</div>` : '<div class="company-badge badge-no">👤 No company</div>'}
+          <div class="spotlight-card" data-view="${next.id}">
+            <span class="spotlight-label">NEXT UP</span>
+            <div class="spotlight-title">${escapeHtml(next.artist || 'Untitled event')}</div>
+            <div class="spotlight-meta">
+              <span>📅 ${dateStr}${timeStr}</span>
+              ${locStr ? `<span>📍 ${escapeHtml(locStr)}</span>` : ''}
+              <span class="category-pill">${escapeHtml(next.category || 'Concert')}</span>
+            </div>
           </div>`;
       } else {
         spotlightSlot.innerHTML = '';
       }
 
       document.getElementById('upcomingList').innerHTML = upcoming.length
-        ? upcoming.map(ticketHTML).join('')
-        : '<div class="empty">Nothing saved yet. Tap "Add Event" below to scan a poster!</div>';
+        ? upcoming.map(queueItemHTML).join('')
+        : '<div class="empty">Your queue is empty. Tap "+" to add a concert or festival!</div>';
 
       document.getElementById('pastList').innerHTML = past.length
-        ? past.map(ticketHTML).join('')
+        ? past.map(queueItemHTML).join('')
         : '<div class="empty">Past events will land here.</div>';
 
       document.querySelectorAll('[data-view]').forEach(el => {
@@ -761,49 +786,25 @@
       document.querySelectorAll('[data-del]').forEach(btn => {
         btn.onclick = (e) => { e.stopPropagation(); deleteEvent(btn.getAttribute('data-del')); };
       });
-      document.querySelectorAll('[data-edit]').forEach(btn => {
-        btn.onclick = (e) => {
-          e.stopPropagation();
-          const ev = events.find(e => e.id === btn.getAttribute('data-edit'));
-          switchTab('add');
-          openReview(ev);
-        };
-      });
-      document.querySelectorAll('[data-gcal]').forEach(btn => {
-        btn.onclick = (e) => { e.stopPropagation(); window.open(gcalUrl(events.find(ev => ev.id === btn.getAttribute('data-gcal'))), '_blank'); };
-      });
-      document.querySelectorAll('[data-ics]').forEach(btn => {
-        btn.onclick = (e) => { e.stopPropagation(); downloadIcs(events.find(ev => ev.id === btn.getAttribute('data-ics'))); };
-      });
     }
 
-    function ticketHTML(ev) {
-      const meta = [ev.time, ev.location].filter(Boolean).join(' · ');
-      const imgHTML = ev.image
-        ? `<img src="${ev.image}" class="ticket-img" alt="Poster">`
-        : `<div class="ticket-img-placeholder">🎟️</div>`;
+    function queueItemHTML(ev) {
+      const dateStr = fmtDate(ev.startDate);
+      const timeStr = ev.time ? ` · ${ev.time}` : '';
+      const locStr = [ev.venue, ev.city].filter(Boolean).join(' · ');
 
-      const companyHTML = ev.company
-        ? `<div class="company-badge badge-yes">👥 With ${escapeHtml(ev.company)}</div>`
-        : `<div class="company-badge badge-no">👤 No company</div>`;
+      const imgHTML = ev.image
+        ? `<img src="${ev.image}" class="queue-img" alt="Poster">`
+        : `<div class="queue-img-placeholder">🎟️</div>`;
 
       return `
-        <div class="ticket">
-          <div class="ticket-body" data-view="${ev.id}" style="cursor: pointer;">
-            ${imgHTML}
-            <div class="ticket-main">
-              <div class="ticket-date">${fmtDateRangeBadge(ev.startDate, ev.endDate)}</div>
-              <div class="ticket-name">${escapeHtml(ev.name || 'Untitled event')}</div>
-              ${meta ? `<div class="ticket-meta"><span>${escapeHtml(meta)}</span></div>` : ''}
-              ${companyHTML}
-            </div>
+        <div class="queue-item" data-view="${ev.id}">
+          ${imgHTML}
+          <div class="queue-info">
+            <div class="queue-artist">${escapeHtml(ev.artist || 'Untitled event')}</div>
+            <div class="queue-details">${dateStr}${timeStr} ${locStr ? `· ${escapeHtml(locStr)}` : ''}</div>
           </div>
-          <div class="ticket-stub">
-            <button class="stub-btn" data-edit="${ev.id}">Edit</button>
-            <button class="stub-btn" data-gcal="${ev.id}">Add to Google Cal</button>
-            <button class="stub-btn" data-ics="${ev.id}">Download .ics</button>
-            <button class="stub-btn del" data-del="${ev.id}">Remove</button>
-          </div>
+          <span class="category-pill">${escapeHtml(ev.category || 'Concert')}</span>
         </div>`;
     }
 
@@ -840,26 +841,19 @@
         if (end) {
           dates = `${start}/${end}T235900`;
         } else {
-          const d = new Date(ev.startDate + 'T' + (ev.time || '19:00'));
-          const endD = new Date(d.getTime() + 2 * 60 * 60 * 1000);
+          const d = new Date(ev.startDate + 'T' + (ev.time || '21:00'));
+          const endD = new Date(d.getTime() + 3 * 60 * 60 * 1000);
           dates = `${start}/${endD.toISOString().replace(/[-:]/g, '').split('.')[0]}`;
         }
       } else if (start) {
-        if (ev.endDate && ev.startDate !== ev.endDate) {
-          const eD = new Date(ev.endDate + 'T00:00:00');
-          eD.setDate(eD.getDate() + 1);
-          const endFmt = eD.toISOString().slice(0, 10).replace(/-/g, '');
-          dates = `${start}/${endFmt}`;
-        } else {
-          dates = `${start}/${start}`;
-        }
+        dates = `${start}/${start}`;
       }
 
       const params = new URLSearchParams({
         action: 'TEMPLATE',
-        text: ev.name || 'Event',
-        details: ev.description || '',
-        location: ev.location || ''
+        text: ev.artist || 'Event',
+        details: ev.description || 'Saved to cue: Never miss your cue.',
+        location: [ev.venue, ev.city].filter(Boolean).join(', ')
       });
       if (dates) params.set('dates', dates);
       return `https://calendar.google.com/calendar/render?${params.toString()}`;
@@ -867,18 +861,12 @@
 
     function downloadIcs(ev) {
       const start = toGCalDate(ev.startDate, ev.time) || new Date().toISOString().replace(/[-:]/g, '').split('.')[0];
-      const dtStart = start.includes('T') ? start : start + 'T190000';
+      const dtStart = start.includes('T') ? start : start + 'T210000';
       const startDate = new Date(
         dtStart.slice(0, 4), dtStart.slice(4, 6) - 1, dtStart.slice(6, 8),
-        dtStart.slice(9, 11) || 19, dtStart.slice(11, 13) || 0
+        dtStart.slice(9, 11) || 21, dtStart.slice(11, 13) || 0
       );
-
-      let endDate;
-      if (ev.endDate) {
-        endDate = new Date(ev.endDate + 'T23:59:59');
-      } else {
-        endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
-      }
+      const endDate = new Date(startDate.getTime() + 3 * 60 * 60 * 1000);
 
       const fmt = d => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
       const ics = [
@@ -887,37 +875,30 @@
         `DTSTAMP:${fmt(new Date())}`,
         `DTSTART:${fmt(startDate)}`,
         `DTEND:${fmt(endDate)}`,
-        `SUMMARY:${(ev.name || 'Event').replace(/\n/g, ' ')}`,
-        ev.location ? `LOCATION:${ev.location.replace(/\n/g, ' ')}` : '',
+        `SUMMARY:${(ev.artist || 'Event').replace(/\n/g, ' ')}`,
+        ev.venue ? `LOCATION:${[ev.venue, ev.city].filter(Boolean).join(', ').replace(/\n/g, ' ')}` : '',
         ev.description ? `DESCRIPTION:${ev.description.replace(/\n/g, ' ')}` : '',
         'END:VEVENT', 'END:VCALENDAR'
       ].filter(Boolean).join('\r\n');
       const blob = new Blob([ics], { type: 'text/calendar' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = (ev.name || 'event').replace(/[^a-z0-9]+/gi, '_') + '.ics';
+      a.download = (ev.artist || 'event').replace(/[^a-z0-9]+/gi, '_') + '.ics';
       a.click();
     }
 
-    // ---- Upload + AI extraction ----
-    const dropzone = document.getElementById('dropzone');
+    // ---- Add Options Handlers ----
     const fileInput = document.getElementById('fileInput');
     const statusEl = document.getElementById('status');
+    const aiParsingSlot = document.getElementById('aiParsingSlot');
     const reviewSlot = document.getElementById('reviewSlot');
 
-    dropzone.addEventListener('click', () => fileInput.click());
-    dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag'); });
-    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag'));
-    dropzone.addEventListener('drop', e => {
-      e.preventDefault(); dropzone.classList.remove('drag');
-      if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
-    });
+    document.getElementById('btnOptionScreenshot').onclick = () => fileInput.click();
     fileInput.addEventListener('change', () => {
       if (fileInput.files[0]) handleFile(fileInput.files[0]);
     });
 
-    document.getElementById('manualLink').addEventListener('click', () => openReview({}));
-    document.getElementById('pasteLink').addEventListener('click', async () => {
+    document.getElementById('btnOptionLink').onclick = async () => {
       try {
         const text = await navigator.clipboard.readText();
         if (text) {
@@ -929,7 +910,9 @@
         const url = prompt('Paste Instagram link or caption here:');
         if (url) handleSharedText(url);
       }
-    });
+    };
+
+    document.getElementById('btnOptionManual').onclick = () => openReview({});
 
     function fileToBase64(file) {
       return new Promise((resolve, reject) => {
@@ -941,7 +924,7 @@
     }
 
     async function handleFile(file) {
-      statusEl.textContent = 'Reading poster screenshot…';
+      renderAiParsingState();
       try {
         const base64 = await fileToBase64(file);
         const mediaType = file.type || 'image/jpeg';
@@ -953,7 +936,7 @@
           body: JSON.stringify({
             contents: [{
               parts: [
-                { text: `Today's date is ${today}. This image is a screenshot of an Instagram post advertising an event. Extract the event details and respond with ONLY a JSON object, no markdown, no preamble, in this exact shape: {"name": string, "startDate": "YYYY-MM-DD" or "", "endDate": "YYYY-MM-DD" or "", "time": "HH:MM" (24h) or "", "location": string, "description": string (one short sentence)}. If the year isn't shown, assume the next upcoming occurrence of that date after today. The events are in Portugal, so format city names properly. If a field truly can't be determined, use an empty string.` },
+                { text: `Today's date is ${today}. This image is a screenshot or poster of an Instagram event post. Extract the music/event details and respond ONLY with a JSON object in this exact shape: {"artist": string (Artist or Event Name), "startDate": "YYYY-MM-DD" or "", "endDate": "YYYY-MM-DD" or "", "time": "HH:MM" (24h) or "", "venue": string (Venue name), "city": string (City in Portugal), "category": "Concert" or "Festival" or "Party" or "Other", "description": string (short 1-sentence note)}.` },
                 { inlineData: { mimeType: mediaType, data: base64 } }
               ]
             }]
@@ -972,13 +955,57 @@
         const clean = text.replace(/```json|```/g, '').trim();
         const parsed = JSON.parse(clean);
         parsed.image = `data:${mediaType};base64,${base64}`;
-        statusEl.textContent = 'Got it — check the details below.';
-        openReview(parsed);
+        renderAiParsedSuccess(parsed);
       } catch (e) {
         console.error(e);
-        statusEl.textContent = "Error: " + e.message + " — add the details by hand below.";
+        aiParsingSlot.innerHTML = '';
+        statusEl.textContent = "Error reading poster — please add details below.";
         openReview({});
       }
+    }
+
+    function renderAiParsingState() {
+      statusEl.textContent = '';
+      reviewSlot.innerHTML = '';
+      aiParsingSlot.innerHTML = `
+        <div class="ai-parsing-card">
+          <div class="parsing-status-bar">
+            <div class="spinner"></div>
+            <span>Reading your post…</span>
+          </div>
+          <div class="parsed-field">🎵 <strong>Artist:</strong> <span>Detecting...</span></div>
+          <div class="parsed-field">📅 <strong>Date:</strong> <span>Detecting...</span></div>
+          <div class="parsed-field">🕐 <strong>Time:</strong> <span>Detecting...</span></div>
+          <div class="parsed-field">📍 <strong>Venue & City:</strong> <span>Detecting...</span></div>
+        </div>`;
+      aiParsingSlot.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function renderAiParsedSuccess(parsed) {
+      const locStr = [parsed.venue, parsed.city].filter(Boolean).join(', ') || 'Venue not specified';
+      aiParsingSlot.innerHTML = `
+        <div class="ai-parsing-card">
+          <div class="parsing-status-bar" style="color: var(--purple-light);">
+            <span>✨ Event detected!</span>
+          </div>
+          <div class="parsed-field">🎵 <strong>Artist:</strong> <span>${escapeHtml(parsed.artist || 'Untitled event')}</span></div>
+          <div class="parsed-field">📅 <strong>Date:</strong> <span>${fmtDate(parsed.startDate)}</span></div>
+          <div class="parsed-field">🕐 <strong>Time:</strong> <span>${parsed.time || 'Not specified'}</span></div>
+          <div class="parsed-field">📍 <strong>Location:</strong> <span>${escapeHtml(locStr)}</span></div>
+          <div class="parsed-field">🏷️ <strong>Category:</strong> <span class="category-pill">${escapeHtml(parsed.category || 'Concert')}</span></div>
+          
+          <div style="font-size: 13px; font-weight: 600; color: #ffffff; margin: 16px 0 12px;">Looks good?</div>
+          <div class="btn-row">
+            <button class="btn btn-ghost" id="btnCancelParsed">Cancel</button>
+            <button class="btn btn-primary" id="btnConfirmParsed">Add to cue →</button>
+          </div>
+        </div>`;
+
+      document.getElementById('btnCancelParsed').onclick = () => { aiParsingSlot.innerHTML = ''; };
+      document.getElementById('btnConfirmParsed').onclick = () => {
+        aiParsingSlot.innerHTML = '';
+        openReview(parsed);
+      };
     }
 
     function openReview(prefill) {
@@ -986,32 +1013,46 @@
         <div class="review">
           <input type="hidden" id="f_image" value="${escapeAttr(prefill.image || '')}">
           <h3>Confirm event details</h3>
-          <div class="field"><label>Event name</label><input id="f_name" value="${escapeAttr(prefill.name || '')}" placeholder="e.g. Sunset Market at the Docks"></div>
+          <div class="field"><label>Artist / Event Name</label><input id="f_artist" value="${escapeAttr(prefill.artist || prefill.name || '')}" placeholder="e.g. Branko, Slow J, Festival X"></div>
+          
           <div class="review-row">
             <div class="field"><label>Start Date</label><input id="f_start" type="date" value="${prefill.startDate || ''}"></div>
-            <div class="field"><label>End Date</label><input id="f_end" type="date" value="${prefill.endDate || ''}"></div>
-          </div>
-          <div class="review-row">
             <div class="field"><label>Time</label><input id="f_time" type="time" value="${prefill.time || ''}"></div>
-            <div class="field"><label>Location</label><input id="f_location" list="pt-cities" value="${escapeAttr(prefill.location || '')}" placeholder="Venue or city"></div>
           </div>
-          <div class="field"><label>Company</label><input id="f_company" value="${escapeAttr(prefill.company || '')}" placeholder="Who is going? (Leave blank if alone)"></div>
+
+          <div class="review-row">
+            <div class="field"><label>Venue</label><input id="f_venue" value="${escapeAttr(prefill.venue || '')}" placeholder="e.g. Armazém 22, Coliseu"></div>
+            <div class="field"><label>City</label><input id="f_city" list="pt-cities" value="${escapeAttr(prefill.city || '')}" placeholder="e.g. Porto, Lisboa"></div>
+          </div>
+
+          <div class="field">
+            <label>Category</label>
+            <select id="f_category">
+              <option value="Concert" ${prefill.category === 'Concert' ? 'selected' : ''}>Concert</option>
+              <option value="Festival" ${prefill.category === 'Festival' ? 'selected' : ''}>Festival</option>
+              <option value="Party" ${prefill.category === 'Party' ? 'selected' : ''}>Party</option>
+              <option value="Other" ${prefill.category === 'Other' ? 'selected' : ''}>Other</option>
+            </select>
+          </div>
+
           <div class="field"><label>Note</label><textarea id="f_desc" placeholder="Anything worth remembering">${escapeHtml(prefill.description || '')}</textarea></div>
+          
           <div class="btn-row">
             <button class="btn btn-ghost" id="cancelBtn">Cancel</button>
-            <button class="btn btn-primary" id="saveBtn">Save to cue</button>
+            <button class="btn btn-primary" id="saveBtn">Add to cue →</button>
           </div>
         </div>`;
+
       document.getElementById('cancelBtn').onclick = () => { reviewSlot.innerHTML = ''; statusEl.textContent = ''; };
       document.getElementById('saveBtn').onclick = async () => {
         const ev = {
           id: prefill.id || uid(),
-          name: document.getElementById('f_name').value.trim(),
+          artist: document.getElementById('f_artist').value.trim(),
           startDate: document.getElementById('f_start').value,
-          endDate: document.getElementById('f_end').value,
           time: document.getElementById('f_time').value,
-          location: document.getElementById('f_location').value.trim(),
-          company: document.getElementById('f_company').value.trim(),
+          venue: document.getElementById('f_venue').value.trim(),
+          city: document.getElementById('f_city').value.trim(),
+          category: document.getElementById('f_category').value,
           description: document.getElementById('f_desc').value.trim(),
           image: document.getElementById('f_image').value
         };
@@ -1022,41 +1063,45 @@
         }
         await saveEvents();
         reviewSlot.innerHTML = '';
-        statusEl.textContent = 'Saved ✓';
+        statusEl.textContent = 'Added to cue ✓';
         fileInput.value = '';
         render();
         renderCalendar();
-        switchTab('events');
-        setTimeout(() => { if (statusEl.textContent === 'Saved ✓') statusEl.textContent = ''; }, 2500);
+        switchTab('queue');
+        setTimeout(() => { if (statusEl.textContent === 'Added to cue ✓') statusEl.textContent = ''; }, 2500);
       };
       reviewSlot.scrollIntoView({ behavior: 'smooth' });
     }
 
     function openDetailModal(ev) {
-      const meta = [ev.time, ev.location].filter(Boolean).join(' · ');
-      const companyBadge = ev.company
-        ? `<div class="company-badge badge-yes">👥 With ${escapeHtml(ev.company)}</div>`
-        : `<div class="company-badge badge-no">👤 No company</div>`;
+      const dateStr = fmtDate(ev.startDate);
+      const timeStr = ev.time ? ` · ${ev.time}` : '';
+      const locStr = [ev.venue, ev.city].filter(Boolean).join(' · ');
 
       reviewSlot.innerHTML = `
         <div class="review detail-modal">
-          <div class="modal-header">
-            <h3 style="margin:0;">Event Details</h3>
-            <button class="stub-btn" id="closeModalBtn" style="font-size:14px; font-weight:600;">✕ Close</button>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <span class="category-pill">${escapeHtml(ev.category || 'Concert')}</span>
+            <button class="stub-btn" id="closeModalBtn" style="font-weight:600; font-size:13px;">✕ Close</button>
           </div>
           ${ev.image ? `<img src="${ev.image}" class="full-modal-img" alt="Poster">` : ''}
-          <h2 style="margin: 12px 0 6px; font-weight:600; font-size:22px;">${escapeHtml(ev.name || 'Untitled event')}</h2>
-          <div class="ticket-date" style="font-size:14px; margin-bottom:8px;">📅 ${fmtDateRangeBadge(ev.startDate, ev.endDate)}</div>
-          ${meta ? `<div class="ticket-meta" style="font-size:14px; margin-bottom:10px;">📍 ${escapeHtml(meta)}</div>` : ''}
-          <div style="margin-bottom: 16px;">${companyBadge}</div>
-          ${ev.description ? `<div style="background:var(--bg); padding:14px; border-radius:6px; border:1px solid var(--border); font-size:14px; margin-bottom:20px; white-space:pre-wrap;"><strong>Note:</strong><br>${escapeHtml(ev.description)}</div>` : ''}
+          <h2 style="margin: 10px 0 6px; font-weight:700; font-size:22px; color:#ffffff;">${escapeHtml(ev.artist || 'Untitled event')}</h2>
+          <div style="font-size:14px; color:var(--text-muted); margin-bottom:6px;">📅 ${dateStr}${timeStr}</div>
+          ${locStr ? `<div style="font-size:14px; color:var(--text-muted); margin-bottom:14px;">📍 ${escapeHtml(locStr)}</div>` : ''}
+          ${ev.description ? `<div style="background:#09090b; padding:14px; border-radius:8px; border:1px solid var(--border); font-size:13px; margin-bottom:20px; white-space:pre-wrap;"><strong>Note:</strong><br>${escapeHtml(ev.description)}</div>` : ''}
+          
           <div class="btn-row">
-            <button class="btn btn-ghost" id="editFromModalBtn">Edit Event</button>
+            <button class="btn btn-ghost" id="btnDelFromModal" style="color:var(--danger);">Delete</button>
+            <button class="btn btn-ghost" id="editFromModalBtn">Edit</button>
             <button class="btn btn-primary" id="gcalFromModalBtn">Add to Google Cal</button>
           </div>
         </div>`;
 
       document.getElementById('closeModalBtn').onclick = () => { reviewSlot.innerHTML = ''; };
+      document.getElementById('btnDelFromModal').onclick = async () => {
+        await deleteEvent(ev.id);
+        reviewSlot.innerHTML = '';
+      };
       document.getElementById('editFromModalBtn').onclick = () => {
         switchTab('add');
         openReview(ev);
@@ -1067,7 +1112,7 @@
 
     function escapeAttr(s) { return escapeHtml(s).replace(/"/g, '&quot;'); }
 
-    // ---- Visual Interactive Calendar Engine ----
+    // ---- Interactive Visual Calendar Engine ----
     function renderCalendar() {
       const year = calCurrentDate.getFullYear();
       const month = calCurrentDate.getMonth();
@@ -1130,11 +1175,11 @@
     }
 
     function renderSelectedDateEvents(dateStr, dayEvents) {
-      document.getElementById('calSelectedTitle').textContent = `Events on ${dateStr}`;
+      document.getElementById('calSelectedTitle').textContent = `YOUR EVENTS (${dateStr})`;
       const list = document.getElementById('calSelectedList');
       list.innerHTML = dayEvents.length
-        ? dayEvents.map(ticketHTML).join('')
-        : '<div class="empty">No events scheduled for this date.</div>';
+        ? dayEvents.map(queueItemHTML).join('')
+        : '<div class="empty">No events scheduled on this date.</div>';
 
       document.querySelectorAll('#calSelectedList [data-view]').forEach(el => {
         el.onclick = () => {
@@ -1193,7 +1238,7 @@
           if (res) {
             const blob = await res.blob();
             await cache.delete('shared-image');
-            statusEl.textContent = 'Reading shared screenshot…';
+            renderAiParsingState();
             const file = new File([blob], 'shared.jpg', { type: blob.type || 'image/jpeg' });
             handleFile(file);
           }
@@ -1211,7 +1256,7 @@
 
     async function handleSharedText(sharedText) {
       switchTab('add');
-      statusEl.textContent = 'Scanning shared post...';
+      renderAiParsingState();
       try {
         const response = await fetch(getApiEndpoint(), {
           method: 'POST',
@@ -1234,17 +1279,11 @@
           parsed.image = data._extractedImage;
         }
 
-        if (!parsed.name && !parsed.startDate && !parsed.location) {
-          statusEl.innerHTML = '⚠️ <strong>Link recebido!</strong> O Instagram bloqueia a leitura direta de links.<br>Por favor, <strong>tire um print do post</strong> e selecione a imagem acima ou <strong>cole a legenda</strong> do post!';
-          openReview({});
-          return;
-        }
-
-        statusEl.textContent = 'Got it — check the details below.';
-        openReview(parsed);
+        renderAiParsedSuccess(parsed);
       } catch (e) {
         console.error(e);
-        statusEl.textContent = "Error: " + e.message + " — add the details by hand below.";
+        aiParsingSlot.innerHTML = '';
+        statusEl.textContent = "Please confirm event details below.";
         openReview({});
       }
     }

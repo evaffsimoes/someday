@@ -1,39 +1,19 @@
-const CACHE_NAME = 'someday-static-v1';
+const CACHE_NAME = 'cue-v13';
 const SHARE_CACHE = 'someday-shared-v1';
 
-const ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png',
-  '/favicon.ico'
-];
-
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)).catch(() => {})
-  );
-  self.skipWaiting();
+self.addEventListener('install', (e) => {
+  e.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(['/', '/index.html', '/manifest.json'])));
 });
 
-self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
-});
+self.addEventListener('fetch', (e) => {
+  const url = new URL(e.request.url);
 
-self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
-
-  if (event.request.method === 'POST' && url.pathname.includes('share-target')) {
-    event.respondWith(handleShareTarget(event));
+  if (url.pathname.endsWith('/share-target')) {
+    e.respondWith(handleShareTarget(e));
     return;
   }
 
-  if (event.request.method === 'GET') {
-    event.respondWith(
-      fetch(event.request).catch(() => caches.match(event.request))
-    );
-  }
+  e.respondWith(caches.match(e.request).then((res) => res || fetch(e.request)));
 });
 
 async function handleShareTarget(event) {
