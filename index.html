@@ -1211,7 +1211,7 @@
 
     async function handleSharedText(sharedText) {
       switchTab('add');
-      statusEl.textContent = 'Scanning shared post link...';
+      statusEl.textContent = 'Scanning shared post...';
       try {
         const response = await fetch(getApiEndpoint(), {
           method: 'POST',
@@ -1233,6 +1233,13 @@
         if (data._extractedImage) {
           parsed.image = data._extractedImage;
         }
+
+        if (!parsed.name && !parsed.startDate && !parsed.location) {
+          statusEl.innerHTML = '⚠️ <strong>Link recebido!</strong> O Instagram bloqueia a leitura direta de links.<br>Por favor, <strong>tire um print do post</strong> e selecione a imagem acima ou <strong>cole a legenda</strong> do post!';
+          openReview({});
+          return;
+        }
+
         statusEl.textContent = 'Got it — check the details below.';
         openReview(parsed);
       } catch (e) {
