@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saved for Someday</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#111111">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="shortcut icon" type="image/png" href="/icon-192.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+
+    :root {
+      --bg: #ffffff;
+      --text-main: #111111;
+      --text-muted: #888888;
+      --border: #eaeaea;
+      --accent: #000000;
+      --surface: #fafafa;
+      --danger: #ff4444;
+      --pink: #ff1493;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #111111;
+        --text-main: #ffffff;
+        --text-muted: #888888;
+        --border: #333333;
+        --accent: #ffffff;
+        --surface: #1a1a1a;
+        --danger: #ff5555;
+        --pink: #ff2a85;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text-main);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+      padding: 30px 20px 100px;
+      line-height: 1.5;
+    }
+
+    .wrap {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    header {
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .eyebrow {
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    h1 {
+      font-weight: 600;
+      font-size: 28px;
+      margin: 0 0 6px;
+      letter-spacing: -0.02em;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin: 0;
+      font-weight: 300;
+    }
+
+    /* Screen Tabs Navigation */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .nav-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 8px 16px;
+      transition: color 0.2s;
+    }
+
+    .nav-btn.active {
+      color: var(--pink);
+    }
+
+    .nav-btn .nav-icon {
+      font-size: 20px;
+    }
+
+    .tab-screen {
+      display: none;
+    }
+
+    .tab-screen.active {
+      display: block;
+    }
+
+    .dropzone {
+      margin-top: 16px;
+      border: 1px dashed var(--border);
+      border-radius: 12px;
+      padding: 40px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: var(--bg);
+    }
+
+    .dropzone:hover,
+    .dropzone.drag {
+      border-color: var(--text-main);
+      background: var(--surface);
+    }
+
+    .dropzone .icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .dropzone strong {
+      font-size: 15px;
+      font-weight: 500;
+      display: block;
+    }
+
+    .dropzone span {
+      display: block;
+      color: var(--text-muted);
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    input[type=file] {
+      display: none;
+    }
+
+    .manual-link {
+      display: block;
+      text-align: center;
+      margin-top: 16px;
+      font-size: 13px;
+      color: var(--text-muted);
+      cursor: pointer;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .manual-link:hover {
+      color: var(--text-main);
+    }
+
+    .status {
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-main);
+      margin-top: 16px;
+      min-height: 20px;
+    }
+
+    /* Spotlight Card */
+    .spotlight-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .spotlight-badge {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--pink);
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    /* Review / edit card */
+    .review {
+      margin-top: 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .review h3 {
+      margin: 0 0 16px;
+      font-size: 18px;
+      font-weight: 500;
+    }
+
+    .field {
+      margin-bottom: 16px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .field input,
+    .field textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 14px;
+      background: var(--bg);
+      color: var(--text-main);
+      transition: border-color 0.2s;
+    }
+
+    .field input:focus,
+    .field textarea:focus {
+      outline: none;
+      border-color: var(--text-main);
+    }
+
+    .field textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+
+    .review-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .review-row .field {
+      flex: 1;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .btn {
+      flex: 1;
+      border: none;
+      padding: 12px 16px;
+      border-radius: 6px;
+      font-family: inherit;
+      font-weight: 500;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--text-main);
+      color: var(--bg);
+    }
+
+    .btn-primary:hover {
+      opacity: 0.9;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-main);
+      border: 1px solid var(--border);
+    }
+
+    .btn-ghost:hover {
+      background: var(--surface);
+    }
+
+    /* Section Titles */
+    .section-title {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin: 32px 0 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .empty {
+      padding: 24px 0;
+      color: var(--text-muted);
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .ticket {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .ticket-main {
+      flex: 1;
+      padding-right: 16px;
+    }
+
+    .ticket-date {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .ticket-name {
+      font-weight: 500;
+      font-size: 16px;
+      margin: 0 0 4px;
+    }
+
+    .ticket-meta {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .ticket-stub {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 90px;
+      align-items: flex-end;
+    }
+
+    .stub-btn {
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: 12px;
+      color: var(--text-muted);
+      cursor: pointer;
+      text-align: right;
+      transition: color 0.2s;
+    }
+
+    .stub-btn:hover {
+      color: var(--text-main);
+    }
+
+    .stub-btn.del:hover {
+      color: var(--danger);
+    }
+
+    .ticket-body {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      flex: 1;
+      padding-right: 16px;
+    }
+
+    .ticket-img {
+      width: 64px;
+      height: 64px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .company-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 3px 8px;
+      border-radius: 12px;
+      margin-top: 4px;
+    }
+
+    .badge-yes {
+      background: rgba(46, 204, 113, 0.15);
+      color: #2ecc71;
+      border: 1px solid rgba(46, 204, 113, 0.3);
+    }
+
+    .badge-no {
+      background: rgba(231, 76, 60, 0.15);
+      color: #e74c3c;
+      border: 1px solid rgba(231, 76, 60, 0.3);
+    }
+
+    .ticket-img-placeholder {
+      width: 64px;
+      height: 64px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    .full-modal-img {
+      width: 100%;
+      max-height: 320px;
+      object-fit: contain;
+      border-radius: 8px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      margin-bottom: 12px;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    /* Interactive Visual Calendar Styles */
+    .cal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      text-align: center;
+    }
+
+    .cal-day-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      padding-bottom: 6px;
+    }
+
+    .cal-cell {
+      aspect-ratio: 1;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s;
+    }
+
+    .cal-cell:hover {
+      border-color: var(--text-main);
+    }
+
+    .cal-cell.empty-cell {
+      background: transparent;
+      border: none;
+      cursor: default;
+    }
+
+    .cal-cell.today {
+      border-color: var(--pink);
+      font-weight: 600;
+    }
+
+    .cal-cell.selected {
+      background: var(--text-main);
+      color: var(--bg);
+    }
+
+    .cal-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--pink);
+      position: absolute;
+      bottom: 4px;
+    }
+
+    @media (max-width: 420px) {
+      .ticket {
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .ticket-body {
+        padding-right: 0;
+      }
+
+      .ticket-stub {
+        flex-direction: row;
+        align-items: center;
+        width: 100%;
+        justify-content: flex-start;
+        gap: 16px;
+      }
+
+      .stub-btn {
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <div class="eyebrow">Someday, Maybe</div>
+      <h1>Saved for Someday</h1>
+      <p>Turn Instagram event screenshots and posts into your calendar queue.</p>
+    </header>
+
+    <!-- SCREEN 1: EVENTS (HOME) -->
+    <div id="screen-events" class="tab-screen active">
+      <div id="spotlightSlot"></div>
+      <div class="section-title">Upcoming Queue</div>
+      <div id="upcomingList"></div>
+      <div class="section-title">Past / Done</div>
+      <div id="pastList"></div>
+    </div>
+
+    <!-- SCREEN 2: ADD EVENT -->
+    <div id="screen-add" class="tab-screen">
+      <div class="dropzone" id="dropzone">
+        <span class="icon">🎟️</span>
+        <strong>Upload a screenshot</strong>
+        <span>Tap to choose, or drag an image here</span>
+        <input type="file" id="fileInput" accept="image/*">
+      </div>
+      <span class="manual-link" id="pasteLink" style="margin-top: 16px; font-weight: 600; color: var(--pink);">📋 Paste copied Instagram link</span>
+      <span class="manual-link" id="manualLink" style="margin-top: 10px;">...or add an event by hand</span>
+      <div class="status" id="status"></div>
+      <div id="reviewSlot"></div>
+    </div>
+
+    <!-- SCREEN 3: CALENDAR -->
+    <div id="screen-calendar" class="tab-screen">
+      <div class="cal-header">
+        <button class="btn btn-ghost" id="calPrevBtn" style="padding: 6px 12px; font-size:12px;">← Prev</button>
+        <h3 id="calMonthTitle" style="margin:0; font-size:16px; font-weight:600;"></h3>
+        <button class="btn btn-ghost" id="calNextBtn" style="padding: 6px 12px; font-size:12px;">Next →</button>
+      </div>
+      <div class="cal-grid" id="calDaysHeader">
+        <div class="cal-day-label">Sun</div>
+        <div class="cal-day-label">Mon</div>
+        <div class="cal-day-label">Tue</div>
+        <div class="cal-day-label">Wed</div>
+        <div class="cal-day-label">Thu</div>
+        <div class="cal-day-label">Fri</div>
+        <div class="cal-day-label">Sat</div>
+      </div>
+      <div class="cal-grid" id="calGrid" style="margin-top: 8px;"></div>
+      <div class="section-title" id="calSelectedTitle" style="margin-top:32px;">Events on Selected Date</div>
+      <div id="calSelectedList"></div>
+    </div>
+
+    <datalist id="pt-cities">
+      <option value="Lisbon">
+      <option value="Porto">
+      <option value="Vila Nova de Gaia">
+      <option value="Amadora">
+      <option value="Braga">
+      <option value="Coimbra">
+      <option value="Funchal">
+      <option value="Almada">
+      <option value="Setúbal">
+      <option value="Faro">
+      <option value="Aveiro">
+      <option value="Évora">
+      <option value="Leiria">
+      <option value="Guimarães">
+      <option value="Cascais">
+      <option value="Sintra">
+    </datalist>
+  </div>
+
+  <!-- STICKY BOTTOM NAVIGATION BAR -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-tab="events">
+      <span class="nav-icon">🎟️</span>
+      <span>Events</span>
+    </button>
+    <button class="nav-btn" data-tab="add">
+      <span class="nav-icon">➕</span>
+      <span>Add Event</span>
+    </button>
+    <button class="nav-btn" data-tab="calendar">
+      <span class="nav-icon">📅</span>
+      <span>Calendar</span>
+    </button>
+  </nav>
+
+  <script>
+    const STORE_KEY = 'someday-events';
+    let events = [];
+    let calCurrentDate = new Date();
+    let calSelectedDateStr = null;
+
+    function uid() { return 'ev_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8); }
+
+    function getStorageItem(key) {
+      try {
+        if (window.storage && typeof window.storage.get === 'function') {
+          return window.storage.get(key).then(res => res ? res.value : null).catch(() => localStorage.getItem(key));
+        }
+      } catch (e) { }
+      return Promise.resolve(localStorage.getItem(key));
+    }
+
+    function setStorageItem(key, val) {
+      try {
+        if (window.storage && typeof window.storage.set === 'function') {
+          return window.storage.set(key, val).catch(() => localStorage.setItem(key, val));
+        }
+      } catch (e) { }
+      localStorage.setItem(key, val);
+      return Promise.resolve();
+    }
+
+    async function loadEvents() {
+      try {
+        const raw = await getStorageItem(STORE_KEY);
+        events = raw ? JSON.parse(raw) : [];
+        events = events.map(e => {
+          if (e.date && !e.startDate) { e.startDate = e.date; delete e.date; }
+          return e;
+        });
+      } catch (e) { events = []; }
+      render();
+      renderCalendar();
+    }
+
+    async function saveEvents() {
+      try { await setStorageItem(STORE_KEY, JSON.stringify(events)); }
+      catch (e) { console.error('save failed', e); }
+    }
+
+    function fmtDateRangeBadge(start, end) {
+      const fmt = dStr => {
+        if (!dStr) return null;
+        const d = new Date(dStr + 'T00:00:00');
+        if (isNaN(d)) return dStr;
+        return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+      };
+      const s = fmt(start);
+      const e = fmt(end);
+      if (s && e && s !== e) return `${s} - ${e}`;
+      if (s) return s;
+      return 'Date unknown';
+    }
+
+    function isPast(ev) {
+      const checkDate = ev.endDate || ev.startDate;
+      if (!checkDate) return false;
+      const d = new Date(checkDate + 'T23:59:59');
+      return d < new Date();
+    }
+
+    function switchTab(tabName) {
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-tab') === tabName);
+      });
+      document.querySelectorAll('.tab-screen').forEach(screen => {
+        screen.classList.toggle('active', screen.id === `screen-${tabName}`);
+      });
+      if (tabName === 'calendar') {
+        renderCalendar();
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+      btn.onclick = () => switchTab(btn.getAttribute('data-tab'));
+    });
+
+    function render() {
+      const upcoming = events.filter(e => !isPast(e)).sort((a, b) => (a.startDate || '9999').localeCompare(b.startDate || '9999'));
+      const past = events.filter(e => isPast(e)).sort((a, b) => (b.startDate || '').localeCompare(a.startDate || ''));
+
+      // Next Event Spotlight Card
+      const spotlightSlot = document.getElementById('spotlightSlot');
+      if (upcoming.length > 0) {
+        const next = upcoming[0];
+        spotlightSlot.innerHTML = `
+          <div class="spotlight-card" data-view="${next.id}" style="cursor: pointer;">
+            <span class="spotlight-badge">★ Next Event Spotlight</span>
+            <h3 style="margin:0 0 6px; font-weight:600;">${escapeHtml(next.name || 'Untitled event')}</h3>
+            <div class="ticket-date" style="font-size:13px; margin-bottom:6px;">📅 ${fmtDateRangeBadge(next.startDate, next.endDate)}</div>
+            ${next.location ? `<div class="ticket-meta" style="font-size:13px; margin-bottom:8px;">📍 ${escapeHtml(next.location)}</div>` : ''}
+            ${next.company ? `<div class="company-badge badge-yes">👥 With ${escapeHtml(next.company)}</div>` : '<div class="company-badge badge-no">👤 No company</div>'}
+          </div>`;
+      } else {
+        spotlightSlot.innerHTML = '';
+      }
+
+      document.getElementById('upcomingList').innerHTML = upcoming.length
+        ? upcoming.map(ticketHTML).join('')
+        : '<div class="empty">Nothing saved yet. Tap "Add Event" below to scan a poster!</div>';
+
+      document.getElementById('pastList').innerHTML = past.length
+        ? past.map(ticketHTML).join('')
+        : '<div class="empty">Past events will land here.</div>';
+
+      document.querySelectorAll('[data-view]').forEach(el => {
+        el.onclick = () => {
+          const ev = events.find(e => e.id === el.getAttribute('data-view'));
+          openDetailModal(ev);
+        };
+      });
+      document.querySelectorAll('[data-del]').forEach(btn => {
+        btn.onclick = (e) => { e.stopPropagation(); deleteEvent(btn.getAttribute('data-del')); };
+      });
+      document.querySelectorAll('[data-edit]').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const ev = events.find(e => e.id === btn.getAttribute('data-edit'));
+          switchTab('add');
+          openReview(ev);
+        };
+      });
+      document.querySelectorAll('[data-gcal]').forEach(btn => {
+        btn.onclick = (e) => { e.stopPropagation(); window.open(gcalUrl(events.find(ev => ev.id === btn.getAttribute('data-gcal'))), '_blank'); };
+      });
+      document.querySelectorAll('[data-ics]').forEach(btn => {
+        btn.onclick = (e) => { e.stopPropagation(); downloadIcs(events.find(ev => ev.id === btn.getAttribute('data-ics'))); };
+      });
+    }
+
+    function ticketHTML(ev) {
+      const meta = [ev.time, ev.location].filter(Boolean).join(' · ');
+      const imgHTML = ev.image
+        ? `<img src="${ev.image}" class="ticket-img" alt="Poster">`
+        : `<div class="ticket-img-placeholder">🎟️</div>`;
+
+      const companyHTML = ev.company
+        ? `<div class="company-badge badge-yes">👥 With ${escapeHtml(ev.company)}</div>`
+        : `<div class="company-badge badge-no">👤 No company</div>`;
+
+      return `
+        <div class="ticket">
+          <div class="ticket-body" data-view="${ev.id}" style="cursor: pointer;">
+            ${imgHTML}
+            <div class="ticket-main">
+              <div class="ticket-date">${fmtDateRangeBadge(ev.startDate, ev.endDate)}</div>
+              <div class="ticket-name">${escapeHtml(ev.name || 'Untitled event')}</div>
+              ${meta ? `<div class="ticket-meta"><span>${escapeHtml(meta)}</span></div>` : ''}
+              ${companyHTML}
+            </div>
+          </div>
+          <div class="ticket-stub">
+            <button class="stub-btn" data-edit="${ev.id}">Edit</button>
+            <button class="stub-btn" data-gcal="${ev.id}">Add to Google Cal</button>
+            <button class="stub-btn" data-ics="${ev.id}">Download .ics</button>
+            <button class="stub-btn del" data-del="${ev.id}">Remove</button>
+          </div>
+        </div>`;
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    async function deleteEvent(id) {
+      events = events.filter(e => e.id !== id);
+      await saveEvents();
+      render();
+      renderCalendar();
+    }
+
+    function toGCalDate(dateStr, timeStr) {
+      if (!dateStr) return null;
+      const datePart = dateStr.replace(/-/g, '');
+      if (timeStr) {
+        const m = timeStr.match(/(\d{1,2}):(\d{2})/);
+        if (m) {
+          let hh = m[1].padStart(2, '0'), mm = m[2];
+          return `${datePart}T${hh}${mm}00`;
+        }
+      }
+      return datePart;
+    }
+
+    function gcalUrl(ev) {
+      const start = toGCalDate(ev.startDate, ev.time);
+      let dates = start;
+
+      if (start && start.includes('T')) {
+        const end = toGCalDate(ev.endDate, null);
+        if (end) {
+          dates = `${start}/${end}T235900`;
+        } else {
+          const d = new Date(ev.startDate + 'T' + (ev.time || '19:00'));
+          const endD = new Date(d.getTime() + 2 * 60 * 60 * 1000);
+          dates = `${start}/${endD.toISOString().replace(/[-:]/g, '').split('.')[0]}`;
+        }
+      } else if (start) {
+        if (ev.endDate && ev.startDate !== ev.endDate) {
+          const eD = new Date(ev.endDate + 'T00:00:00');
+          eD.setDate(eD.getDate() + 1);
+          const endFmt = eD.toISOString().slice(0, 10).replace(/-/g, '');
+          dates = `${start}/${endFmt}`;
+        } else {
+          dates = `${start}/${start}`;
+        }
+      }
+
+      const params = new URLSearchParams({
+        action: 'TEMPLATE',
+        text: ev.name || 'Event',
+        details: ev.description || '',
+        location: ev.location || ''
+      });
+      if (dates) params.set('dates', dates);
+      return `https://calendar.google.com/calendar/render?${params.toString()}`;
+    }
+
+    function downloadIcs(ev) {
+      const start = toGCalDate(ev.startDate, ev.time) || new Date().toISOString().replace(/[-:]/g, '').split('.')[0];
+      const dtStart = start.includes('T') ? start : start + 'T190000';
+      const startDate = new Date(
+        dtStart.slice(0, 4), dtStart.slice(4, 6) - 1, dtStart.slice(6, 8),
+        dtStart.slice(9, 11) || 19, dtStart.slice(11, 13) || 0
+      );
+
+      let endDate;
+      if (ev.endDate) {
+        endDate = new Date(ev.endDate + 'T23:59:59');
+      } else {
+        endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000);
+      }
+
+      const fmt = d => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+      const ics = [
+        'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//SavedForSomeday//EN', 'BEGIN:VEVENT',
+        `UID:${ev.id}@savedforsomeday`,
+        `DTSTAMP:${fmt(new Date())}`,
+        `DTSTART:${fmt(startDate)}`,
+        `DTEND:${fmt(endDate)}`,
+        `SUMMARY:${(ev.name || 'Event').replace(/\n/g, ' ')}`,
+        ev.location ? `LOCATION:${ev.location.replace(/\n/g, ' ')}` : '',
+        ev.description ? `DESCRIPTION:${ev.description.replace(/\n/g, ' ')}` : '',
+        'END:VEVENT', 'END:VCALENDAR'
+      ].filter(Boolean).join('\r\n');
+      const blob = new Blob([ics], { type: 'text/calendar' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = (ev.name || 'event').replace(/[^a-z0-9]+/gi, '_') + '.ics';
+      a.click();
+    }
+
+    // ---- Upload + AI extraction ----
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
+    const statusEl = document.getElementById('status');
+    const reviewSlot = document.getElementById('reviewSlot');
+
+    dropzone.addEventListener('click', () => fileInput.click());
+    dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag'); });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag'));
+    dropzone.addEventListener('drop', e => {
+      e.preventDefault(); dropzone.classList.remove('drag');
+      if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+    });
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files[0]) handleFile(fileInput.files[0]);
+    });
+
+    document.getElementById('manualLink').addEventListener('click', () => openReview({}));
+    document.getElementById('pasteLink').addEventListener('click', async () => {
+      try {
+        const text = await navigator.clipboard.readText();
+        if (text) {
+          handleSharedText(text);
+        } else {
+          statusEl.textContent = 'Clipboard is empty — copy an Instagram link first!';
+        }
+      } catch (e) {
+        const url = prompt('Paste Instagram link here:');
+        if (url) handleSharedText(url);
+      }
+    });
+
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(r.result.split(',')[1]);
+        r.onerror = reject;
+        r.readAsDataURL(file);
+      });
+    }
+
+    async function handleFile(file) {
+      statusEl.textContent = 'Reading poster screenshot…';
+      try {
+        const base64 = await fileToBase64(file);
+        const mediaType = file.type || 'image/jpeg';
+        const today = new Date().toISOString().slice(0, 10);
+
+        const response = await fetch('/.netlify/functions/gemini', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { text: `Today's date is ${today}. This image is a screenshot of an Instagram post advertising an event. Extract the event details and respond with ONLY a JSON object, no markdown, no preamble, in this exact shape: {"name": string, "startDate": "YYYY-MM-DD" or "", "endDate": "YYYY-MM-DD" or "", "time": "HH:MM" (24h) or "", "location": string, "description": string (one short sentence)}. If the year isn't shown, assume the next upcoming occurrence of that date after today. The events are in Portugal, so format city names properly. If a field truly can't be determined, use an empty string.` },
+                { inlineData: { mimeType: mediaType, data: base64 } }
+              ]
+            }]
+          })
+        });
+
+        const textRes = await response.text();
+        let data;
+        try { data = JSON.parse(textRes); } catch (e) { }
+
+        if (!response.ok) {
+          throw new Error(data?.error?.message || data?.error || textRes.slice(0, 100) || 'Unknown API error');
+        }
+
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        const clean = text.replace(/```json|```/g, '').trim();
+        const parsed = JSON.parse(clean);
+        parsed.image = `data:${mediaType};base64,${base64}`;
+        statusEl.textContent = 'Got it — check the details below.';
+        openReview(parsed);
+      } catch (e) {
+        console.error(e);
+        statusEl.textContent = "Error: " + e.message + " — add the details by hand below.";
+        openReview({});
+      }
+    }
+
+    function openReview(prefill) {
+      reviewSlot.innerHTML = `
+        <div class="review">
+          <input type="hidden" id="f_image" value="${escapeAttr(prefill.image || '')}">
+          <h3>Confirm event details</h3>
+          <div class="field"><label>Event name</label><input id="f_name" value="${escapeAttr(prefill.name || '')}" placeholder="e.g. Sunset Market at the Docks"></div>
+          <div class="review-row">
+            <div class="field"><label>Start Date</label><input id="f_start" type="date" value="${prefill.startDate || ''}"></div>
+            <div class="field"><label>End Date</label><input id="f_end" type="date" value="${prefill.endDate || ''}"></div>
+          </div>
+          <div class="review-row">
+            <div class="field"><label>Time</label><input id="f_time" type="time" value="${prefill.time || ''}"></div>
+            <div class="field"><label>Location</label><input id="f_location" list="pt-cities" value="${escapeAttr(prefill.location || '')}" placeholder="Venue or city"></div>
+          </div>
+          <div class="field"><label>Company</label><input id="f_company" value="${escapeAttr(prefill.company || '')}" placeholder="Who is going? (Leave blank if alone)"></div>
+          <div class="field"><label>Note</label><textarea id="f_desc" placeholder="Anything worth remembering">${escapeHtml(prefill.description || '')}</textarea></div>
+          <div class="btn-row">
+            <button class="btn btn-ghost" id="cancelBtn">Cancel</button>
+            <button class="btn btn-primary" id="saveBtn">Save to Someday</button>
+          </div>
+        </div>`;
+      document.getElementById('cancelBtn').onclick = () => { reviewSlot.innerHTML = ''; statusEl.textContent = ''; };
+      document.getElementById('saveBtn').onclick = async () => {
+        const ev = {
+          id: prefill.id || uid(),
+          name: document.getElementById('f_name').value.trim(),
+          startDate: document.getElementById('f_start').value,
+          endDate: document.getElementById('f_end').value,
+          time: document.getElementById('f_time').value,
+          location: document.getElementById('f_location').value.trim(),
+          company: document.getElementById('f_company').value.trim(),
+          description: document.getElementById('f_desc').value.trim(),
+          image: document.getElementById('f_image').value
+        };
+        if (prefill.id) {
+          events = events.map(e => e.id === ev.id ? ev : e);
+        } else {
+          events.push(ev);
+        }
+        await saveEvents();
+        reviewSlot.innerHTML = '';
+        statusEl.textContent = 'Saved ✓';
+        fileInput.value = '';
+        render();
+        renderCalendar();
+        switchTab('events');
+        setTimeout(() => { if (statusEl.textContent === 'Saved ✓') statusEl.textContent = ''; }, 2500);
+      };
+      reviewSlot.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function openDetailModal(ev) {
+      const meta = [ev.time, ev.location].filter(Boolean).join(' · ');
+      const companyBadge = ev.company
+        ? `<div class="company-badge badge-yes">👥 With ${escapeHtml(ev.company)}</div>`
+        : `<div class="company-badge badge-no">👤 No company</div>`;
+
+      reviewSlot.innerHTML = `
+        <div class="review detail-modal">
+          <div class="modal-header">
+            <h3 style="margin:0;">Event Details</h3>
+            <button class="stub-btn" id="closeModalBtn" style="font-size:14px; font-weight:600;">✕ Close</button>
+          </div>
+          ${ev.image ? `<img src="${ev.image}" class="full-modal-img" alt="Poster">` : ''}
+          <h2 style="margin: 12px 0 6px; font-weight:600; font-size:22px;">${escapeHtml(ev.name || 'Untitled event')}</h2>
+          <div class="ticket-date" style="font-size:14px; margin-bottom:8px;">📅 ${fmtDateRangeBadge(ev.startDate, ev.endDate)}</div>
+          ${meta ? `<div class="ticket-meta" style="font-size:14px; margin-bottom:10px;">📍 ${escapeHtml(meta)}</div>` : ''}
+          <div style="margin-bottom: 16px;">${companyBadge}</div>
+          ${ev.description ? `<div style="background:var(--bg); padding:14px; border-radius:6px; border:1px solid var(--border); font-size:14px; margin-bottom:20px; white-space:pre-wrap;"><strong>Note:</strong><br>${escapeHtml(ev.description)}</div>` : ''}
+          <div class="btn-row">
+            <button class="btn btn-ghost" id="editFromModalBtn">Edit Event</button>
+            <button class="btn btn-primary" id="gcalFromModalBtn">Add to Google Cal</button>
+          </div>
+        </div>`;
+
+      document.getElementById('closeModalBtn').onclick = () => { reviewSlot.innerHTML = ''; };
+      document.getElementById('editFromModalBtn').onclick = () => {
+        switchTab('add');
+        openReview(ev);
+      };
+      document.getElementById('gcalFromModalBtn').onclick = () => { window.open(gcalUrl(ev), '_blank'); };
+      reviewSlot.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function escapeAttr(s) { return escapeHtml(s).replace(/"/g, '&quot;'); }
+
+    // ---- Visual Interactive Calendar Engine ----
+    function renderCalendar() {
+      const year = calCurrentDate.getFullYear();
+      const month = calCurrentDate.getMonth();
+      const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      
+      document.getElementById('calMonthTitle').textContent = `${monthNames[month]} ${year}`;
+
+      const firstDay = new Date(year, month, 1).getDay();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const todayStr = new Date().toISOString().slice(0, 10);
+
+      const grid = document.getElementById('calGrid');
+      grid.innerHTML = '';
+
+      for (let i = 0; i < firstDay; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = 'cal-cell empty-cell';
+        grid.appendChild(emptyCell);
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dayStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const cell = document.createElement('div');
+        cell.className = 'cal-cell';
+        if (dayStr === todayStr) cell.classList.add('today');
+        if (dayStr === calSelectedDateStr) cell.classList.add('selected');
+
+        cell.textContent = day;
+
+        const dayEvents = events.filter(e => {
+          if (!e.startDate) return false;
+          if (e.endDate) return dayStr >= e.startDate && dayStr <= e.endDate;
+          return e.startDate === dayStr;
+        });
+
+        if (dayEvents.length > 0) {
+          const dot = document.createElement('div');
+          dot.className = 'cal-dot';
+          cell.appendChild(dot);
+        }
+
+        cell.onclick = () => {
+          calSelectedDateStr = dayStr;
+          renderCalendar();
+          renderSelectedDateEvents(dayStr, dayEvents);
+        };
+
+        grid.appendChild(cell);
+      }
+
+      if (!calSelectedDateStr) {
+        calSelectedDateStr = todayStr;
+      }
+      const initialEvents = events.filter(e => {
+        if (!e.startDate) return false;
+        if (e.endDate) return calSelectedDateStr >= e.startDate && calSelectedDateStr <= e.endDate;
+        return e.startDate === calSelectedDateStr;
+      });
+      renderSelectedDateEvents(calSelectedDateStr, initialEvents);
+    }
+
+    function renderSelectedDateEvents(dateStr, dayEvents) {
+      document.getElementById('calSelectedTitle').textContent = `Events on ${dateStr}`;
+      const list = document.getElementById('calSelectedList');
+      list.innerHTML = dayEvents.length
+        ? dayEvents.map(ticketHTML).join('')
+        : '<div class="empty">No events scheduled for this date.</div>';
+
+      document.querySelectorAll('#calSelectedList [data-view]').forEach(el => {
+        el.onclick = () => {
+          const ev = events.find(e => e.id === el.getAttribute('data-view'));
+          openDetailModal(ev);
+        };
+      });
+    }
+
+    document.getElementById('calPrevBtn').onclick = () => {
+      calCurrentDate.setMonth(calCurrentDate.getMonth() - 1);
+      renderCalendar();
+    };
+    document.getElementById('calNextBtn').onclick = () => {
+      calCurrentDate.setMonth(calCurrentDate.getMonth() + 1);
+      renderCalendar();
+    };
+
+    loadEvents();
+    checkForSharedData();
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(err => console.warn('SW registration failed', err));
+    }
+
+    async function checkForSharedData() {
+      const params = new URLSearchParams(window.location.search);
+      const sharedText = params.get('text') || params.get('url') || params.get('title');
+
+      if (sharedText && params.get('shared') !== '1') {
+        window.history.replaceState({}, '', window.location.pathname);
+        switchTab('add');
+        handleSharedText(sharedText);
+        return;
+      }
+
+      if (params.get('shared') === '1') {
+        window.history.replaceState({}, '', window.location.pathname);
+        switchTab('add');
+        try {
+          const cache = await caches.open('someday-shared-v1');
+          const res = await cache.match('shared-image');
+          if (res) {
+            const blob = await res.blob();
+            await cache.delete('shared-image');
+            statusEl.textContent = 'Reading shared screenshot…';
+            const file = new File([blob], 'shared.jpg', { type: blob.type || 'image/jpeg' });
+            handleFile(file);
+          }
+        } catch (e) {
+          console.warn('No shared image found', e);
+        }
+      }
+    }
+
+    function getApiEndpoint() {
+      return (window.location.hostname.includes('vercel.app') || window.location.hostname.includes('vercel'))
+        ? '/api/gemini'
+        : '/.netlify/functions/gemini';
+    }
+
+    async function handleFile(file) {
+      statusEl.textContent = 'Reading poster screenshot…';
+      try {
+        const base64 = await fileToBase64(file);
+        const mediaType = file.type || 'image/jpeg';
+        const today = new Date().toISOString().slice(0, 10);
+
+        const response = await fetch(getApiEndpoint(), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { text: `Today's date is ${today}. This image is a screenshot of an Instagram post advertising an event. Extract the event details and respond with ONLY a JSON object, no markdown, no preamble, in this exact shape: {"name": string, "startDate": "YYYY-MM-DD" or "", "endDate": "YYYY-MM-DD" or "", "time": "HH:MM" (24h) or "", "location": string, "description": string (one short sentence)}. If the year isn't shown, assume the next upcoming occurrence of that date after today. The events are in Portugal, so format city names properly. If a field truly can't be determined, use an empty string.` },
+                { inlineData: { mimeType: mediaType, data: base64 } }
+              ]
+            }]
+          })
+        });
+
+        const textRes = await response.text();
+        let data;
+        try { data = JSON.parse(textRes); } catch (e) { }
+
+        if (!response.ok) {
+          throw new Error(data?.error?.message || data?.error || textRes.slice(0, 100) || 'Unknown API error');
+        }
+
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        const clean = text.replace(/```json|```/g, '').trim();
+        const parsed = JSON.parse(clean);
+        parsed.image = `data:${mediaType};base64,${base64}`;
+        statusEl.textContent = 'Got it — check the details below.';
+        openReview(parsed);
+      } catch (e) {
+        console.error(e);
+        statusEl.textContent = "Error: " + e.message + " — add the details by hand below.";
+        openReview({});
+      }
+    }
+
+    async function handleSharedText(sharedText) {
+      switchTab('add');
+      statusEl.textContent = 'Scanning shared post...';
+      try {
+        const response = await fetch(getApiEndpoint(), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sharedUrl: sharedText })
+        });
+
+        const textRes = await response.text();
+        let data;
+        try { data = JSON.parse(textRes); } catch (e) { }
+
+        if (!response.ok) {
+          throw new Error(data?.error?.message || data?.error || textRes.slice(0, 100) || 'Unknown API error');
+        }
+
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        const clean = text.replace(/```json|```/g, '').trim();
+        const parsed = JSON.parse(clean);
+        if (data._extractedImage) {
+          parsed.image = data._extractedImage;
+        }
+        statusEl.textContent = 'Got it — check the details below.';
+        openReview(parsed);
+      } catch (e) {
+        console.error(e);
+        statusEl.textContent = "Error: " + e.message + " — add the details by hand below.";
+        openReview({});
+      }
+    }
+  </script>
+</body>
+
+</html>
