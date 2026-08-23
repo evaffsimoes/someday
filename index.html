@@ -51,23 +51,53 @@
     }
 
     header {
-      margin-bottom: 24px;
-      text-align: center;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
 
-    .logo-img {
-      height: 44px;
-      width: auto;
-      margin: 0 auto 8px;
-      display: block;
+    .logo-text {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--purple);
+      letter-spacing: -0.04em;
+      line-height: 1;
     }
 
-    .tagline {
-      font-size: 13px;
+    .logo-text .logo-gem {
+      font-size: 18px;
+      display: inline-block;
+      margin-left: 1px;
+      vertical-align: middle;
+    }
+
+    .header-left .tagline {
+      font-size: 15px;
+      font-weight: 500;
       color: var(--text-muted);
-      margin: 0;
-      font-weight: 400;
+      margin: 4px 0 0;
       letter-spacing: -0.01em;
+      line-height: 1.2;
+    }
+
+    .header-left .tagline .tagline-purple {
+      color: var(--purple);
+    }
+
+    .profile-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 17px;
+      flex-shrink: 0;
     }
 
     /* Sticky Bottom Navigation Bar */
@@ -139,57 +169,104 @@
 
     /* NEXT UP Spotlight Card */
     .spotlight-card {
-      background: linear-gradient(135deg, #1e112a 0%, #121214 100%);
-      border: 1px solid var(--purple-glow);
-      border-radius: 16px;
-      padding: 18px 20px;
-      margin-bottom: 24px;
-      position: relative;
-      overflow: hidden;
+      background: var(--surface-card);
+      border: 1px solid #2a2a30;
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 28px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
       cursor: pointer;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
     }
 
-    .spotlight-card::after {
-      content: '';
-      position: absolute;
-      top: -20px;
-      right: -20px;
-      width: 100px;
-      height: 100px;
-      background: radial-gradient(circle, var(--purple-glow) 0%, transparent 70%);
-      pointer-events: none;
+    .spotlight-poster {
+      width: 88px;
+      height: 110px;
+      border-radius: 10px;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: #1f1f23;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      border: 1px solid var(--border);
+    }
+
+    .spotlight-info {
+      flex: 1;
+      min-width: 0;
     }
 
     .spotlight-label {
-      font-size: 10px;
+      font-size: 9px;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.12em;
-      color: var(--purple-light);
-      margin-bottom: 6px;
+      letter-spacing: 0.14em;
+      color: var(--text-muted);
+      margin-bottom: 4px;
       display: block;
     }
 
     .spotlight-title {
-      font-size: 20px;
+      font-size: 17px;
       font-weight: 700;
-      margin: 0 0 6px;
+      margin: 0 0 10px;
       letter-spacing: -0.02em;
       color: #ffffff;
+      line-height: 1.25;
     }
 
-    .spotlight-meta {
-      font-size: 13px;
-      color: var(--text-muted);
+    .spotlight-detail-row {
       display: flex;
       align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .spotlight-detail-row svg {
+      flex-shrink: 0;
+    }
+
+    .spotlight-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 10px;
+    }
+
+    .days-left-badge {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: rgba(168, 85, 247, 0.18);
+      color: var(--purple-light);
+      border: 1px solid rgba(168, 85, 247, 0.3);
+    }
+
+    .bookmark-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      padding: 4px;
+      font-size: 18px;
+      line-height: 1;
+      transition: color 0.2s;
+    }
+
+    .bookmark-btn:hover {
+      color: var(--purple-light);
     }
 
     .category-pill {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
       font-size: 10px;
       font-weight: 600;
       text-transform: uppercase;
@@ -211,14 +288,28 @@
       margin: 24px 0 12px;
       display: flex;
       align-items: center;
+      justify-content: space-between;
       gap: 8px;
     }
 
-    .section-title::after {
+    .section-title-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title-left::before {
       content: '';
-      flex: 1;
-      height: 1px;
-      background: var(--border);
+    }
+
+    .section-see-all {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--purple-light);
+      cursor: pointer;
+      text-transform: none;
+      letter-spacing: 0;
+      white-space: nowrap;
     }
 
     /* Compact Event Card in Queue */
@@ -230,7 +321,7 @@
       margin-bottom: 10px;
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
       cursor: pointer;
       transition: border-color 0.2s ease, background 0.2s ease;
     }
@@ -241,8 +332,8 @@
     }
 
     .queue-img {
-      width: 54px;
-      height: 54px;
+      width: 58px;
+      height: 58px;
       object-fit: cover;
       border-radius: 10px;
       border: 1px solid var(--border);
@@ -250,15 +341,15 @@
     }
 
     .queue-img-placeholder {
-      width: 54px;
-      height: 54px;
+      width: 58px;
+      height: 58px;
       border-radius: 10px;
       border: 1px solid var(--border);
       background: #1f1f23;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 20px;
+      font-size: 22px;
       flex-shrink: 0;
     }
 
@@ -277,41 +368,104 @@
       color: #ffffff;
     }
 
-    .queue-details {
+    .queue-date-row {
       font-size: 12px;
       color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 2px;
+    }
+
+    .queue-loc-row {
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 4px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
 
-    .queue-actions {
+    .queue-right {
       display: flex;
+      flex-direction: column;
+      align-items: flex-end;
       gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .queue-icons {
+      display: flex;
+      gap: 2px;
     }
 
     .icon-btn {
       background: none;
       border: none;
       color: var(--text-muted);
-      padding: 6px;
+      padding: 5px;
       border-radius: 6px;
       cursor: pointer;
       transition: color 0.2s;
-      font-size: 14px;
+      font-size: 16px;
+      line-height: 1;
     }
 
     .icon-btn:hover {
       color: var(--text-main);
     }
 
+    /* Add Screen Header */
+    .add-screen-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      margin-bottom: 6px;
+    }
+
+    .add-close-btn {
+      position: absolute;
+      left: 0;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .add-screen-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .add-screen-sub {
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin: 6px 0 24px;
+    }
+
     /* Add Event Options Card */
     .add-option-card {
-      background: var(--surface);
+      background: var(--surface-card);
       border: 1px solid var(--border);
       border-radius: 14px;
-      padding: 18px 20px;
-      margin-bottom: 12px;
+      padding: 16px 18px;
+      margin-bottom: 10px;
       display: flex;
       align-items: center;
       gap: 16px;
@@ -320,20 +474,24 @@
     }
 
     .add-option-card:hover {
-      border-color: var(--purple-light);
-      background: var(--surface-card);
+      border-color: rgba(168, 85, 247, 0.4);
+      background: #1a1a20;
     }
 
     .add-icon {
-      font-size: 24px;
-      width: 44px;
-      height: 44px;
-      border-radius: 10px;
-      background: #27272a;
+      font-size: 22px;
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: rgba(168, 85, 247, 0.18);
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
+    }
+
+    .add-text {
+      flex: 1;
     }
 
     .add-text strong {
@@ -344,6 +502,38 @@
     }
 
     .add-text span {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .add-chevron {
+      color: var(--text-muted);
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .how-it-works-card {
+      margin-top: 20px;
+      border-top: 1px solid var(--border);
+      padding-top: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+    }
+
+    .how-it-works-card .hiw-icon {
+      font-size: 18px;
+    }
+
+    .how-it-works-card .hiw-text strong {
+      font-size: 14px;
+      font-weight: 600;
+      display: block;
+      color: #ffffff;
+    }
+
+    .how-it-works-card .hiw-text span {
       font-size: 12px;
       color: var(--text-muted);
     }
@@ -377,7 +567,9 @@
     }
 
     @keyframes spin {
-      to { transform: rotate(360deg); }
+      to {
+        transform: rotate(360deg);
+      }
     }
 
     .parsed-field {
@@ -427,8 +619,15 @@
     }
 
     @keyframes modalFadeIn {
-      from { opacity: 0; transform: scale(0.96); }
-      to { opacity: 1; transform: scale(1); }
+      from {
+        opacity: 0;
+        transform: scale(0.96);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
     }
 
     .full-modal-img {
@@ -614,29 +813,39 @@
 <body>
   <div class="wrap">
     <header>
-      <img src="icon-512.png" alt="cue logo" class="logo-img">
-      <p class="tagline">Never miss your cue.</p>
+      <div class="header-left">
+        <div class="logo-text">cue<span class="logo-gem">✦</span></div>
+        <p class="tagline">Never miss your <span class="tagline-purple">cue.</span></p>
+      </div>
     </header>
 
     <!-- TAB 1: QUEUE (HOME) -->
     <div id="screen-queue" class="tab-screen active">
       <div id="spotlightSlot"></div>
-      <div class="section-title">UPCOMING QUEUE</div>
+      <div class="section-title">
+        <span class="section-title-left">UPCOMING</span>
+        <span class="section-see-all">See all</span>
+      </div>
       <div id="upcomingList"></div>
-      <div class="section-title">PAST QUEUE</div>
+      <div class="section-title"><span class="section-title-left">PAST</span></div>
       <div id="pastList"></div>
     </div>
 
     <!-- TAB 2: ADD TO CUE (+) -->
     <div id="screen-add" class="tab-screen">
-      <h2 style="font-size: 20px; font-weight:700; margin: 0 0 16px;">Add to cue</h2>
+      <div class="add-screen-header">
+        <button class="add-close-btn" id="addCloseBtn">✕</button>
+        <h2 class="add-screen-title">Add to cue 🎟️</h2>
+      </div>
+      <p class="add-screen-sub">Save events from Instagram<br>or add manually.</p>
 
       <div class="add-option-card" id="btnOptionScreenshot">
         <div class="add-icon">📸</div>
         <div class="add-text">
           <strong>Screenshot</strong>
-          <span>Upload an Instagram poster or story photo</span>
+          <span>Upload a screenshot of an Instagram post</span>
         </div>
+        <span class="add-chevron">›</span>
       </div>
       <input type="file" id="fileInput" accept="image/*" style="display: none;">
 
@@ -644,16 +853,18 @@
         <div class="add-icon">🔗</div>
         <div class="add-text">
           <strong>Instagram link</strong>
-          <span>Paste a copied link or post caption</span>
+          <span>Paste a link from Instagram</span>
         </div>
+        <span class="add-chevron">›</span>
       </div>
 
       <div class="add-option-card" id="btnOptionManual">
-        <div class="add-icon">✍️</div>
+        <div class="add-icon">✏️</div>
         <div class="add-text">
           <strong>Add manually</strong>
-          <span>Type event details by hand</span>
+          <span>Enter event details yourself</span>
         </div>
+        <span class="add-chevron">›</span>
       </div>
 
       <div class="status" id="status"></div>
@@ -664,9 +875,12 @@
     <!-- TAB 3: CALENDAR -->
     <div id="screen-calendar" class="tab-screen">
       <div class="cal-header">
-        <button class="btn btn-ghost" id="calPrevBtn" style="padding: 6px 12px; font-size:12px; flex:none;">← Prev</button>
-        <h3 id="calMonthTitle" style="margin:0; font-size:16px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em;"></h3>
-        <button class="btn btn-ghost" id="calNextBtn" style="padding: 6px 12px; font-size:12px; flex:none;">Next →</button>
+        <button class="btn btn-ghost" id="calPrevBtn" style="padding: 6px 12px; font-size:12px; flex:none;">←
+          Prev</button>
+        <h3 id="calMonthTitle"
+          style="margin:0; font-size:16px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em;"></h3>
+        <button class="btn btn-ghost" id="calNextBtn" style="padding: 6px 12px; font-size:12px; flex:none;">Next
+          →</button>
       </div>
       <div class="cal-grid" id="calDaysHeader">
         <div class="cal-day-label">Sun</div>
@@ -678,7 +892,7 @@
         <div class="cal-day-label">Sat</div>
       </div>
       <div class="cal-grid" id="calGrid" style="margin-top: 8px;"></div>
-      
+
       <div class="section-title" id="calSelectedTitle" style="margin-top:32px;">YOUR EVENTS</div>
       <div id="calSelectedList"></div>
     </div>
@@ -700,14 +914,14 @@
   <!-- STICKY BOTTOM NAVIGATION BAR (Queue | + | Calendar) -->
   <nav class="bottom-nav">
     <button class="nav-btn active" data-tab="queue">
-      <span style="font-size: 18px;">🎟️</span>
+      <span style="font-size: 20px;">🎟️</span>
       <span>Queue</span>
     </button>
     <button class="nav-btn-center" id="navBtnPlus" data-tab="add" title="Add to cue">
-      <span>+</span>
+      <span style="font-size: 26px; line-height:1;">+</span>
     </button>
     <button class="nav-btn" data-tab="calendar">
-      <span style="font-size: 18px;">📅</span>
+      <span style="font-size: 20px;">📅</span>
       <span>Calendar</span>
     </button>
   </nav>
@@ -717,6 +931,7 @@
     let events = [];
     let calCurrentDate = new Date();
     let calSelectedDateStr = null;
+    let showAllUpcoming = false;
 
     function uid() { return 'cue_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8); }
 
@@ -790,6 +1005,31 @@
       btn.onclick = () => switchTab(btn.getAttribute('data-tab'));
     });
 
+    document.addEventListener('click', e => {
+      if (e.target.id === 'addCloseBtn') switchTab('queue');
+    });
+
+    function daysLeft(dateStr) {
+      if (!dateStr) return null;
+      const d = new Date(dateStr + 'T00:00:00');
+      if (isNaN(d)) return null;
+      const diff = Math.ceil((d - new Date()) / (1000 * 60 * 60 * 24));
+      return diff;
+    }
+
+    function fmtDateRange(startDate, endDate) {
+      if (!startDate) return 'Date unknown';
+      const opts = { day: 'numeric', month: 'short' };
+      const s = new Date(startDate + 'T00:00:00');
+      if (endDate && endDate !== startDate) {
+        const e = new Date(endDate + 'T00:00:00');
+        const sStr = s.toLocaleDateString(undefined, opts);
+        const eStr = e.toLocaleDateString(undefined, opts);
+        return `${sStr} – ${eStr} ${e.getFullYear()}`;
+      }
+      return s.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
     function render() {
       const upcoming = events.filter(e => !isPast(e)).sort((a, b) => (a.startDate || '9999').localeCompare(b.startDate || '9999'));
       const past = events.filter(e => isPast(e)).sort((a, b) => (b.startDate || '').localeCompare(a.startDate || ''));
@@ -798,18 +1038,26 @@
       const spotlightSlot = document.getElementById('spotlightSlot');
       if (upcoming.length > 0) {
         const next = upcoming[0];
-        const dateStr = fmtDate(next.startDate);
-        const timeStr = next.time ? ` · ${next.time}` : '';
-        const locStr = [next.venue, next.city].filter(Boolean).join(' · ');
+        const dateStr = fmtDateRange(next.startDate, next.endDate);
+        const timeStr = next.time || '';
+        const locStr = [next.venue, next.city].filter(Boolean).join(', ');
+        const dl = daysLeft(next.startDate);
+        const posterHTML = next.image
+          ? `<img src="${next.image}" class="spotlight-poster" alt="Poster">`
+          : `<div class="spotlight-poster">🎟️</div>`;
 
         spotlightSlot.innerHTML = `
           <div class="spotlight-card" data-view="${next.id}">
-            <span class="spotlight-label">NEXT UP</span>
-            <div class="spotlight-title">${escapeHtml(next.artist || 'Untitled event')}</div>
-            <div class="spotlight-meta">
-              <span>📅 ${dateStr}${timeStr}</span>
-              ${locStr ? `<span>📍 ${escapeHtml(locStr)}</span>` : ''}
-              <span class="category-pill">${escapeHtml(next.category || 'Concert')}</span>
+            ${posterHTML}
+            <div class="spotlight-info">
+              <span class="spotlight-label">NEXT UP</span>
+              <div class="spotlight-title">${escapeHtml(next.artist || 'Untitled event')}</div>
+              ${dateStr ? `<div class="spotlight-detail-row">📅 <span>${escapeHtml(dateStr)}</span></div>` : ''}
+              ${timeStr ? `<div class="spotlight-detail-row">� <span>${escapeHtml(timeStr)}</span></div>` : ''}
+              ${locStr ? `<div class="spotlight-detail-row">📍 <span>${escapeHtml(locStr)}</span></div>` : ''}
+              <div class="spotlight-footer">
+                ${dl !== null && dl >= 0 ? `<span class="days-left-badge">${dl === 0 ? 'Today!' : dl + ' day' + (dl !== 1 ? 's' : '') + ' left'}</span>` : '<span></span>'}
+              </div>
             </div>
           </div>`;
       } else {
@@ -817,8 +1065,19 @@
       }
 
       document.getElementById('upcomingList').innerHTML = upcoming.length
-        ? upcoming.map(queueItemHTML).join('')
+        ? upcoming.slice(0, showAllUpcoming ? undefined : 3).map(queueItemHTML).join('')
         : '<div class="empty">Your queue is empty. Tap "+" to add a concert or festival!</div>';
+
+      const seeAllBtn = document.querySelector('.section-see-all');
+      if (seeAllBtn) {
+        if (upcoming.length <= 3) {
+          seeAllBtn.style.display = 'none';
+        } else {
+          seeAllBtn.style.display = '';
+          seeAllBtn.textContent = showAllUpcoming ? 'Show less' : 'See all';
+          seeAllBtn.onclick = () => { showAllUpcoming = !showAllUpcoming; render(); };
+        }
+      }
 
       document.getElementById('pastList').innerHTML = past.length
         ? past.map(queueItemHTML).join('')
@@ -838,7 +1097,7 @@
     function queueItemHTML(ev) {
       const dateStr = fmtDate(ev.startDate);
       const timeStr = ev.time ? ` · ${ev.time}` : '';
-      const locStr = [ev.venue, ev.city].filter(Boolean).join(' · ');
+      const locStr = [ev.venue, ev.city].filter(Boolean).join(', ');
 
       const imgHTML = ev.image
         ? `<img src="${ev.image}" class="queue-img" alt="Poster">`
@@ -849,9 +1108,15 @@
           ${imgHTML}
           <div class="queue-info">
             <div class="queue-artist">${escapeHtml(ev.artist || 'Untitled event')}</div>
-            <div class="queue-details">${dateStr}${timeStr} ${locStr ? `· ${escapeHtml(locStr)}` : ''}</div>
+            <div class="queue-date-row">📅 ${dateStr}${timeStr}</div>
+            ${locStr ? `<div class="queue-loc-row">📍 ${escapeHtml(locStr)}</div>` : ''}
+            <span class="category-pill" style="margin-top:4px;">${escapeHtml(ev.category || 'Concert')}</span>
           </div>
-          <span class="category-pill">${escapeHtml(ev.category || 'Concert')}</span>
+          <div class="queue-right">
+            <div class="queue-icons">
+              <button class="icon-btn" title="Bookmark" onclick="event.stopPropagation()">🔖</button>
+            </div>
+          </div>
         </div>`;
     }
 
@@ -1060,7 +1325,8 @@
           <input type="hidden" id="f_image" value="${escapeAttr(prefill.image || '')}">
           <h3>Confirm event details</h3>
           <div class="field"><label>Artist / Event Name</label><input id="f_artist" value="${escapeAttr(prefill.artist || prefill.name || '')}" placeholder="e.g. Branko, Slow J, Festival X"></div>
-          
+          <div class="field"><label>Going with 👥</label><input id="f_company" value="${escapeAttr(prefill.company || '')}" placeholder="e.g. João, Maria, ..."></div>
+
           <div class="review-row">
             <div class="field"><label>Start Date</label><input id="f_start" type="date" value="${prefill.startDate || ''}"></div>
             <div class="field"><label>Time</label><input id="f_time" type="time" value="${prefill.time || ''}"></div>
@@ -1074,15 +1340,14 @@
           <div class="field">
             <label>Category</label>
             <select id="f_category">
-              <option value="Concert" ${prefill.category === 'Concert' ? 'selected' : ''}>Concert</option>
+              <option value="Concert" ${(prefill.category === 'Concert' || !prefill.category) ? 'selected' : ''}>Concert</option>
               <option value="Festival" ${prefill.category === 'Festival' ? 'selected' : ''}>Festival</option>
-              <option value="Party" ${prefill.category === 'Party' ? 'selected' : ''}>Party</option>
-              <option value="Other" ${prefill.category === 'Other' ? 'selected' : ''}>Other</option>
+              <option value="Other" ${prefill.category === 'Other' || prefill.category === 'Party' ? 'selected' : ''}>Other</option>
             </select>
           </div>
 
           <div class="field"><label>Note</label><textarea id="f_desc" placeholder="Anything worth remembering">${escapeHtml(prefill.description || '')}</textarea></div>
-          
+
           <div class="btn-row">
             <button class="btn btn-ghost" id="cancelBtn">Cancel</button>
             <button class="btn btn-primary" id="saveBtn">Add to cue →</button>
@@ -1094,6 +1359,7 @@
         const ev = {
           id: prefill.id || uid(),
           artist: document.getElementById('f_artist').value.trim(),
+          company: document.getElementById('f_company').value.trim(),
           startDate: document.getElementById('f_start').value,
           time: document.getElementById('f_time').value,
           venue: document.getElementById('f_venue').value.trim(),
@@ -1172,7 +1438,7 @@
       const year = calCurrentDate.getFullYear();
       const month = calCurrentDate.getMonth();
       const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-      
+
       document.getElementById('calMonthTitle').textContent = `${monthNames[month]} ${year}`;
 
       const firstDay = new Date(year, month, 1).getDay();
@@ -1262,18 +1528,18 @@
 
     async function checkForSharedData() {
       const fullUrl = window.location.href;
-      
+
       const searchParams = new URLSearchParams(window.location.search);
       const hashParams = new URLSearchParams(window.location.hash.replace('#', '?'));
 
       let sharedText = searchParams.get('text') || searchParams.get('url') || searchParams.get('title') ||
-                        hashParams.get('text') || hashParams.get('url') || hashParams.get('title');
+        hashParams.get('text') || hashParams.get('url') || hashParams.get('title');
 
       if (!sharedText && fullUrl.includes('?')) {
         const queryPart = fullUrl.split('?')[1] || '';
         const match = queryPart.match(/(?:text|url|title)=([^&]+)/i);
         if (match && match[1]) {
-          try { sharedText = decodeURIComponent(match[1]); } catch(e) { sharedText = match[1]; }
+          try { sharedText = decodeURIComponent(match[1]); } catch (e) { sharedText = match[1]; }
         }
       }
 
@@ -1304,21 +1570,19 @@
     }
 
     function getApiEndpoint() {
-      return (window.location.hostname.includes('vercel.app') || window.location.hostname.includes('vercel'))
-        ? '/api/gemini'
-        : '/.netlify/functions/gemini';
+      return '/api/gemini';
     }
 
     function parseGeminiJson(text) {
       if (!text) return {};
       const match = text.match(/\{[\s\S]*\}/);
       if (match) {
-        try { return JSON.parse(match[0]); } catch(e) {}
+        try { return JSON.parse(match[0]); } catch (e) { }
       }
       try {
         const clean = text.replace(/```json|```/g, '').trim();
         return JSON.parse(clean);
-      } catch(e) {}
+      } catch (e) { }
       return {};
     }
 
