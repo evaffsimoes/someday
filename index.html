@@ -249,6 +249,32 @@
       border: 1px solid rgba(168, 85, 247, 0.3);
     }
 
+    /* Friend Chips */
+    .friend-chips-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .friend-chip {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: #09090b;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+
+    .friend-chip.selected {
+      background: var(--purple-glow);
+      color: var(--text-main);
+      border-color: var(--purple-light);
+    }
+
     .bookmark-btn {
       background: none;
       border: none;
@@ -939,7 +965,9 @@
 
   <script>
     const STORE_KEY = 'cue-events-v12';
+    const FRIENDS_KEY = 'cue-friends-v1';
     let events = [];
+    let savedFriends = [];
     let calCurrentDate = new Date();
     let calSelectedDateStr = null;
     let showAllUpcoming = false;
@@ -975,7 +1003,10 @@
           if (!e.category) e.category = 'Concert';
           return e;
         });
-      } catch (e) { events = []; }
+
+        const fRaw = await getStorageItem(FRIENDS_KEY);
+        if (fRaw) savedFriends = JSON.parse(fRaw);
+      } catch (e) { events = []; savedFriends = []; }
       render();
       renderCalendar();
     }
@@ -1387,8 +1418,15 @@
         <div class="review">
           <input type="hidden" id="f_image" value="${escapeAttr(prefill.image || '')}">
           <h3>Confirm event details</h3>
-          <div class="field"><label>Artist / Event Name</label><input id="f_artist" value="${escapeAttr(prefill.artist || prefill.name || '')}" placeholder="e.g. Branko, Slow J, Festival X"></div>
-          <div class="field"><label>Going with</label><input id="f_company" value="${escapeAttr(prefill.company || '')}" placeholder="e.g. João, Maria, ..."></div>
+          <div class="field">
+            <label>Artist / Event Name</label>
+            <input id="f_artist" value="${escapeAttr(prefill.artist || prefill.name || '')}" placeholder="e.g. Branko, Slow J, Festival X">
+          </div>
+          <div class="field">
+            <label>Going with</label>
+            <input id="f_company" value="${escapeAttr(prefill.company || '')}" placeholder="e.g. João, Maria, ...">
+            <div id="friends-chips" class="friend-chips-container"></div>
+          </div>
 
           <div class="field"><label>Dates (Start - End)</label><input id="f_daterange" type="text" placeholder="Select dates"></div>
           
@@ -1418,14 +1456,46 @@
           </div>
         </div>`;
 
-      document.getElementById('cancelBtn').onclick = () => { reviewSlot.innerHTML = ''; statusEl.textContent = ''; };
+      const companyInput = document.getElementById('f_company');
+
+      const renderFriendChips = () => {
+        const container = document.getElementById('friends-chips');
+        if (!container || savedFriends.length === 0) return;
+
+        const currentVals = companyInput.value.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+        container.innerHTML = savedFriends.map(f => {
+          const isSelected = currentVals.includes(f.toLowerCase());
+          return `<span class="friend-chip ${isSelected ? 'selected' : ''}" onclick="window.toggleFriend('${escapeAttr(f)}')">${escapeHtml(f)}</span>`;
+        }).join('');
+      };
+
+      window.toggleFriend = (f) => {
+        let vals = companyInput.value.split(',').map(s => s.trim()).filter(Boolean);
+        const lowerF = f.toLowerCase();
+        if (vals.find(v => v.toLowerCase() === lowerF)) {
+          vals = vals.filter(v => v.toLowerCase() !== lowerF);
+        } else {
+          vals.push(f);
+        }
+        companyInput.value = vals.join(', ');
+        renderFriendChips();
+      };
+
+      companyInput.addEventListener('input', renderFriendChips);
+      renderFriendChips(); // render initial
+
+      document.getElementById('cancelBtn').onclick = () => { reviewSlot.innerHTML = ''; statusEl.textContent = ''; restoreAddOptions(); };
       document.getElementById('saveBtn').onclick = async () => {
+        const dateInput = document.getElementById('f_daterange').value;
+        const [startD, endD] = dateInput.includes(' to ') ? dateInput.split(' to ') : [dateInput, dateInput];
+
+        const compStr = document.getElementById('f_company').value.trim();
         const ev = {
           id: prefill.id || uid(),
           artist: document.getElementById('f_artist').value.trim(),
-          company: document.getElementById('f_company').value.trim(),
-          startDate: document.getElementById('f_start').value,
-          endDate: document.getElementById('f_end').value,
+          company: compStr,
+          startDate: startD || '',
+          endDate: endD || startD || '',
           time: document.getElementById('f_time').value,
           venue: document.getElementById('f_venue').value.trim(),
           city: document.getElementById('f_city').value.trim(),
@@ -1433,6 +1503,19 @@
           description: document.getElementById('f_desc').value.trim(),
           image: document.getElementById('f_image').value
         };
+
+        if (compStr) {
+          const newNames = compStr.split(',').map(n => n.trim()).filter(Boolean);
+          let changed = false;
+          newNames.forEach(n => {
+            if (!savedFriends.find(f => f.toLowerCase() === n.toLowerCase())) {
+              savedFriends.push(n);
+              changed = true;
+            }
+          });
+          if (changed) await setStorageItem(FRIENDS_KEY, JSON.stringify(savedFriends));
+        }
+
         if (prefill.id) {
           events = events.map(e => e.id === ev.id ? ev : e);
         } else {
