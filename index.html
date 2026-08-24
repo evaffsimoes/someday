@@ -1252,49 +1252,9 @@
         : '<div class="empty">Past events will land here.</div>';
 
       document.querySelectorAll('[data-view]').forEach(el => {
-        let startX = 0, currentTranslation = 0, isDragging = false;
-
-        // Touch events for Swipe-to-Delete
-        el.addEventListener('touchstart', (e) => {
-          if (e.target.closest('.icon-btn')) return; // ignore clicks on nested buttons
-          startX = e.touches[0].clientX;
-          isDragging = true;
-          el.style.transition = 'none';
-        }, { passive: true });
-
-        el.addEventListener('touchmove', (e) => {
-          if (!isDragging) return;
-          const deltaX = e.touches[0].clientX - startX;
-          if (deltaX < 0) { // sweeping left
-            e.preventDefault(); // prevent vertical scroll while sweeping
-            el.style.transform = `translateX(${Math.max(deltaX, -100)}px)`;
-            currentTranslation = deltaX;
-          }
-        }, { passive: false });
-
-        el.addEventListener('touchend', (e) => {
-          if (!isDragging) return;
-          isDragging = false;
-          el.style.transition = 'transform 0.2s ease';
-          if (currentTranslation < -60) {
-            // Sweep threshold met: trigger delete
-            el.style.transform = `translateX(-100%)`;
-            setTimeout(() => {
-              deleteEvent(el.getAttribute('data-view'));
-            }, 200);
-          } else {
-            // Snap back
-            el.style.transform = `translateX(0)`;
-          }
-          currentTranslation = 0;
-        });
-
-        // Click to open detail model (unchanged)
-        el.addEventListener('click', (e) => {
-          // Prevent tap if it was just a swipe release
-          if (Math.abs(currentTranslation) > 10) return;
-          const ev = events.find(event => event.id === el.getAttribute('data-view'));
-          openDetailModal(ev);
+        el.addEventListener('click', () => {
+          const ev = events.find(e => e.id === el.getAttribute('data-view'));
+          if (ev) openDetailModal(ev);
         });
       });
 
@@ -1743,12 +1703,9 @@
       const content = document.getElementById('eventModalContent');
 
       content.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
           ${categoryPillHTML(ev.category)}
-          <div style="display:flex; align-items:center; gap:8px;">
-            <button class="icon-btn" id="editFromModalBtn" style="font-size:18px; display:flex; align-items:center; justify-content:center;" title="Edit"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-            <button class="icon-btn" id="closeModalBtn" style="font-size:18px; color:var(--text-muted);">✕</button>
-          </div>
+          <button class="icon-btn" id="closeModalBtn" style="font-size:18px; color:var(--text-muted);">✕</button>
         </div>
         ${ev.image ? `<img src="${ev.image}" class="full-modal-img" alt="Poster">` : ''}
         <h2 style="margin: 8px 0 6px; font-weight:700; font-size:22px; color:#ffffff;">${escapeHtml(ev.artist || 'Untitled event')}</h2>
@@ -1758,6 +1715,9 @@
         ${ev.description ? `<div style="background:#09090b; padding:14px; border-radius:10px; border:1px solid var(--border); font-size:13px; margin-bottom:20px; margin-top:10px; white-space:pre-wrap; color:var(--text-main);"><strong>Lineup / Notes:</strong><br>${escapeHtml(ev.description)}</div>` : ''}
         
         <div class="btn-row">
+          <button class="btn btn-ghost" id="editFromModalBtn">Edit event</button>
+        </div>
+        <div class="btn-row" style="margin-top: 10px;">
           <button class="btn btn-primary" id="gcalFromModalBtn">Add to Google Cal</button>
         </div>
         <div class="btn-row" style="margin-top: 10px;">
@@ -1812,7 +1772,10 @@
         if (dayStr === todayStr) cell.classList.add('today');
         if (dayStr === calSelectedDateStr) cell.classList.add('selected');
 
-        cell.textContent = day;
+        // Use a span for the number so appended dots are not wiped
+        const numSpan = document.createElement('span');
+        numSpan.textContent = day;
+        cell.appendChild(numSpan);
 
         const dayEvents = events.filter(e => {
           if (!e.startDate) return false;
