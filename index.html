@@ -1095,11 +1095,52 @@
         : '<div class="empty">Past events will land here.</div>';
 
       document.querySelectorAll('[data-view]').forEach(el => {
-        el.onclick = () => {
-          const ev = events.find(e => e.id === el.getAttribute('data-view'));
+        let startX = 0, currentTranslation = 0, isDragging = false;
+
+        // Touch events for Swipe-to-Delete
+        el.addEventListener('touchstart', (e) => {
+          if (e.target.closest('.icon-btn')) return; // ignore clicks on nested buttons
+          startX = e.touches[0].clientX;
+          isDragging = true;
+          el.style.transition = 'none';
+        }, { passive: true });
+
+        el.addEventListener('touchmove', (e) => {
+          if (!isDragging) return;
+          const deltaX = e.touches[0].clientX - startX;
+          if (deltaX < 0) { // sweeping left
+            e.preventDefault(); // prevent vertical scroll while sweeping
+            el.style.transform = `translateX(${Math.max(deltaX, -100)}px)`;
+            currentTranslation = deltaX;
+          }
+        }, { passive: false });
+
+        el.addEventListener('touchend', (e) => {
+          if (!isDragging) return;
+          isDragging = false;
+          el.style.transition = 'transform 0.2s ease';
+          if (currentTranslation < -60) {
+            // Sweep threshold met: trigger delete
+            el.style.transform = `translateX(-100%)`;
+            setTimeout(() => {
+              deleteEvent(el.getAttribute('data-view'));
+            }, 200);
+          } else {
+            // Snap back
+            el.style.transform = `translateX(0)`;
+          }
+          currentTranslation = 0;
+        });
+
+        // Click to open detail model (unchanged)
+        el.addEventListener('click', (e) => {
+          // Prevent tap if it was just a swipe release
+          if (Math.abs(currentTranslation) > 10) return;
+          const ev = events.find(event => event.id === el.getAttribute('data-view'));
           openDetailModal(ev);
-        };
+        });
       });
+
       document.querySelectorAll('[data-del]').forEach(btn => {
         btn.onclick = (e) => { e.stopPropagation(); deleteEvent(btn.getAttribute('data-del')); };
       });
@@ -1121,13 +1162,16 @@
         : `<div class="queue-img-placeholder">🎟️</div>`;
 
       return `
-        <div class="queue-item" data-view="${ev.id}">
-          ${imgHTML}
-          <div class="queue-info">
-            <div class="queue-artist">${escapeHtml(ev.artist || 'Untitled event')}</div>
-            <div class="queue-date-row">📅 ${dateStr}${timeStr}</div>
-            ${locStr ? `<div class="queue-loc-row">📍 ${escapeHtml(locStr)}</div>` : ''}
-            ${categoryPillHTML(ev.category)}
+        <div class="queue-swipe-wrapper">
+          <div class="queue-delete-bg">🗑️ Apagar</div>
+          <div class="queue-item" data-view="${ev.id}" oncontextmenu="return false;">
+            ${imgHTML}
+            <div class="queue-info">
+              <div class="queue-artist">${escapeHtml(ev.artist || 'Untitled event')}</div>
+              <div class="queue-date-row">📅 ${dateStr}${timeStr}</div>
+              ${locStr ? `<div class="queue-loc-row">📍 ${escapeHtml(locStr)}</div>` : ''}
+              ${categoryPillHTML(ev.category)}
+            </div>
           </div>
         </div>`;
     }
@@ -1346,11 +1390,8 @@
           <div class="field"><label>Artist / Event Name</label><input id="f_artist" value="${escapeAttr(prefill.artist || prefill.name || '')}" placeholder="e.g. Branko, Slow J, Festival X"></div>
           <div class="field"><label>Going with</label><input id="f_company" value="${escapeAttr(prefill.company || '')}" placeholder="e.g. João, Maria, ..."></div>
 
-          <div class="review-row">
-            <div class="field"><label>Start Date</label><input id="f_start" type="date" value="${prefill.startDate || ''}"></div>
-            <div class="field"><label>End Date</label><input id="f_end" type="date" value="${prefill.endDate || ''}"></div>
-          </div>
-
+          <div class="field"><label>Dates (Start - End)</label><input id="f_daterange" type="text" placeholder="Select dates"></div>
+          
           <div class="review-row">
             <div class="field"><label>Time</label><input id="f_time" type="time" value="${prefill.time || ''}"></div>
             <div class="field"><label>City</label><input id="f_city" list="pt-cities" value="${escapeAttr(prefill.city || '')}" placeholder="e.g. Porto, Lisboa"></div>
@@ -1505,13 +1546,20 @@
         });
 
         if (dayEvents.length > 0) {
-          // Use color of first event's category
-          const firstCat = dayEvents[0].category || 'Concert';
-          const dotColor = firstCat === 'Festival' ? '#fbbf24' : firstCat === 'Other' ? '#2dd4bf' : '#a855f7';
-          const dot = document.createElement('div');
-          dot.className = 'cal-dot';
-          dot.style.background = dotColor;
-          cell.appendChild(dot);
+          const dotsContainer = document.createElement('div');
+          dotsContainer.className = 'dots-container';
+
+          // Maximum 3 dots to prevent UI breaking
+          const limit = Math.min(dayEvents.length, 3);
+          for (let i = 0; i < limit; i++) {
+            const cat = dayEvents[i].category || 'Concert';
+            const dotColor = cat === 'Festival' ? '#fbbf24' : cat === 'Other' ? '#2dd4bf' : '#a855f7';
+            const dot = document.createElement('div');
+            dot.className = 'cal-dot';
+            dot.style.background = dotColor;
+            dotsContainer.appendChild(dot);
+          }
+          cell.appendChild(dotsContainer);
         }
 
         cell.onclick = () => {
