@@ -1061,14 +1061,14 @@
           <div class="spotlight-card" data-view="${next.id}">
             ${posterHTML}
             <div class="spotlight-info">
-              <span class="spotlight-label">NEXT UP</span>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <span class="spotlight-label">NEXT UP</span>
+                ${dl !== null && dl >= 0 ? `<span class="days-left-badge" style="font-size:12px; font-weight:700; padding:4px 10px; background:var(--surface); color:#fff; border: 1px solid var(--border); border-radius:12px;">${dl === 0 ? 'TODAY!' : dl + ' DAYS LEFT'}</span>` : ''}
+              </div>
               <div class="spotlight-title">${escapeHtml(next.artist || 'Untitled event')}</div>
               ${dateStr ? `<div class="spotlight-detail-row">📅 <span>${escapeHtml(dateStr)}</span></div>` : ''}
               ${timeStr ? `<div class="spotlight-detail-row"><span style="font-size:11px;color:var(--text-muted);font-weight:600;">AT</span> <span>${escapeHtml(timeStr)}</span></div>` : ''}
               ${locStr ? `<div class="spotlight-detail-row">📍 <span>${escapeHtml(locStr)}</span></div>` : ''}
-              <div class="spotlight-footer">
-                ${dl !== null && dl >= 0 ? `<span class="days-left-badge">${dl === 0 ? 'Today!' : dl + ' day' + (dl !== 1 ? 's' : '') + ' left'}</span>` : '<span></span>'}
-              </div>
             </div>
           </div>`;
       } else {
@@ -1439,7 +1439,7 @@
         <div style="font-size:14px; color:var(--text-muted); margin-bottom:6px;">📅 ${dateStr}${timeStr}</div>
         ${locStr ? `<div style="font-size:14px; color:var(--text-muted); margin-bottom:6px;">📍 ${escapeHtml(locStr)}</div>` : ''}
         ${ev.company ? `<div style="font-size:14px; color:var(--text-muted); margin-bottom:6px;">👥 ${escapeHtml(ev.company)}</div>` : ''}
-        ${ev.description ? `<div style="background:#09090b; padding:14px; border-radius:10px; border:1px solid var(--border); font-size:13px; margin-bottom:20px; margin-top:10px; white-space:pre-wrap; color:var(--text-main);"><strong>Note:</strong><br>${escapeHtml(ev.description)}</div>` : ''}
+        ${ev.description ? `<div style="background:#09090b; padding:14px; border-radius:10px; border:1px solid var(--border); font-size:13px; margin-bottom:20px; margin-top:10px; white-space:pre-wrap; color:var(--text-main);"><strong>Lineup / Notes:</strong><br>${escapeHtml(ev.description)}</div>` : ''}
         
         <div class="btn-row">
           <button class="btn btn-primary" id="gcalFromModalBtn">Add to Google Cal</button>
