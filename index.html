@@ -14,9 +14,10 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="shortcut icon" type="image/png" href="icon-192.png">
   <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap"
+    rel="stylesheet">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-
     :root {
       --bg: #000000;
       --surface: #121214;
@@ -159,12 +160,106 @@
       background: var(--purple-light);
     }
 
+    /* Tab Switching Animations */
     .tab-screen {
       display: none;
+      padding-bottom: 90px;
     }
 
     .tab-screen.active {
       display: block;
+      animation: fadeSlide 0.3s ease-out forwards;
+    }
+
+    @keyframes fadeSlide {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Queue Item */
+    .queue-item {
+      display: flex;
+      gap: 14px;
+      padding: 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      margin-bottom: 14px;
+      cursor: auto;
+    }
+
+    /* Sticky Month Headers */
+    .month-header {
+      position: sticky;
+      top: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(10px);
+      padding: 14px 0 6px;
+      font-size: 18px;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      color: #fff;
+      z-index: 10;
+      margin-top: 10px;
+      margin-bottom: 10px;
+      letter-spacing: -0.02em;
+    }
+
+    /* Undo Toast */
+    .undo-toast {
+      position: fixed;
+      bottom: 80px;
+      /* Above Bottom Nav */
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--surface-card);
+      border: 1px solid var(--border);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 30px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.8);
+      transition: 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 2000;
+      opacity: 0;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .undo-toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .undo-toast button {
+      background: none;
+      border: none;
+      color: var(--purple-light);
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 14px;
+      padding: 0;
+    }
+
+    /* Map Link */
+    a.map-link {
+      color: var(--text-muted);
+      text-decoration: underline;
+      text-decoration-color: var(--border);
+    }
+
+    a.map-link:hover {
+      color: #fff;
     }
 
     /* NEXT UP Spotlight Card */
@@ -963,6 +1058,9 @@
     </button>
   </nav>
 
+  <!-- Undo Toast Container -->
+  <div id="undoToastHTML"></div>
+
   <script>
     const STORE_KEY = 'cue-events-v12';
     const FRIENDS_KEY = 'cue-friends-v1';
@@ -1106,8 +1204,33 @@
         spotlightSlot.innerHTML = '';
       }
 
+      document.getElementById('undoToastHTML').innerHTML = `
+        <div id="undoToast" class="undo-toast">
+          <span>Event removed.</span>
+          <button id="undoBtn">Undo ↩</button>
+        </div>
+      `;
+
+      // Build upcoming list with Month Headers
+      let currentMonthStr = '';
+      const upcomingHTML = upcoming.slice(0, showAllUpcoming ? undefined : undefined).map(ev => {
+        let html = '';
+        if (ev.startDate) {
+          const d = new Date(ev.startDate + 'T12:00:00');
+          if (!isNaN(d)) {
+            const mStr = d.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+            if (mStr !== currentMonthStr) {
+              html += `<div class="month-header">${mStr}</div>`;
+              currentMonthStr = mStr;
+            }
+          }
+        }
+        html += queueItemHTML(ev);
+        return html;
+      }).join('');
+
       document.getElementById('upcomingList').innerHTML = upcoming.length
-        ? upcoming.slice(0, showAllUpcoming ? undefined : 3).map(queueItemHTML).join('')
+        ? upcomingHTML
         : '<div class="empty">Your queue is empty. Tap "+" to add a concert or festival!</div>';
 
       const seeAllBtn = document.querySelector('.section-see-all');
@@ -1200,11 +1323,10 @@
             <div class="queue-info">
               <div class="queue-artist">${escapeHtml(ev.artist || 'Untitled event')}</div>
               <div class="queue-date-row">📅 ${dateStr}${timeStr}</div>
-              ${locStr ? `<div class="queue-loc-row">📍 ${escapeHtml(locStr)}</div>` : ''}
+              ${locStr ? `<div class="queue-loc-row">📍 <a href="https://maps.google.com/?q=${encodeURIComponent(locStr)}" target="_blank" class="map-link" onclick="event.stopPropagation()">${escapeHtml(locStr)}</a></div>` : ''}
               ${categoryPillHTML(ev.category)}
             </div>
-          </div>
-        </div>`;
+          </div>`;
     }
 
     function categoryPillHTML(cat) {
@@ -1219,11 +1341,36 @@
       return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     }
 
+    let lastDeletedEvent = null;
+    let fallbackUndoTimer = null;
+
     async function deleteEvent(id) {
+      lastDeletedEvent = events.find(e => e.id === id);
       events = events.filter(e => e.id !== id);
       await saveEvents();
       render();
       renderCalendar();
+
+      // Show Undo Toast
+      const toast = document.getElementById('undoToast');
+      if (toast) {
+        toast.classList.add('show');
+        clearTimeout(fallbackUndoTimer);
+
+        document.getElementById('undoBtn').onclick = async () => {
+          if (lastDeletedEvent) {
+            events.push(lastDeletedEvent);
+            await saveEvents();
+            render();
+            renderCalendar();
+          }
+          toast.classList.remove('show');
+        };
+
+        fallbackUndoTimer = setTimeout(() => {
+          toast.classList.remove('show');
+        }, 4000);
+      }
     }
 
     function toGCalDate(dateStr, timeStr) {
@@ -1432,7 +1579,12 @@
           
           <div class="review-row">
             <div class="field"><label>Time</label><input id="f_time" type="time" value="${prefill.time || ''}"></div>
-            <div class="field"><label>City</label><input id="f_city" list="pt-cities" value="${escapeAttr(prefill.city || '')}" placeholder="e.g. Porto, Lisboa"></div>
+          <div class="field"><label>City</label>
+             <div style="position:relative;">
+               <input id="f_city" list="pt-cities" value="${escapeAttr(prefill.city || '')}" placeholder="e.g. Porto, Lisboa" style="padding-right: 40px;">
+               <button type="button" id="geoBtn" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:16px;">📍</button>
+             </div>
+          </div>
           </div>
 
           <div class="field"><label>Venue</label><input id="f_venue" value="${escapeAttr(prefill.venue || '')}" placeholder="e.g. Armazém 22, Coliseu"></div>
@@ -1483,6 +1635,32 @@
 
       companyInput.addEventListener('input', renderFriendChips);
       renderFriendChips(); // render initial
+
+      const geoBtn = document.getElementById('geoBtn');
+      if (geoBtn) {
+        geoBtn.onclick = () => {
+          if (!navigator.geolocation) {
+            alert('Geolocation not supported.');
+            return;
+          }
+          geoBtn.textContent = '⏳';
+          navigator.geolocation.getCurrentPosition(async (pos) => {
+            try {
+              const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos.coords.latitude}&lon=${pos.coords.longitude}&zoom=10`);
+              const data = await res.json();
+              const city = data.address.city || data.address.town || data.address.village || data.address.municipality || '';
+              if (city) document.getElementById('f_city').value = city;
+            } catch (e) {
+              console.error(e);
+            } finally {
+              geoBtn.textContent = '📍';
+            }
+          }, () => {
+            geoBtn.textContent = '📍';
+            alert('Could not get your location.');
+          });
+        };
+      }
 
       document.getElementById('cancelBtn').onclick = () => { reviewSlot.innerHTML = ''; statusEl.textContent = ''; restoreAddOptions(); };
       document.getElementById('saveBtn').onclick = async () => {
@@ -1561,7 +1739,7 @@
         ${ev.image ? `<img src="${ev.image}" class="full-modal-img" alt="Poster">` : ''}
         <h2 style="margin: 8px 0 6px; font-weight:700; font-size:22px; color:#ffffff;">${escapeHtml(ev.artist || 'Untitled event')}</h2>
         <div style="font-size:14px; color:var(--text-muted); margin-bottom:6px;">📅 ${dateStr}${timeStr}</div>
-        ${locStr ? `<div style="font-size:14px; color:var(--text-muted); margin-bottom:6px;">📍 ${escapeHtml(locStr)}</div>` : ''}
+        ${locStr ? `<div style="font-size:14px; color:var(--text-muted); margin-bottom:6px;">📍 <a href="https://maps.google.com/?q=${encodeURIComponent(locStr)}" target="_blank" class="map-link">${escapeHtml(locStr)}</a></div>` : ''}
         ${ev.company ? `<div style="font-size:14px; color:var(--text-muted); margin-bottom:6px;">👥 ${escapeHtml(ev.company)}</div>` : ''}
         ${ev.description ? `<div style="background:#09090b; padding:14px; border-radius:10px; border:1px solid var(--border); font-size:13px; margin-bottom:20px; margin-top:10px; white-space:pre-wrap; color:var(--text-main);"><strong>Lineup / Notes:</strong><br>${escapeHtml(ev.description)}</div>` : ''}
         
