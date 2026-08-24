@@ -17,6 +17,9 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap"
     rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <style>
     :root {
       --bg: #000000;
@@ -1609,6 +1612,17 @@
         </div>`;
 
       const companyInput = document.getElementById('f_company');
+
+      // Pre-fill the date range for flatpickr
+      let defaultDates = [];
+      if (prefill.startDate) defaultDates.push(new Date(prefill.startDate + 'T12:00:00'));
+      if (prefill.endDate && prefill.endDate !== prefill.startDate) defaultDates.push(new Date(prefill.endDate + 'T12:00:00'));
+
+      flatpickr("#f_daterange", {
+        mode: "range",
+        dateFormat: "Y-m-d",
+        defaultDate: defaultDates
+      });
 
       const renderFriendChips = () => {
         const container = document.getElementById('friends-chips');
