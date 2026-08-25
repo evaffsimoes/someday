@@ -1,3 +1,77 @@
+const MAX_SHARED_TEXT_LENGTH = 10_000;
+const MAX_INLINE_IMAGE_BASE64_LENGTH = 4_000_000;
+const MAX_PAGE_BYTES = 1_000_000;
+const MAX_POSTER_BYTES = 2_000_000;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_REQUESTS = 12;
+const requestLog = new Map();
+
+function isRateLimited(req) {
+  const forwarded = req.headers['x-forwarded-for'];
+  const ip = (Array.isArray(forwarded) ? forwarded[0] : forwarded || req.socket?.remoteAddress || 'unknown').split(',')[0].trim();
+  const now = Date.now();
+  const recent = (requestLog.get(ip) || []).filter(time => now - time < RATE_LIMIT_WINDOW_MS);
+  recent.push(now);
+  requestLog.set(ip, recent);
+  return recent.length > RATE_LIMIT_MAX_REQUESTS;
+}
+
+function readUrl(value) {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' ? url : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+function isInstagramUrl(url) {
+  return url && (url.hostname === 'instagram.com' || url.hostname.endsWith('.instagram.com'));
+}
+
+async function readLimited(response, maxBytes) {
+  const declaredLength = Number(response.headers.get('content-length') || 0);
+  if (declaredLength > maxBytes) throw new Error('Remote resource is too large');
+  const reader = response.body?.getReader();
+  if (!reader) {
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    if (bytes.byteLength > maxBytes) throw new Error('Remote resource is too large');
+    return bytes;
+  }
+  const chunks = [];
+  let total = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) {
+      await reader.cancel();
+      throw new Error('Remote resource is too large');
+    }
+    chunks.push(value);
+  }
+  const result = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    result.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return result;
+}
+
+function validatePayload(body) {
+  if (!body || typeof body !== 'object') throw new Error('A JSON request body is required');
+  if (body.sharedUrl && (typeof body.sharedUrl !== 'string' || body.sharedUrl.length > MAX_SHARED_TEXT_LENGTH)) {
+    throw new Error('Shared text is invalid or too long');
+  }
+  const inlineData = body.contents?.[0]?.parts?.find(part => part.inlineData)?.inlineData;
+  if (inlineData) {
+    if (!/^image\/(jpeg|png|webp)$/i.test(inlineData.mimeType || '') || typeof inlineData.data !== 'string' || inlineData.data.length > MAX_INLINE_IMAGE_BASE64_LENGTH) {
+      throw new Error('Use a JPEG, PNG, or WebP image smaller than 3 MB');
+    }
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
@@ -7,11 +81,15 @@ export default async function handler(req, res) {
   if (!apiKey) {
     return res.status(500).json({ error: 'GEMINI_API_KEY is missing' });
   }
+  if (isRateLimited(req)) {
+    return res.status(429).json({ error: 'Too many requests. Please try again in a minute.' });
+  }
 
   let extractedImageDataUrl = null;
 
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
+    validatePayload(body);
     const today = new Date().toISOString().slice(0, 10);
 
     if (body.sharedUrl) {
@@ -21,9 +99,10 @@ export default async function handler(req, res) {
       let enrichedText = sharedUrlStr;
 
       // If it's a URL, fetch OG meta tags server-side
-      if (sharedUrlStr.startsWith('http')) {
+      const sharedUrl = readUrl(sharedUrlStr);
+      if (isInstagramUrl(sharedUrl)) {
         try {
-          const pageRes = await fetch(sharedUrlStr, {
+          const pageRes = await fetch(sharedUrl, {
             headers: {
               'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
               'Accept': 'text/html',
@@ -31,7 +110,8 @@ export default async function handler(req, res) {
             },
             signal: AbortSignal.timeout(5000)
           });
-          const html = await pageRes.text();
+          if (!pageRes.ok || !pageRes.headers.get('content-type')?.includes('text/html')) throw new Error('Instagram page could not be read');
+          const html = new TextDecoder().decode(await readLimited(pageRes, MAX_PAGE_BYTES));
 
           const ogTitle = (html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i) || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:title["']/i) || [])[1] || '';
           const ogDesc = (html.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i) || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:description["']/i) || [])[1] || '';
@@ -44,10 +124,13 @@ export default async function handler(req, res) {
           // Fetch the poster image and convert to base64
           if (ogImage) {
             try {
-              const imgRes = await fetch(ogImage, { signal: AbortSignal.timeout(5000) });
-              const imgBuf = await imgRes.arrayBuffer();
+              const imageUrl = readUrl(ogImage);
+              if (!imageUrl) throw new Error('Invalid poster URL');
+              const imgRes = await fetch(imageUrl, { signal: AbortSignal.timeout(5000) });
+              const imgMime = imgRes.headers.get('content-type')?.split(';')[0].toLowerCase() || '';
+              if (!imgRes.ok || !/^image\/(jpeg|png|webp)$/i.test(imgMime)) throw new Error('Poster is not a supported image');
+              const imgBuf = await readLimited(imgRes, MAX_POSTER_BYTES);
               const imgB64 = Buffer.from(imgBuf).toString('base64');
-              const imgMime = imgRes.headers.get('content-type') || 'image/jpeg';
               extractedImageDataUrl = `data:${imgMime};base64,${imgB64}`;
             } catch (_) { /* image fetch failed, skip */ }
           }

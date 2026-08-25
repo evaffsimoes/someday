@@ -1067,6 +1067,7 @@
   <script>
     const STORE_KEY = 'cue-events-v12';
     const FRIENDS_KEY = 'cue-friends-v1';
+    const MAX_SOURCE_IMAGE_BYTES = 12 * 1024 * 1024;
     let events = [];
     let savedFriends = [];
     let calCurrentDate = new Date();
@@ -1113,8 +1114,13 @@
     }
 
     async function saveEvents() {
-      try { await setStorageItem(STORE_KEY, JSON.stringify(events)); }
-      catch (e) { console.error('save failed', e); }
+      try {
+        await setStorageItem(STORE_KEY, JSON.stringify(events));
+        return true;
+      } catch (e) {
+        console.error('save failed', e);
+        return false;
+      }
     }
 
     function fmtDate(dStr) {
@@ -1185,12 +1191,13 @@
         const timeStr = next.time || '';
         const locStr = [next.venue, next.city].filter(Boolean).join(', ');
         const dl = daysLeft(next.startDate);
-        const posterHTML = next.image
-          ? `<img src="${next.image}" class="spotlight-poster" alt="Poster">`
+        const posterSrc = safeImageUrl(next.image);
+        const posterHTML = posterSrc
+          ? `<img src="${escapeAttr(posterSrc)}" class="spotlight-poster" alt="Poster">`
           : `<div class="spotlight-poster">🎟️</div>`;
 
         spotlightSlot.innerHTML = `
-          <div class="spotlight-card" data-view="${next.id}">
+          <div class="spotlight-card" data-view="${escapeAttr(next.id)}">
             ${posterHTML}
             <div class="spotlight-info">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
@@ -1274,19 +1281,19 @@
       const timeStr = ev.time ? ` · ${ev.time}` : '';
       const locStr = [ev.venue, ev.city].filter(Boolean).join(', ');
 
-      const imgHTML = ev.image
-        ? `<img src="${ev.image}" class="queue-img" alt="Poster">`
+      const imageSrc = safeImageUrl(ev.image);
+      const imgHTML = imageSrc
+        ? `<img src="${escapeAttr(imageSrc)}" class="queue-img" alt="Poster">`
         : `<div class="queue-img-placeholder">🎟️</div>`;
 
       return `
         <div class="queue-swipe-wrapper">
-          <div class="queue-delete-bg">🗑️ Apagar</div>
-          <div class="queue-item" data-view="${ev.id}" oncontextmenu="return false;">
+          <div class="queue-item" data-view="${escapeAttr(ev.id)}" oncontextmenu="return false;">
             ${imgHTML}
             <div class="queue-info">
               <div class="queue-artist">${escapeHtml(ev.artist || 'Untitled event')}</div>
-              <div class="queue-date-row">📅 ${dateStr}${timeStr}</div>
-              ${locStr ? `<div class="queue-loc-row">📍 <a href="https://maps.google.com/?q=${encodeURIComponent(locStr)}" target="_blank" class="map-link" onclick="event.stopPropagation()">${escapeHtml(locStr)}</a></div>` : ''}
+              <div class="queue-date-row">📅 ${escapeHtml(dateStr)}${escapeHtml(timeStr)}</div>
+              ${locStr ? `<div class="queue-loc-row">📍 <a href="https://maps.google.com/?q=${encodeURIComponent(locStr)}" target="_blank" rel="noopener noreferrer" class="map-link" onclick="event.stopPropagation()">${escapeHtml(locStr)}</a></div>` : ''}
               ${categoryPillHTML(ev.category)}
             </div>
           </div>`;
@@ -1302,6 +1309,16 @@
 
     function escapeHtml(s) {
       return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    function safeImageUrl(value) {
+      const image = String(value || '');
+      if (/^data:image\/(jpeg|png|webp);base64,[a-z0-9+/=]+$/i.test(image)) return image;
+      try {
+        const url = new URL(image);
+        if (url.protocol === 'https:') return url.href;
+      } catch (_) { }
+      return '';
     }
 
     let lastDeletedEvent = null;
@@ -1370,7 +1387,8 @@
         action: 'TEMPLATE',
         text: ev.artist || 'Event',
         details: ev.description || 'Saved to cue: Never miss your cue.',
-        location: [ev.venue, ev.city].filter(Boolean).join(', ')
+        location: [ev.venue, ev.city].filter(Boolean).join(', '),
+        ctz: 'Europe/Lisbon'
       });
       if (dates) params.set('dates', dates);
       return `https://calendar.google.com/calendar/render?${params.toString()}`;
@@ -1386,15 +1404,16 @@
       const endDate = new Date(startDate.getTime() + 3 * 60 * 60 * 1000);
 
       const fmt = d => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+      const escapeIcs = value => String(value || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
       const ics = [
         'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//cue//EN', 'BEGIN:VEVENT',
         `UID:${ev.id}@cue-app`,
         `DTSTAMP:${fmt(new Date())}`,
         `DTSTART:${fmt(startDate)}`,
         `DTEND:${fmt(endDate)}`,
-        `SUMMARY:${(ev.artist || 'Event').replace(/\n/g, ' ')}`,
-        ev.venue ? `LOCATION:${[ev.venue, ev.city].filter(Boolean).join(', ').replace(/\n/g, ' ')}` : '',
-        ev.description ? `DESCRIPTION:${ev.description.replace(/\n/g, ' ')}` : '',
+        `SUMMARY:${escapeIcs(ev.artist || 'Event')}`,
+        ev.venue ? `LOCATION:${escapeIcs([ev.venue, ev.city].filter(Boolean).join(', '))}` : '',
+        ev.description ? `DESCRIPTION:${escapeIcs(ev.description)}` : '',
         'END:VEVENT', 'END:VCALENDAR'
       ].filter(Boolean).join('\r\n');
       const blob = new Blob([ics], { type: 'text/calendar' });
@@ -1431,11 +1450,34 @@
       });
     }
 
+    async function prepareImage(file) {
+      if (!file?.type?.match(/^image\/(jpeg|png|webp)$/i)) throw new Error('Please choose a JPEG, PNG, or WebP image.');
+      if (file.size > MAX_SOURCE_IMAGE_BYTES) throw new Error('That image is too large. Please choose one under 12 MB.');
+
+      const objectUrl = URL.createObjectURL(file);
+      try {
+        const image = new Image();
+        image.src = objectUrl;
+        await image.decode();
+        const maxDimension = 1600;
+        const scale = Math.min(1, maxDimension / Math.max(image.naturalWidth, image.naturalHeight));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+        canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+        const compressed = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.82));
+        if (!compressed) throw new Error('Could not prepare that image.');
+        const base64 = await fileToBase64(compressed);
+        return { base64, mediaType: 'image/jpeg' };
+      } finally {
+        URL.revokeObjectURL(objectUrl);
+      }
+    }
+
     async function handleFile(file) {
       renderAiParsingState();
       try {
-        const base64 = await fileToBase64(file);
-        const mediaType = file.type || 'image/jpeg';
+        const { base64, mediaType } = await prepareImage(file);
         const today = new Date().toISOString().slice(0, 10);
 
         const response = await fetch(getApiEndpoint(), {
@@ -1497,7 +1539,7 @@
           </div>
           <div class="parsed-field">🎵 <strong>Artist:</strong> <span>${escapeHtml(parsed.artist || 'Untitled event')}</span></div>
           <div class="parsed-field">📅 <strong>Date:</strong> <span>${fmtDate(parsed.startDate)}</span></div>
-          <div class="parsed-field">🕐 <strong>Time:</strong> <span>${parsed.time || 'Not specified'}</span></div>
+          <div class="parsed-field">🕐 <strong>Time:</strong> <span>${escapeHtml(parsed.time || 'Not specified')}</span></div>
           <div class="parsed-field">📍 <strong>Location:</strong> <span>${escapeHtml(locStr)}</span></div>
           <div class="parsed-field">🏷️ <strong>Category:</strong> <span class="category-pill">${escapeHtml(parsed.category || 'Concert')}</span></div>
           
@@ -1541,7 +1583,7 @@
           <div class="field"><label>Dates (Start - End)</label><input id="f_daterange" type="text" placeholder="Select dates"></div>
           
           <div class="review-row">
-            <div class="field"><label>Time</label><input id="f_time" type="time" value="${prefill.time || ''}"></div>
+            <div class="field"><label>Time</label><input id="f_time" type="time" value="${escapeAttr(prefill.time || '')}"></div>
           <div class="field"><label>City</label>
              <div style="position:relative;">
                <input id="f_city" list="pt-cities" value="${escapeAttr(prefill.city || '')}" placeholder="e.g. Porto, Lisboa" style="padding-right: 40px;">
@@ -1642,6 +1684,7 @@
         const [startD, endD] = dateInput.includes(' to ') ? dateInput.split(' to ') : [dateInput, dateInput];
 
         const compStr = document.getElementById('f_company').value.trim();
+        const previousEvents = events;
         const ev = {
           id: prefill.id || uid(),
           artist: document.getElementById('f_artist').value.trim(),
@@ -1673,7 +1716,11 @@
         } else {
           events.push(ev);
         }
-        await saveEvents();
+        if (!await saveEvents()) {
+          events = previousEvents;
+          statusEl.textContent = 'Could not save this event. Try a smaller image.';
+          return;
+        }
         reviewSlot.innerHTML = '';
         restoreAddOptions();
         statusEl.textContent = 'Added to cue ✓';
@@ -1707,10 +1754,10 @@
           ${categoryPillHTML(ev.category)}
           <button class="icon-btn" id="closeModalBtn" style="font-size:18px; color:var(--text-muted);">✕</button>
         </div>
-        ${ev.image ? `<img src="${ev.image}" class="full-modal-img" alt="Poster">` : ''}
+        ${safeImageUrl(ev.image) ? `<img src="${escapeAttr(safeImageUrl(ev.image))}" class="full-modal-img" alt="Poster">` : ''}
         <h2 style="margin: 8px 0 6px; font-weight:700; font-size:22px; color:#ffffff;">${escapeHtml(ev.artist || 'Untitled event')}</h2>
-        <div style="font-size:14px; color:var(--text-muted); margin-bottom:6px;">📅 ${dateStr}${timeStr}</div>
-        ${locStr ? `<div style="font-size:14px; color:var(--text-muted); margin-bottom:6px;">📍 <a href="https://maps.google.com/?q=${encodeURIComponent(locStr)}" target="_blank" class="map-link">${escapeHtml(locStr)}</a></div>` : ''}
+        <div style="font-size:14px; color:var(--text-muted); margin-bottom:6px;">📅 ${escapeHtml(dateStr)}${escapeHtml(timeStr)}</div>
+        ${locStr ? `<div style="font-size:14px; color:var(--text-muted); margin-bottom:6px;">📍 <a href="https://maps.google.com/?q=${encodeURIComponent(locStr)}" target="_blank" rel="noopener noreferrer" class="map-link">${escapeHtml(locStr)}</a></div>` : ''}
         ${ev.company ? `<div style="font-size:14px; color:var(--text-muted); margin-bottom:6px;">👥 ${escapeHtml(ev.company)}</div>` : ''}
         ${ev.description ? `<div style="background:#09090b; padding:14px; border-radius:10px; border:1px solid var(--border); font-size:13px; margin-bottom:20px; margin-top:10px; white-space:pre-wrap; color:var(--text-main);"><strong>Lineup / Notes:</strong><br>${escapeHtml(ev.description)}</div>` : ''}
         
@@ -1739,7 +1786,7 @@
         switchTab('add');
         openReview(ev);
       };
-      document.getElementById('gcalFromModalBtn').onclick = () => { window.open(gcalUrl(ev), '_blank'); };
+      document.getElementById('gcalFromModalBtn').onclick = () => { window.open(gcalUrl(ev), '_blank', 'noopener,noreferrer'); };
     }
 
     function escapeAttr(s) { return escapeHtml(s).replace(/"/g, '&quot;'); }
