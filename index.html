@@ -721,6 +721,33 @@
       font-weight: 500;
     }
 
+    .missing-fields {
+      margin: 14px 0;
+      padding: 12px;
+      border-radius: 10px;
+      background: rgba(251, 191, 36, 0.1);
+      border: 1px solid rgba(251, 191, 36, 0.25);
+      color: #fde68a;
+      font-size: 13px;
+    }
+
+    .inline-link-form {
+      display: flex;
+      gap: 8px;
+      margin: 10px 0 16px;
+    }
+
+    .inline-link-form input {
+      min-width: 0;
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      color: var(--text-main);
+      background: var(--surface);
+      font: inherit;
+    }
+
     /* Fixed Modal Overlay for Event Details */
     .modal-overlay {
       position: fixed;
@@ -937,6 +964,49 @@
       bottom: 4px;
     }
 
+    .cal-range-marker {
+      position: absolute;
+      left: 2px;
+      right: 2px;
+      bottom: 2px;
+      height: 3px;
+      background: #fbbf24;
+      opacity: 0.95;
+    }
+
+    .calendar-toast {
+      position: fixed;
+      z-index: 2100;
+      left: 16px;
+      right: 16px;
+      bottom: 88px;
+      max-width: 508px;
+      margin: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 1px solid var(--purple-glow);
+      border-radius: 12px;
+      background: #201332;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+      color: #ffffff;
+      font-size: 13px;
+    }
+
+    .calendar-toast button {
+      flex: 0 0 auto;
+      border: 0;
+      border-radius: 8px;
+      padding: 8px 10px;
+      background: var(--purple);
+      color: #ffffff;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
     .empty {
       padding: 32px 0;
       color: var(--text-muted);
@@ -992,6 +1062,7 @@
         </div>
         <span class="add-chevron">›</span>
       </div>
+      <div id="linkInputSlot"></div>
 
       <div class="add-option-card" id="btnOptionManual">
         <div class="add-icon">✏️</div>
@@ -1428,18 +1499,40 @@
     const statusEl = document.getElementById('status');
     const aiParsingSlot = document.getElementById('aiParsingSlot');
     const reviewSlot = document.getElementById('reviewSlot');
+    const linkInputSlot = document.getElementById('linkInputSlot');
 
-    document.getElementById('btnOptionScreenshot').onclick = () => fileInput.click();
+    document.getElementById('btnOptionScreenshot').onclick = () => { closeLinkInput(); fileInput.click(); };
     fileInput.addEventListener('change', () => {
       if (fileInput.files[0]) handleFile(fileInput.files[0]);
     });
 
-    document.getElementById('btnOptionLink').onclick = () => {
-      const url = prompt('Paste Instagram link or caption here:');
-      if (url && url.trim()) handleSharedText(url.trim());
-    };
+    document.getElementById('btnOptionLink').onclick = openLinkInput;
 
-    document.getElementById('btnOptionManual').onclick = () => openReview({});
+    document.getElementById('btnOptionManual').onclick = () => { closeLinkInput(); openReview({}); };
+
+    function closeLinkInput() {
+      linkInputSlot.innerHTML = '';
+    }
+
+    function openLinkInput() {
+      if (document.getElementById('sharedLinkInput')) return document.getElementById('sharedLinkInput').focus();
+      reviewSlot.innerHTML = '';
+      aiParsingSlot.innerHTML = '';
+      linkInputSlot.innerHTML = `
+        <form class="inline-link-form" id="sharedLinkForm">
+          <input id="sharedLinkInput" type="text" autocomplete="url" placeholder="Cola o link ou a legenda do Instagram" aria-label="Link ou legenda do Instagram">
+          <button class="btn btn-primary" type="submit">Ler</button>
+        </form>`;
+      const input = document.getElementById('sharedLinkInput');
+      input.focus();
+      document.getElementById('sharedLinkForm').onsubmit = event => {
+        event.preventDefault();
+        const sharedText = input.value.trim();
+        if (!sharedText) return input.focus();
+        closeLinkInput();
+        handleSharedText(sharedText);
+      };
+    }
 
     function fileToBase64(file) {
       return new Promise((resolve, reject) => {
@@ -1515,6 +1608,7 @@
 
     function renderAiParsingState() {
       statusEl.textContent = '';
+      closeLinkInput();
       reviewSlot.innerHTML = '';
       aiParsingSlot.innerHTML = `
         <div class="ai-parsing-card">
@@ -1532,6 +1626,15 @@
 
     function renderAiParsedSuccess(parsed) {
       const locStr = [parsed.venue, parsed.city].filter(Boolean).join(', ') || 'Venue not specified';
+      const missingFields = [
+        { key: 'artist', label: 'nome do evento', inputId: 'f_artist' },
+        { key: 'startDate', label: 'data', inputId: 'f_daterange' },
+        { key: 'venue', label: 'local', inputId: 'f_venue' },
+        { key: 'city', label: 'cidade', inputId: 'f_city' }
+      ].filter(field => !String(parsed[field.key] || '').trim());
+      const missingMessage = missingFields.length
+        ? `<div class="missing-fields">Falta confirmar: <strong>${escapeHtml(missingFields.map(field => field.label).join(', '))}</strong>.</div>`
+        : '';
       aiParsingSlot.innerHTML = `
         <div class="ai-parsing-card">
           <div class="parsing-status-bar" style="color: var(--purple-light);">
@@ -1542,22 +1645,22 @@
           <div class="parsed-field">🕐 <strong>Time:</strong> <span>${escapeHtml(parsed.time || 'Not specified')}</span></div>
           <div class="parsed-field">📍 <strong>Location:</strong> <span>${escapeHtml(locStr)}</span></div>
           <div class="parsed-field">🏷️ <strong>Category:</strong> <span class="category-pill">${escapeHtml(parsed.category || 'Concert')}</span></div>
-          
-          <div style="font-size: 13px; font-weight: 600; color: #ffffff; margin: 16px 0 12px;">Looks good?</div>
+          ${missingMessage}
+          <div style="font-size: 13px; font-weight: 600; color: #ffffff; margin: 16px 0 12px;">${missingFields.length ? 'Completa os dados em falta' : 'Confirma os detalhes'}</div>
           <div class="btn-row">
             <button class="btn btn-ghost" id="btnCancelParsed">Cancel</button>
-            <button class="btn btn-primary" id="btnConfirmParsed">Add to cue →</button>
+            <button class="btn btn-primary" id="btnConfirmParsed">${missingFields.length ? 'Completar →' : 'Rever e guardar →'}</button>
           </div>
         </div>`;
 
       document.getElementById('btnCancelParsed').onclick = () => { aiParsingSlot.innerHTML = ''; };
       document.getElementById('btnConfirmParsed').onclick = () => {
         aiParsingSlot.innerHTML = '';
-        openReview(parsed);
+        openReview(parsed, missingFields[0]?.inputId);
       };
     }
 
-    function openReview(prefill) {
+    function openReview(prefill, focusField = '') {
       const isEditing = !!(prefill && prefill.id);
       // Show/hide add option cards depending on mode
       ['btnOptionScreenshot', 'btnOptionLink', 'btnOptionManual'].forEach(id => {
@@ -1625,6 +1728,7 @@
         dateFormat: "Y-m-d",
         defaultDate: defaultDates
       });
+      if (focusField) setTimeout(() => document.getElementById(focusField)?.focus(), 0);
 
       const renderFriendChips = () => {
         const container = document.getElementById('friends-chips');
@@ -1728,9 +1832,20 @@
         render();
         renderCalendar();
         switchTab('queue');
+        showCalendarToast(ev);
         setTimeout(() => { if (statusEl.textContent === 'Added to cue ✓') statusEl.textContent = ''; }, 2500);
       };
       reviewSlot.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function showCalendarToast(ev) {
+      const slot = document.getElementById('calendarToastSlot');
+      slot.innerHTML = `<div class="calendar-toast" role="status"><span>Evento guardado. Queres adicioná-lo ao calendário?</span><button id="calendarToastBtn">Adicionar</button></div>`;
+      document.getElementById('calendarToastBtn').onclick = () => {
+        window.open(gcalUrl(ev), '_blank', 'noopener,noreferrer');
+        slot.innerHTML = '';
+      };
+      setTimeout(() => { if (slot.firstChild) slot.innerHTML = ''; }, 8000);
     }
 
     function restoreAddOptions() {
@@ -1845,6 +1960,15 @@
             dotsContainer.appendChild(dot);
           }
           cell.appendChild(dotsContainer);
+
+          const spanningEvent = dayEvents.find(event => event.endDate && event.endDate !== event.startDate);
+          if (spanningEvent) {
+            const marker = document.createElement('div');
+            marker.className = 'cal-range-marker';
+            marker.style.background = spanningEvent.category === 'Festival' ? '#fbbf24' : '#a855f7';
+            marker.title = `${spanningEvent.artist || 'Event'} runs until ${fmtDate(spanningEvent.endDate)}`;
+            cell.appendChild(marker);
+          }
         }
 
         cell.onclick = () => {
@@ -2003,6 +2127,7 @@
   <div id="eventModalOverlay" class="modal-overlay">
     <div class="modal-content" id="eventModalContent"></div>
   </div>
+  <div id="calendarToastSlot"></div>
 </body>
 
 </html>
