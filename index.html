@@ -1013,117 +1013,118 @@
       font-size: 13px;
       text-align: center;
     }
+
     .notification-btn {
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 9px 12px;
-  background: var(--surface);
-  color: var(--text-main);
-  font: inherit;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-}
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 9px 12px;
+      background: var(--surface);
+      color: var(--text-main);
+      font: inherit;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+    }
 
-.notification-btn:hover {
-  border-color: var(--purple);
-  background: var(--surface-card);
-}
+    .notification-btn:hover {
+      border-color: var(--purple);
+      background: var(--surface-card);
+    }
 
-.queue-item {
-  min-height: 86px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, .2);
-}
+    .queue-item {
+      min-height: 86px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, .2);
+    }
 
-.queue-info {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 4px;
-}
+    .queue-info {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 4px;
+    }
 
-.queue-artist {
-  font-family: 'Outfit', sans-serif;
-  font-size: 16px;
-  line-height: 1.2;
-}
+    .queue-artist {
+      font-family: 'Outfit', sans-serif;
+      font-size: 16px;
+      line-height: 1.2;
+    }
 
-.queue-date-row,
-.queue-loc-row {
-  line-height: 1.3;
-}
+    .queue-date-row,
+    .queue-loc-row {
+      line-height: 1.3;
+    }
 
-.queue-date-badge {
-  min-width: 50px;
-  padding: 7px 6px;
-  border-radius: 10px;
-  background: rgba(168, 85, 247, .14);
-  color: var(--purple-light);
-  text-align: center;
-  line-height: 1.1;
-  flex-shrink: 0;
-}
+    .queue-date-badge {
+      min-width: 50px;
+      padding: 7px 6px;
+      border-radius: 10px;
+      background: rgba(168, 85, 247, .14);
+      color: var(--purple-light);
+      text-align: center;
+      line-height: 1.1;
+      flex-shrink: 0;
+    }
 
-.queue-date-badge strong {
-  display: block;
-  font-size: 18px;
-}
+    .queue-date-badge strong {
+      display: block;
+      font-size: 18px;
+    }
 
-.queue-date-badge small {
-  display: block;
-  margin-top: 3px;
-  color: var(--text-muted);
-  font-size: 9px;
-  text-transform: uppercase;
-}
+    .queue-date-badge small {
+      display: block;
+      margin-top: 3px;
+      color: var(--text-muted);
+      font-size: 9px;
+      text-transform: uppercase;
+    }
 
-.event-image-editor {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
+    .event-image-editor {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
 
-.event-image-preview-wrapper {
-  width: 76px;
-  height: 76px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  flex-shrink: 0;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: #1f1f23;
-  font-size: 24px;
-}
+    .event-image-preview-wrapper {
+      width: 76px;
+      height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      flex-shrink: 0;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #1f1f23;
+      font-size: 24px;
+    }
 
-.event-image-preview-wrapper img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
+    .event-image-preview-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
 
-.event-image-editor small {
-  display: block;
-  margin-top: 5px;
-  color: var(--text-muted);
-  font-size: 10px;
-}
+    .event-image-editor small {
+      display: block;
+      margin-top: 5px;
+      color: var(--text-muted);
+      font-size: 10px;
+    }
   </style>
 </head>
 
 <body>
   <div class="wrap">
-  <header>
-    <div class="header-left">
-      <div class="logo-text">cue<span class="logo-gem">✦</span></div>
-      <p class="tagline">Never miss your <span class="tagline-purple">cue.</span></p>
-    </div>
+    <header>
+      <div class="header-left">
+        <div class="logo-text">cue<span class="logo-gem">✦</span></div>
+        <p class="tagline">Never miss your <span class="tagline-purple">cue.</span></p>
+      </div>
 
-    <button id="notificationBtn" class="notification-btn" type="button">
-      🔔 Alerts
-    </button>
-  </header>
+      <button id="notificationBtn" class="notification-btn" type="button">
+        🔔 Alerts
+      </button>
+    </header>
 
     <!-- TAB 1: QUEUE (HOME) -->
     <div id="screen-queue" class="tab-screen active">
@@ -1443,24 +1444,24 @@
     }
 
     function queueItemHTML(ev) {
-  const dateStr = fmtDateRange(ev.startDate, ev.endDate);
-  const locStr = [ev.venue, ev.city].filter(Boolean).join(', ');
-  const imageSrc = safeImageUrl(ev.image);
+      const dateStr = fmtDateRange(ev.startDate, ev.endDate);
+      const locStr = [ev.venue, ev.city].filter(Boolean).join(', ');
+      const imageSrc = safeImageUrl(ev.image);
 
-  const date = ev.startDate
-    ? new Date(`${ev.startDate}T12:00:00`)
-    : null;
+      const date = ev.startDate
+        ? new Date(`${ev.startDate}T12:00:00`)
+        : null;
 
-  const day = date && !isNaN(date) ? date.getDate() : '—';
-  const month = date && !isNaN(date)
-    ? date.toLocaleDateString(undefined, { month: 'short' })
-    : 'sem data';
+      const day = date && !isNaN(date) ? date.getDate() : '—';
+      const month = date && !isNaN(date)
+        ? date.toLocaleDateString(undefined, { month: 'short' })
+        : 'sem data';
 
-  const imageHTML = imageSrc
-    ? `<img src="${escapeAttr(imageSrc)}" class="queue-img" alt="Imagem do evento">`
-    : `<div class="queue-img-placeholder">🎟️</div>`;
+      const imageHTML = imageSrc
+        ? `<img src="${escapeAttr(imageSrc)}" class="queue-img" alt="Imagem do evento">`
+        : `<div class="queue-img-placeholder">🎟️</div>`;
 
-  return `
+      return `
     <div class="queue-swipe-wrapper">
       <div class="queue-item" data-view="${escapeAttr(ev.id)}">
         ${imageHTML}
@@ -1499,7 +1500,7 @@
         </div>
       </div>
     </div>`;
-}
+    }
     function categoryPillHTML(cat) {
       const c = cat || 'Concert';
       let cls = 'category-pill';
@@ -1807,8 +1808,8 @@
           <div class="event-image-editor">
             <div id="eventImagePreviewWrapper" class="event-image-preview-wrapper">
               ${safeImageUrl(prefill.image)
-                ? `<img src="${escapeAttr(safeImageUrl(prefill.image))}" alt="Imagem do evento">`
-                : '🎟️'}
+          ? `<img src="${escapeAttr(safeImageUrl(prefill.image))}" alt="Imagem do evento">`
+          : '🎟️'}
             </div>
 
             <div>
@@ -1861,25 +1862,25 @@
             <button class="btn btn-primary" id="saveBtn">Add to cue →</button>
           </div>
         </div>`;
-        let editedImage = prefill.image || '';
+      let editedImage = prefill.image || '';
 
-              const imageInput = document.getElementById('eventImageInput');
-              const imagePreview = document.getElementById('eventImagePreviewWrapper');
+      const imageInput = document.getElementById('eventImageInput');
+      const imagePreview = document.getElementById('eventImagePreviewWrapper');
 
-              imageInput?.addEventListener('change', async () => {
-                const file = imageInput.files?.[0];
-                if (!file) return;
+      imageInput?.addEventListener('change', async () => {
+        const file = imageInput.files?.[0];
+        if (!file) return;
 
-                try {
-                  const prepared = await prepareImage(file);
-                  editedImage = `data:${prepared.mediaType};base64,${prepared.base64}`;
-                  imagePreview.innerHTML =
-                    `<img src="${editedImage}" alt="Imagem do evento">`;
-                } catch (error) {
-                  alert(error.message);
-                  imageInput.value = '';
-                }
-              });
+        try {
+          const prepared = await prepareImage(file);
+          editedImage = `data:${prepared.mediaType};base64,${prepared.base64}`;
+          imagePreview.innerHTML =
+            `<img src="${editedImage}" alt="Imagem do evento">`;
+        } catch (error) {
+          alert(error.message);
+          imageInput.value = '';
+        }
+      });
       const companyInput = document.getElementById('f_company');
 
       // Pre-fill the date range for flatpickr
@@ -2178,67 +2179,100 @@
       calCurrentDate.setMonth(calCurrentDate.getMonth() + 1);
       renderCalendar();
     };
-const NOTIFICATION_KEY = 'cue-notifications-v1';
+    const NOTIFICATION_KEY = 'cue-notifications-v1';
 
-async function enableNotifications() {
-  if (!('Notification' in window)) {
-    alert('Este dispositivo não suporta notificações.');
-    return;
-  }
-
-  const permission = await Notification.requestPermission();
-
-  if (permission === 'granted') {
-    document.getElementById('notificationBtn').textContent = '🔔 Ativos';
-    checkEventNotifications();
-  }
-}
-
-function checkEventNotifications() {
-  if (!('Notification' in window) ||
-      Notification.permission !== 'granted') return;
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const sent = JSON.parse(
-    localStorage.getItem(NOTIFICATION_KEY) || '{}'
-  );
-
-  events.forEach(event => {
-    if (!event.startDate) return;
-
-    const eventDate = new Date(`${event.startDate}T00:00:00`);
-    const daysUntil = Math.round(
-      (eventDate - today) / 86400000
-    );
-
-    if (daysUntil !== 0 && daysUntil !== 1) return;
-
-    const key = `${event.id}-${event.startDate}-${daysUntil}`;
-    if (sent[key]) return;
-
-    new Notification(
-      daysUntil === 0
-        ? 'O teu evento é hoje 🎟️'
-        : 'Tens um evento amanhã 🎟️',
-      {
-        body: `${event.artist || 'Evento'}${event.venue ? ` · ${event.venue}` : ''}`,
-        icon: 'icon-192.png',
-        tag: key
+    async function enableNotifications() {
+      if (!('Notification' in window)) {
+        alert('Este dispositivo não suporta notificações.');
+        return;
       }
-    );
 
-    sent[key] = true;
-  });
+      const permission = await Notification.requestPermission();
 
-  localStorage.setItem(NOTIFICATION_KEY, JSON.stringify(sent));
-}
+      if (permission === 'granted') {
+        updateNotificationBtn();
+        checkEventNotifications();
+      } else if (permission === 'denied') {
+        alert('Notificações bloqueadas. Ativa-as nas definições do teu browser.');
+      }
+    }
 
-document.getElementById('notificationBtn').onclick =
-  enableNotifications;
+    function updateNotificationBtn() {
+      const btn = document.getElementById('notificationBtn');
+      if (!btn) return;
+      if (!('Notification' in window)) { btn.style.display = 'none'; return; }
+      if (Notification.permission === 'granted') {
+        btn.textContent = '🔔 Ativas';
+        btn.style.borderColor = 'rgba(168,85,247,0.5)';
+        btn.style.color = 'var(--purple-light)';
+      } else {
+        btn.textContent = '🔕 Alertas';
+      }
+    }
 
-setInterval(checkEventNotifications, 60 * 60 * 1000);
+    function updateAppBadge() {
+      const upcoming = events.filter(e => !isPast(e) && e.startDate);
+      if ('setAppBadge' in navigator) {
+        if (upcoming.length > 0) {
+          navigator.setAppBadge(upcoming.length).catch(() => { });
+        } else {
+          navigator.clearAppBadge().catch(() => { });
+        }
+      }
+    }
+
+    function checkEventNotifications() {
+      if (!('Notification' in window) ||
+        Notification.permission !== 'granted') return;
+
+      updateAppBadge();
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const sent = JSON.parse(
+        localStorage.getItem(NOTIFICATION_KEY) || '{}'
+      );
+
+      const ALERT_DAYS = [7, 3, 1, 0]; // notify at these thresholds
+
+      events.forEach(event => {
+        if (!event.startDate) return;
+
+        const eventDate = new Date(`${event.startDate}T00:00:00`);
+        const daysUntil = Math.round(
+          (eventDate - today) / 86400000
+        );
+
+        if (!ALERT_DAYS.includes(daysUntil)) return;
+
+        const key = `${event.id}-${event.startDate}-d${daysUntil}`;
+        if (sent[key]) return;
+
+        let title;
+        if (daysUntil === 0) title = 'O teu evento é hoje 🎟️';
+        else if (daysUntil === 1) title = 'Tens um evento amanhã 🎟️';
+        else title = `${daysUntil} dias para o teu próximo evento 🎟️`;
+
+        const locStr = [event.venue, event.city].filter(Boolean).join(' · ');
+
+        new Notification(title, {
+          body: `${event.artist || 'Evento'}${locStr ? ` · ${locStr}` : ''}`,
+          icon: 'icon-192.png',
+          badge: 'icon-192.png',
+          tag: key,
+          renotify: true
+        });
+
+        sent[key] = true;
+      });
+
+      localStorage.setItem(NOTIFICATION_KEY, JSON.stringify(sent));
+    }
+
+    document.getElementById('notificationBtn').onclick = enableNotifications;
+    updateNotificationBtn();
+    setInterval(checkEventNotifications, 60 * 60 * 1000); // re-check every hour
     loadEvents();
     checkForSharedData();
 

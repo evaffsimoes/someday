@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>cue widget</title>
+    <style>
+        :root {
+            --purple: #a855f7;
+            --purple-light: #c084fc;
+            --bg: #000;
+            --surface: #121214;
+            --border: #27272a;
+            --text-muted: #a1a1aa;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, 'Inter', BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: #fff;
+            border-radius: 16px;
+            overflow: hidden;
+            padding: 14px;
+            min-height: 120px;
+        }
+
+        .widget-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .widget-logo {
+            font-weight: 800;
+            font-size: 16px;
+            color: var(--purple);
+            letter-spacing: -0.04em;
+        }
+
+        .widget-badge {
+            font-size: 10px;
+            font-weight: 700;
+            background: rgba(168, 85, 247, 0.2);
+            color: var(--purple-light);
+            border: 1px solid rgba(168, 85, 247, 0.35);
+            border-radius: 99px;
+            padding: 2px 8px;
+        }
+
+        .widget-event {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .widget-event-name {
+            font-size: 14px;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .widget-event-date {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .widget-empty {
+            color: var(--text-muted);
+            font-size: 12px;
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .days-badge {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--purple-light);
+            align-self: flex-start;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="widget-header">
+        <div class="widget-logo">cue✦</div>
+        <div class="widget-badge" id="widgetBadge">0 upcoming</div>
+    </div>
+    <div id="widgetContent">
+        <div class="widget-empty">No upcoming events</div>
+    </div>
+
+    <script>
+        function fmtDate(dStr) {
+            if (!dStr) return '';
+            const d = new Date(dStr + 'T00:00:00');
+            if (isNaN(d)) return dStr;
+            return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        function isPast(ev) {
+            const d = new Date((ev.endDate || ev.startDate) + 'T23:59:59');
+            return d < new Date();
+        }
+
+        function daysLeft(dateStr) {
+            const d = new Date(dateStr + 'T00:00:00');
+            return Math.ceil((d - new Date()) / 86400000);
+        }
+
+        try {
+            const raw = localStorage.getItem('cue-events-v12');
+            const events = raw ? JSON.parse(raw) : [];
+            const upcoming = events
+                .filter(e => !isPast(e) && e.startDate)
+                .sort((a, b) => a.startDate.localeCompare(b.startDate));
+
+            document.getElementById('widgetBadge').textContent =
+                upcoming.length + ' upcoming';
+
+            if (upcoming.length > 0) {
+                const next = upcoming[0];
+                const dl = daysLeft(next.startDate);
+                const dLabel = dl === 0 ? 'TODAY!' : dl === 1 ? 'Tomorrow' : `${dl} days left`;
+
+                document.getElementById('widgetContent').innerHTML = `
+          <div class="widget-event">
+            <div class="widget-event-name">${next.artist || 'Untitled event'}</div>
+            <div class="widget-event-date">📅 ${fmtDate(next.startDate)}</div>
+            <div class="days-badge">${dLabel}</div>
+          </div>`;
+            }
+        } catch (e) { }
+    </script>
+</body>
+
+</html>

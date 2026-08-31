@@ -13,13 +13,66 @@
       "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
       "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Add event",
+      "short_name": "Add",
+      "description": "Jump straight to adding a new event",
+      "url": "index.html#add",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "My Queue",
+      "short_name": "Queue",
+      "description": "See your upcoming events",
+      "url": "index.html#queue",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "widgets": [
+    {
+      "name": "Next Up",
+      "short_name": "cue",
+      "description": "Your next upcoming event",
+      "tag": "cue-next-up",
+      "template": "widget.html",
+      "ms_ac_template": "widget.html",
+      "data": "widget-data.json",
+      "type": "application/json",
+      "screenshots": [
+        {
+          "src": "icon-512.png",
+          "sizes": "512x512",
+          "label": "cue widget"
+        }
+      ],
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192"
+        }
+      ],
+      "background_color": "#000000",
+      "display": "standalone"
     }
   ],
   "share_target": {
@@ -33,7 +86,9 @@
       "files": [
         {
           "name": "images",
-          "accept": ["image/*"]
+          "accept": [
+            "image/*"
+          ]
         }
       ]
     }
