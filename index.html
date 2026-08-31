@@ -2183,19 +2183,58 @@
 
     async function enableNotifications() {
       if (!('Notification' in window)) {
-        alert('Este dispositivo não suporta notificações.');
+        alert('Este dispositivo/browser não suporta Notificações Web. (Estás no iPhone? Tens de adicionar ao Ecrã Principal primeiro!)');
         return;
       }
 
-      const permission = await Notification.requestPermission();
+      if (Notification.permission === 'granted') {
+        openSettingsModal();
+        return;
+      }
 
-      if (permission === 'granted') {
-        updateNotificationBtn();
-        checkEventNotifications();
-      } else if (permission === 'denied') {
-        alert('Notificações bloqueadas. Ativa-as nas definições do teu browser.');
+      try {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+          updateNotificationBtn();
+          checkEventNotifications();
+          openSettingsModal();
+        } else if (permission === 'denied') {
+          alert('Tu ou o teu telemóvel bloquearam as notificações. Vai às definições do teu browser/aparelho para permitires.');
+        } else {
+          alert('As notificações foram ignoradas. Estado: ' + permission);
+        }
+      } catch (e) {
+        alert('Erro ao pedir notificações: ' + e.message);
       }
     }
+
+    function loadNotificationPrefs() {
+      try {
+        const p = JSON.parse(localStorage.getItem('cue-notification-prefs'));
+        if (p) return p;
+      } catch (e) { }
+      return [7, 3, 1]; // defaults
+    }
+
+    function openSettingsModal() {
+      const prefs = loadNotificationPrefs();
+      [7, 3, 1, 0].forEach(d => {
+        document.getElementById(`pref-${d}`).checked = prefs.includes(d);
+      });
+      document.getElementById('settingsModalOverlay').classList.add('active');
+    }
+
+    document.getElementById('closeSettingsBtn').onclick = () => {
+      document.getElementById('settingsModalOverlay').classList.remove('active');
+    };
+
+    document.getElementById('saveSettingsBtn').onclick = () => {
+      const prefs = [7, 3, 1, 0].filter(d => document.getElementById(`pref-${d}`).checked);
+      localStorage.setItem('cue-notification-prefs', JSON.stringify(prefs));
+      document.getElementById('settingsModalOverlay').classList.remove('active');
+      checkEventNotifications();
+      alert('Preferences saved!');
+    };
 
     function updateNotificationBtn() {
       const btn = document.getElementById('notificationBtn');
@@ -2234,7 +2273,7 @@
         localStorage.getItem(NOTIFICATION_KEY) || '{}'
       );
 
-      const ALERT_DAYS = [7, 3, 1, 0]; // notify at these thresholds
+      const ALERT_DAYS = loadNotificationPrefs();
 
       events.forEach(event => {
         if (!event.startDate) return;
@@ -2380,6 +2419,35 @@
       }
     }
   </script>
+
+  <!-- Settings Modal Overlay -->
+  <div id="settingsModalOverlay" class="modal-overlay">
+    <div class="modal-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3 style="margin:0;">Notification Settings</h3>
+        <button class="icon-btn" id="closeSettingsBtn" style="font-size:18px; color:var(--text-muted);">✕</button>
+      </div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">When do you want to be reminded of your
+        events?</p>
+
+      <label style="display:flex; align-items:center; gap:8px; margin-bottom:12px; font-size:14px; cursor:pointer;">
+        <input type="checkbox" id="pref-7" checked> 7 days before
+      </label>
+      <label style="display:flex; align-items:center; gap:8px; margin-bottom:12px; font-size:14px; cursor:pointer;">
+        <input type="checkbox" id="pref-3" checked> 3 days before
+      </label>
+      <label style="display:flex; align-items:center; gap:8px; margin-bottom:12px; font-size:14px; cursor:pointer;">
+        <input type="checkbox" id="pref-1" checked> 1 day before
+      </label>
+      <label style="display:flex; align-items:center; gap:8px; margin-bottom:12px; font-size:14px; cursor:pointer;">
+        <input type="checkbox" id="pref-0"> Day of event
+      </label>
+
+      <div class="btn-row" style="margin-top: 24px;">
+        <button class="btn btn-primary" id="saveSettingsBtn">Save Preferences</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Dedicated Event Detail Modal Overlay -->
   <div id="eventModalOverlay" class="modal-overlay">
