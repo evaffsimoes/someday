@@ -956,12 +956,23 @@
     }
 
     .cal-dot {
-      width: 5px;
-      height: 5px;
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
       background: var(--purple-light);
+      flex-shrink: 0;
+    }
+
+    .dots-container {
+      display: flex;
+      flex-direction: row;
+      gap: 2px;
+      align-items: center;
+      justify-content: center;
       position: absolute;
       bottom: 4px;
+      left: 0;
+      right: 0;
     }
 
     .cal-range-marker {
@@ -969,9 +980,44 @@
       left: 2px;
       right: 2px;
       bottom: 2px;
-      height: 3px;
+      height: 4px;
       background: #fbbf24;
-      opacity: 0.95;
+      opacity: 0.9;
+    }
+
+    .days-left-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      background: var(--surface);
+      color: #fff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .days-left-today {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: rgba(239, 68, 68, 0.6);
+      color: #fca5a5;
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+
+    .days-left-soon {
+      background: rgba(251, 191, 36, 0.15);
+      border-color: rgba(251, 191, 36, 0.5);
+      color: #fbbf24;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.6;
+      }
     }
 
     .calendar-toast {
@@ -1206,6 +1252,7 @@
 
     <datalist id="pt-cities">
       <option value="Porto">
+      <option value="Lisboa">
       <option value="Lisbon">
       <option value="Vila Nova de Gaia">
       <option value="Braga">
@@ -1215,6 +1262,31 @@
       <option value="Cascais">
       <option value="Guimarães">
       <option value="Leiria">
+      <option value="Setúbal">
+      <option value="Viseu">
+      <option value="Évora">
+      <option value="Funchal">
+    </datalist>
+    <datalist id="pt-venues">
+      <option value="NOS Alive">
+      <option value="Super Bock Super Rock">
+      <option value="Rock in Rio Lisboa">
+      <option value="Coliseu do Porto">
+      <option value="Coliseu de Lisboa">
+      <option value="Altice Arena">
+      <option value="MEO Arena">
+      <option value="Primavera Sound Porto">
+      <option value="Parque da Cidade">
+      <option value="Palácio do Cristal">
+      <option value="Hard Club">
+      <option value="Casa da Música">
+      <option value="Pavilhão Rosa Mota">
+      <option value="Lisboa ao Vivo">
+      <option value="Parque Eduardo VII">
+      <option value="Queijo Dunas">
+      <option value="Meo Marés Vivas">
+      <option value="Vodafone Paredes de Coura">
+      <option value="Boom Festival">
     </datalist>
   </div>
 
@@ -1235,6 +1307,41 @@
 
   <!-- Undo Toast Container -->
   <div id="undoToastHTML"></div>
+
+  <!-- Settings Modal Overlay -->
+  <div id="settingsModalOverlay" class="modal-overlay">
+    <div class="modal-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3 style="margin:0;">Notification Settings</h3>
+        <button class="icon-btn" id="closeSettingsBtn" style="font-size:18px; color:var(--text-muted);">✕</button>
+      </div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">When do you want to be reminded of your
+        events?</p>
+
+      <label style="display:flex; align-items:center; gap:8px; margin-bottom:12px; font-size:14px; cursor:pointer;">
+        <input type="checkbox" id="pref-7" checked> 7 days before
+      </label>
+      <label style="display:flex; align-items:center; gap:8px; margin-bottom:12px; font-size:14px; cursor:pointer;">
+        <input type="checkbox" id="pref-3" checked> 3 days before
+      </label>
+      <label style="display:flex; align-items:center; gap:8px; margin-bottom:12px; font-size:14px; cursor:pointer;">
+        <input type="checkbox" id="pref-1" checked> 1 day before
+      </label>
+      <label style="display:flex; align-items:center; gap:8px; margin-bottom:12px; font-size:14px; cursor:pointer;">
+        <input type="checkbox" id="pref-0"> Day of event
+      </label>
+
+      <div class="btn-row" style="margin-top: 24px;">
+        <button class="btn btn-ghost" id="testNotifBtn">Test Alert</button>
+        <button class="btn btn-primary" id="saveSettingsBtn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="eventModalOverlay" class="modal-overlay">
+    <div class="modal-content" id="eventModalContent"></div>
+  </div>
+  <div id="calendarToastSlot"></div>
 
   <script>
     const STORE_KEY = 'cue-events-v12';
@@ -1281,14 +1388,42 @@
         const fRaw = await getStorageItem(FRIENDS_KEY);
         if (fRaw) savedFriends = JSON.parse(fRaw);
       } catch (e) { events = []; savedFriends = []; }
+
+      updateDynamicDatalists();
+
       checkEventNotifications();
       render();
       renderCalendar();
     }
 
+    function updateDynamicDatalists() {
+      // Build dynamic cities
+      const dCity = document.getElementById('dynamic-cities') || document.createElement('datalist');
+      dCity.id = 'dynamic-cities';
+      const knownCities = new Set(["Porto", "Lisboa", "Vila Nova de Gaia", "Braga", "Coimbra", "Faro", "Aveiro", "Cascais", "Guimarães", "Leiria", "Setúbal", "Viseu", "Évora", "Funchal"]);
+      events.forEach(e => { if (e.city) knownCities.add(e.city.trim()); });
+      dCity.innerHTML = Array.from(knownCities).sort().map(c => `<option value="${escapeAttr(c)}">`).join('');
+      document.body.appendChild(dCity);
+
+      // Build dynamic venues (seeded with well-known PT venues)
+      const dVenue = document.getElementById('dynamic-venues') || document.createElement('datalist');
+      dVenue.id = 'dynamic-venues';
+      const knownVenues = new Set(["NOS Alive", "Super Bock Super Rock", "Rock in Rio Lisboa", "Coliseu do Porto", "Coliseu de Lisboa", "Altice Arena", "MEO Arena", "Primavera Sound Porto", "Parque da Cidade", "Palácio do Cristal", "Hard Club", "Casa da Música", "Pavilhão Rosa Mota", "Lisboa ao Vivo", "Parque Eduardo VII", "Meo Marés Vivas", "Vodafone Paredes de Coura", "Boom Festival", "Queijo Dunas"]);
+      events.forEach(e => { if (e.venue) knownVenues.add(e.venue.trim()); });
+      dVenue.innerHTML = Array.from(knownVenues).sort().map(v => `<option value="${escapeAttr(v)}">`).join('');
+      document.body.appendChild(dVenue);
+    }
+
     async function saveEvents() {
       try {
         await setStorageItem(STORE_KEY, JSON.stringify(events));
+
+        try {
+          if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Preferences) {
+            window.Capacitor.Plugins.Preferences.set({ key: 'shared-events', value: JSON.stringify(events) });
+          }
+        } catch (err) { }
+
         return true;
       } catch (e) {
         console.error('save failed', e);
@@ -1326,6 +1461,30 @@
     document.querySelectorAll('.nav-btn, .nav-btn-center').forEach(btn => {
       btn.onclick = () => switchTab(btn.getAttribute('data-tab'));
     });
+
+    // --- Swipe navigation ---
+    const TAB_ORDER = ['queue', 'add', 'calendar'];
+    let swipeStartX = 0;
+    let swipeStartY = 0;
+
+    document.addEventListener('touchstart', e => {
+      swipeStartX = e.touches[0].clientX;
+      swipeStartY = e.touches[0].clientY;
+    }, { passive: true });
+
+    document.addEventListener('touchend', e => {
+      // Don't intercept swipes on modals or scrollable elements
+      if (document.querySelector('.modal-overlay.active')) return;
+      const dx = e.changedTouches[0].clientX - swipeStartX;
+      const dy = e.changedTouches[0].clientY - swipeStartY;
+      if (Math.abs(dx) < 50 || Math.abs(dy) > Math.abs(dx) * 0.8) return; // too short or mostly vertical
+
+      const activeTab = document.querySelector('.nav-btn.active')?.getAttribute('data-tab')
+        || document.querySelector('.tab-screen.active')?.id.replace('screen-', '');
+      const idx = TAB_ORDER.indexOf(activeTab);
+      if (dx < 0 && idx < TAB_ORDER.length - 1) switchTab(TAB_ORDER[idx + 1]); // swipe left => next
+      if (dx > 0 && idx > 0) switchTab(TAB_ORDER[idx - 1]); // swipe right => prev
+    }, { passive: true });
 
     document.addEventListener('click', e => {
       if (e.target.id === 'addCloseBtn') switchTab('queue');
@@ -1375,7 +1534,7 @@
             <div class="spotlight-info">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                 <span class="spotlight-label">NEXT UP</span>
-                ${dl !== null && dl >= 0 ? `<span class="days-left-badge" style="font-size:12px; font-weight:700; padding:4px 10px; background:var(--surface); color:#fff; border: 1px solid var(--border); border-radius:12px;">${dl === 0 ? 'TODAY!' : dl + ' DAYS LEFT'}</span>` : ''}
+                ${dl !== null && dl >= 0 ? `<span class="days-left-badge ${dl === 0 ? 'days-left-today' : dl <= 3 ? 'days-left-soon' : ''}">${dl === 0 ? '🔴 TODAY!' : dl === 1 ? '⏰ TOMORROW' : '⏳ ' + dl + ' DAYS'}</span>` : ''}
               </div>
               <div class="spotlight-title">${escapeHtml(next.artist || 'Untitled event')}</div>
               ${dateStr ? `<div class="spotlight-detail-row">📅 <span>${escapeHtml(dateStr)}</span></div>` : ''}
@@ -1491,7 +1650,6 @@
             <div class="queue-loc-row">👥 ${escapeHtml(ev.company)}</div>
           ` : ''}
 
-          ${categoryPillHTML(ev.category)}
         </div>
 
         <div class="queue-date-badge" aria-label="${escapeAttr(dateStr)}">
@@ -1835,14 +1993,13 @@
           <div class="review-row">
             <div class="field"><label>Time</label><input id="f_time" type="time" value="${escapeAttr(prefill.time || '')}"></div>
           <div class="field"><label>City</label>
-             <div style="position:relative;">
-               <input id="f_city" list="pt-cities" value="${escapeAttr(prefill.city || '')}" placeholder="e.g. Porto, Lisboa" style="padding-right: 40px;">
-               <button type="button" id="geoBtn" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:16px;">📍</button>
+             <div>
+               <input id="f_city" list="dynamic-cities" value="${escapeAttr(prefill.city || '')}" placeholder="e.g. Porto, Lisboa">
              </div>
           </div>
           </div>
 
-          <div class="field"><label>Venue</label><input id="f_venue" value="${escapeAttr(prefill.venue || '')}" placeholder="e.g. Armazém 22, Coliseu"></div>
+          <div class="field"><label>Venue</label><input id="f_venue" list="dynamic-venues" value="${escapeAttr(prefill.venue || '')}" placeholder="e.g. Armazém 22, Coliseu"></div>
 
 
 
@@ -2111,29 +2268,48 @@
         });
 
         if (dayEvents.length > 0) {
-          const dotsContainer = document.createElement('div');
-          dotsContainer.className = 'dots-container';
+          const hasMultiDay = dayEvents.some(ev => ev.endDate && ev.endDate !== ev.startDate);
+          const hasSingleDay = dayEvents.some(ev => !ev.endDate || ev.endDate === ev.startDate);
 
-          // Maximum 3 dots to prevent UI breaking
-          const limit = Math.min(dayEvents.length, 3);
-          for (let i = 0; i < limit; i++) {
-            const cat = dayEvents[i].category || 'Concert';
-            const dotColor = cat === 'Festival' ? '#fbbf24' : cat === 'Other' ? '#2dd4bf' : '#a855f7';
-            const dot = document.createElement('div');
-            dot.className = 'cal-dot';
-            dot.style.background = dotColor;
-            dotsContainer.appendChild(dot);
+          // Tint the cell background
+          if (hasMultiDay && hasSingleDay) {
+            cell.style.background = 'linear-gradient(135deg, rgba(251,191,36,0.22) 50%, rgba(168,85,247,0.22) 50%)';
+          } else if (hasMultiDay) {
+            cell.style.background = 'rgba(251,191,36,0.18)';
+            cell.style.borderColor = 'rgba(251,191,36,0.4)';
+          } else {
+            cell.style.background = 'rgba(168,85,247,0.16)';
+            cell.style.borderColor = 'rgba(168,85,247,0.4)';
           }
-          cell.appendChild(dotsContainer);
 
-          const spanningEvent = dayEvents.find(event => event.endDate && event.endDate !== event.startDate);
-          if (spanningEvent) {
+          // Count badge if >1 event
+          if (dayEvents.length > 1) {
+            const badge = document.createElement('div');
+            badge.style.cssText = 'position:absolute;top:2px;right:3px;font-size:8px;font-weight:700;color:rgba(255,255,255,0.6);line-height:1;';
+            badge.textContent = dayEvents.length;
+            cell.appendChild(badge);
+          }
+
+          // Range marker bars only for multi-day events (show start/middle/end)
+          const multiDayEvs = dayEvents.filter(ev => ev.endDate && ev.endDate !== ev.startDate);
+          multiDayEvs.forEach((ev, idx) => {
+            const isStart = ev.startDate === dayStr;
+            const isEnd = ev.endDate === dayStr;
             const marker = document.createElement('div');
             marker.className = 'cal-range-marker';
-            marker.style.background = spanningEvent.category === 'Festival' ? '#fbbf24' : '#a855f7';
-            marker.title = `${spanningEvent.artist || 'Event'} runs until ${fmtDate(spanningEvent.endDate)}`;
+            marker.style.background = ev.category === 'Festival' ? '#fbbf24' : '#a855f7';
+            if (isStart && !isEnd) {
+              marker.style.borderRadius = '4px 0 0 4px';
+              marker.style.left = '30%'; marker.style.right = '0';
+            } else if (isEnd && !isStart) {
+              marker.style.borderRadius = '0 4px 4px 0';
+              marker.style.left = '0'; marker.style.right = '30%';
+            } else {
+              marker.style.left = '0'; marker.style.right = '0';
+            }
+            marker.style.bottom = (2 + idx * 5) + 'px';
             cell.appendChild(marker);
-          }
+          });
         }
 
         cell.onclick = () => {
@@ -2146,22 +2322,52 @@
       }
 
       if (!calSelectedDateStr) {
-        calSelectedDateStr = todayStr;
+        renderSelectedDateEvents(null, []);
+      } else {
+        const initialEvents = events.filter(e => {
+          if (!e.startDate) return false;
+          if (e.endDate) return calSelectedDateStr >= e.startDate && calSelectedDateStr <= e.endDate;
+          return e.startDate === calSelectedDateStr;
+        });
+        renderSelectedDateEvents(calSelectedDateStr, initialEvents);
       }
-      const initialEvents = events.filter(e => {
-        if (!e.startDate) return false;
-        if (e.endDate) return calSelectedDateStr >= e.startDate && calSelectedDateStr <= e.endDate;
-        return e.startDate === calSelectedDateStr;
-      });
-      renderSelectedDateEvents(calSelectedDateStr, initialEvents);
     }
 
     function renderSelectedDateEvents(dateStr, dayEvents) {
-      document.getElementById('calSelectedTitle').textContent = `YOUR EVENTS (${dateStr})`;
+      const title = document.getElementById('calSelectedTitle');
       const list = document.getElementById('calSelectedList');
-      list.innerHTML = dayEvents.length
-        ? dayEvents.map(queueItemHTML).join('')
-        : '<div class="empty">No events scheduled on this date.</div>';
+
+      if (dateStr) {
+        // Show selected day's events first, then the rest
+        title.textContent = `EVENTS ON ${dateStr}`;
+        const rest = events
+          .filter(e => !isPast(e) && e.startDate)
+          .filter(e => {
+            if (e.endDate) return !(dateStr >= e.startDate && dateStr <= e.endDate);
+            return e.startDate !== dateStr;
+          })
+          .sort((a, b) => a.startDate.localeCompare(b.startDate));
+
+        let html = '';
+        if (dayEvents.length) {
+          html += `<div class="month-header" style="color:var(--purple-light);border-color:rgba(168,85,247,0.3)">⟶ ${dateStr}</div>`;
+          html += dayEvents.map(queueItemHTML).join('');
+        }
+        if (rest.length) {
+          html += `<div class="month-header" style="margin-top:16px;">Other upcoming</div>`;
+          html += rest.map(queueItemHTML).join('');
+        }
+        list.innerHTML = html || '<div class="empty">No events this month.</div>';
+      } else {
+        // No day selected — show all upcoming sorted
+        title.textContent = 'UPCOMING EVENTS';
+        const upcoming = events
+          .filter(e => !isPast(e) && e.startDate)
+          .sort((a, b) => a.startDate.localeCompare(b.startDate));
+        list.innerHTML = upcoming.length
+          ? upcoming.map(queueItemHTML).join('')
+          : '<div class="empty">No upcoming events.</div>';
+      }
 
       document.querySelectorAll('#calSelectedList [data-view]').forEach(el => {
         el.onclick = () => {
@@ -2205,6 +2411,8 @@
     }
 
     async function enableNotifications() {
+      customAlert('O sistema está a verificar...', 2000);
+
       if (!('Notification' in window)) {
         customAlert('O teu browser não suporta notificações nativas da Web.');
         return;
@@ -2216,7 +2424,15 @@
       }
 
       try {
-        const permission = await Notification.requestPermission();
+        // Handle both callback and promise-based requestPermission
+        const requestPromise = Notification.requestPermission();
+        let permission;
+        if (requestPromise && typeof requestPromise.then === 'function') {
+          permission = await requestPromise;
+        } else {
+          permission = Notification.permission; // fallback if it was sync/callback only but we missed it
+        }
+
         if (permission === 'granted') {
           updateNotificationBtn();
           checkEventNotifications();
@@ -2251,12 +2467,36 @@
       document.getElementById('settingsModalOverlay').classList.remove('active');
     };
 
+    function triggerNotification(title, options) {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then(reg => {
+          reg.showNotification(title, options);
+        }).catch(() => {
+          new Notification(title, options);
+        });
+      } else {
+        new Notification(title, options);
+      }
+    }
+
+    document.getElementById('testNotifBtn').onclick = () => {
+      if (Notification.permission === 'granted') {
+        triggerNotification('Isto é um Teste! 🎟️', {
+          body: 'A tua Cue App está a enviar alertas corretamente.',
+          icon: 'icon-192.png',
+          badge: 'icon-192.png'
+        });
+      } else {
+        customAlert('Permissão não aceite ainda!');
+      }
+    };
+
     document.getElementById('saveSettingsBtn').onclick = () => {
       const prefs = [7, 3, 1, 0].filter(d => document.getElementById(`pref-${d}`).checked);
       localStorage.setItem('cue-notification-prefs', JSON.stringify(prefs));
       document.getElementById('settingsModalOverlay').classList.remove('active');
       checkEventNotifications();
-      alert('Preferences saved!');
+      customAlert('Preferências guardadas!');
     };
 
     function updateNotificationBtn() {
@@ -2318,7 +2558,7 @@
 
         const locStr = [event.venue, event.city].filter(Boolean).join(' · ');
 
-        new Notification(title, {
+        triggerNotification(title, {
           body: `${event.artist || 'Evento'}${locStr ? ` · ${locStr}` : ''}`,
           icon: 'icon-192.png',
           badge: 'icon-192.png',
@@ -2443,40 +2683,6 @@
     }
   </script>
 
-  <!-- Settings Modal Overlay -->
-  <div id="settingsModalOverlay" class="modal-overlay">
-    <div class="modal-content">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-        <h3 style="margin:0;">Notification Settings</h3>
-        <button class="icon-btn" id="closeSettingsBtn" style="font-size:18px; color:var(--text-muted);">✕</button>
-      </div>
-      <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">When do you want to be reminded of your
-        events?</p>
-
-      <label style="display:flex; align-items:center; gap:8px; margin-bottom:12px; font-size:14px; cursor:pointer;">
-        <input type="checkbox" id="pref-7" checked> 7 days before
-      </label>
-      <label style="display:flex; align-items:center; gap:8px; margin-bottom:12px; font-size:14px; cursor:pointer;">
-        <input type="checkbox" id="pref-3" checked> 3 days before
-      </label>
-      <label style="display:flex; align-items:center; gap:8px; margin-bottom:12px; font-size:14px; cursor:pointer;">
-        <input type="checkbox" id="pref-1" checked> 1 day before
-      </label>
-      <label style="display:flex; align-items:center; gap:8px; margin-bottom:12px; font-size:14px; cursor:pointer;">
-        <input type="checkbox" id="pref-0"> Day of event
-      </label>
-
-      <div class="btn-row" style="margin-top: 24px;">
-        <button class="btn btn-primary" id="saveSettingsBtn">Save Preferences</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Dedicated Event Detail Modal Overlay -->
-  <div id="eventModalOverlay" class="modal-overlay">
-    <div class="modal-content" id="eventModalContent"></div>
-  </div>
-  <div id="calendarToastSlot"></div>
 </body>
 
 </html>

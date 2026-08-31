@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">cue</string>
+    <string name="title_activity_main">cue</string>
+    <string name="package_name">com.eva.somedayapp</string>
+    <string name="custom_url_scheme">com.eva.somedayapp</string>
+</resources>

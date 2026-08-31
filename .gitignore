@@ -1,4 +1,9 @@
 .vercel
-node_modules/  
-android/  
-www/ 
+node_modules/
+www/
+# Android — ignore build outputs but keep source files
+android/.gradle/
+android/build/
+android/app/build/
+android/.idea/
+android/local.properties
