@@ -112,7 +112,7 @@ public class CueWidgetProvider extends AppWidgetProvider {
                     dateDisplay = outFmt.format(inFmt.parse(startDate));
                 } catch (Exception ignored) {}
 
-                String dateLoc = "📅 " + dateDisplay + (loc.length() > 0 ? "  ·  📍 " + loc : "");
+                String dateLoc = dateDisplay + (loc.length() > 0 ? "  ·  " + loc : "");
 
                 views.setTextViewText(R.id.widget_artist, artist);
                 views.setTextViewText(R.id.widget_date_loc, dateLoc);

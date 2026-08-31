@@ -920,19 +920,23 @@
     }
 
     .cal-cell {
-      aspect-ratio: 1;
+      min-height: 60px;
       border-radius: 8px;
       border: 1px solid var(--border);
       background: var(--surface);
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       font-size: 13px;
       font-weight: 500;
       cursor: pointer;
       position: relative;
       transition: all 0.2s;
+      padding-top: 4px;
+      padding-bottom: 4px;
+      overflow: hidden;
+      gap: 2px;
     }
 
     .cal-cell:hover {
@@ -945,45 +949,62 @@
       cursor: default;
     }
 
-    .cal-cell.today {
-      border-color: var(--purple-light);
+    .cal-cell.today span.cal-day-num {
+      background: var(--purple-light);
+      color: #fff;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       font-weight: 700;
     }
 
     .cal-cell.selected {
-      background: var(--purple);
-      color: #ffffff;
+      border-color: var(--purple);
+      background: rgba(168, 85, 247, 0.1);
     }
 
-    .cal-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--purple-light);
-      flex-shrink: 0;
+    .cal-event-pill {
+      width: 95%;
+      margin: 0 auto;
+      font-size: 8px;
+      line-height: 1.1;
+      padding: 2px 4px;
+      border-radius: 4px;
+      color: #fff;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-align: left;
     }
 
-    .dots-container {
-      display: flex;
-      flex-direction: row;
-      gap: 2px;
-      align-items: center;
-      justify-content: center;
-      position: absolute;
-      bottom: 4px;
-      left: 0;
-      right: 0;
+    .cal-event-pill-start {
+      border-radius: 4px 0 0 4px;
+      width: 100%;
+      margin-left: auto;
+      margin-right: 0;
+      padding-right: 0;
     }
 
-    .cal-range-marker {
-      position: absolute;
-      left: 2px;
-      right: 2px;
-      bottom: 2px;
-      height: 4px;
-      background: #fbbf24;
-      opacity: 0.9;
+    .cal-event-pill-end {
+      border-radius: 0 4px 4px 0;
+      width: 100%;
+      margin-left: 0;
+      margin-right: auto;
+      padding-left: 0;
     }
+
+    .cal-event-pill-mid {
+      border-radius: 0;
+      width: 105%;
+      margin-left: -2px;
+      padding-left: 0;
+      padding-right: 0;
+    }
+
 
     .days-left-badge {
       font-size: 11px;
@@ -1334,6 +1355,16 @@
       <div class="btn-row" style="margin-top: 24px;">
         <button class="btn btn-ghost" id="testNotifBtn">Test Alert</button>
         <button class="btn btn-primary" id="saveSettingsBtn">Save</button>
+      </div>
+
+      <div style="margin-top: 32px; border-top: 1px solid var(--border); padding-top: 24px;">
+        <h3 style="margin-bottom:12px;">Data Sync</h3>
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">Copy your events to paste them into
+          another device, or import events you copied.</p>
+        <div class="btn-row">
+          <button class="btn btn-ghost" id="exportDataBtn" style="flex:1;">📤 Copy Data</button>
+          <button class="btn btn-ghost" id="importDataBtn" style="flex:1;">📥 Paste Data</button>
+        </div>
       </div>
     </div>
   </div>
@@ -2256,60 +2287,61 @@
         if (dayStr === todayStr) cell.classList.add('today');
         if (dayStr === calSelectedDateStr) cell.classList.add('selected');
 
-        // Use a span for the number so appended dots are not wiped
         const numSpan = document.createElement('span');
+        numSpan.className = 'cal-day-num';
         numSpan.textContent = day;
         cell.appendChild(numSpan);
 
+        // Sort events so they stack consistently (multi-day first, then by name)
         const dayEvents = events.filter(e => {
           if (!e.startDate) return false;
           if (e.endDate) return dayStr >= e.startDate && dayStr <= e.endDate;
           return e.startDate === dayStr;
+        }).sort((a, b) => {
+          const aMulti = a.endDate && a.endDate !== a.startDate ? 1 : 0;
+          const bMulti = b.endDate && b.endDate !== b.startDate ? 1 : 0;
+          if (aMulti !== bMulti) return bMulti - aMulti;
+          return (a.artist || '').localeCompare(b.artist || '');
         });
 
         if (dayEvents.length > 0) {
-          const hasMultiDay = dayEvents.some(ev => ev.endDate && ev.endDate !== ev.startDate);
-          const hasSingleDay = dayEvents.some(ev => !ev.endDate || ev.endDate === ev.startDate);
-
-          // Tint the cell background
-          if (hasMultiDay && hasSingleDay) {
-            cell.style.background = 'linear-gradient(135deg, rgba(251,191,36,0.22) 50%, rgba(168,85,247,0.22) 50%)';
-          } else if (hasMultiDay) {
-            cell.style.background = 'rgba(251,191,36,0.18)';
-            cell.style.borderColor = 'rgba(251,191,36,0.4)';
-          } else {
-            cell.style.background = 'rgba(168,85,247,0.16)';
-            cell.style.borderColor = 'rgba(168,85,247,0.4)';
-          }
-
-          // Count badge if >1 event
-          if (dayEvents.length > 1) {
-            const badge = document.createElement('div');
-            badge.style.cssText = 'position:absolute;top:2px;right:3px;font-size:8px;font-weight:700;color:rgba(255,255,255,0.6);line-height:1;';
-            badge.textContent = dayEvents.length;
-            cell.appendChild(badge);
-          }
-
-          // Range marker bars only for multi-day events (show start/middle/end)
-          const multiDayEvs = dayEvents.filter(ev => ev.endDate && ev.endDate !== ev.startDate);
-          multiDayEvs.forEach((ev, idx) => {
+          // Render event pills
+          dayEvents.slice(0, 4).forEach((ev) => {
+            const isMultiDay = ev.endDate && ev.endDate !== ev.startDate;
             const isStart = ev.startDate === dayStr;
             const isEnd = ev.endDate === dayStr;
-            const marker = document.createElement('div');
-            marker.className = 'cal-range-marker';
-            marker.style.background = ev.category === 'Festival' ? '#fbbf24' : '#a855f7';
-            if (isStart && !isEnd) {
-              marker.style.borderRadius = '4px 0 0 4px';
-              marker.style.left = '30%'; marker.style.right = '0';
-            } else if (isEnd && !isStart) {
-              marker.style.borderRadius = '0 4px 4px 0';
-              marker.style.left = '0'; marker.style.right = '30%';
-            } else {
-              marker.style.left = '0'; marker.style.right = '0';
+            const color = ev.category === 'Festival' ? '#d97706' : (ev.category === 'Other' ? '#0d9488' : '#7e22ce');
+            const bgColor = ev.category === 'Festival' ? '#fde68a' : (ev.category === 'Other' ? '#99f6e4' : '#e9d5ff'); // light pastel background
+            const textColor = ev.category === 'Festival' ? '#92400e' : (ev.category === 'Other' ? '#115e59' : '#581c87'); // dark text
+
+            const pill = document.createElement('div');
+            pill.className = 'cal-event-pill';
+            pill.style.background = bgColor;
+            pill.style.color = textColor;
+            pill.textContent = ev.artist || 'Event';
+
+            if (isMultiDay) {
+              if (isStart && !isEnd) {
+                pill.classList.add('cal-event-pill-start');
+              } else if (isEnd && !isStart) {
+                pill.classList.add('cal-event-pill-end');
+                pill.textContent = ''; // hide text on tail end
+              } else if (!isStart && !isEnd) {
+                pill.classList.add('cal-event-pill-mid');
+                pill.textContent = ''; // hide text in middle
+              }
             }
-            marker.style.bottom = (2 + idx * 5) + 'px';
-            cell.appendChild(marker);
+
+            cell.appendChild(pill);
           });
+
+          if (dayEvents.length > 4) {
+            const more = document.createElement('div');
+            more.style.fontSize = '8px';
+            more.style.color = 'var(--text-muted)';
+            more.textContent = `+${dayEvents.length - 4} more`;
+            cell.appendChild(more);
+          }
         }
 
         cell.onclick = () => {
@@ -2350,7 +2382,7 @@
 
         let html = '';
         if (dayEvents.length) {
-          html += `<div class="month-header" style="color:var(--purple-light);border-color:rgba(168,85,247,0.3)">⟶ ${dateStr}</div>`;
+          html += `<div class="month-header" style="color:var(--purple-light);border-color:rgba(168,85,247,0.3)"> ${dateStr}</div>`;
           html += dayEvents.map(queueItemHTML).join('');
         }
         if (rest.length) {
@@ -2499,6 +2531,36 @@
       customAlert('Preferências guardadas!');
     };
 
+    document.getElementById('exportDataBtn').onclick = async () => {
+      try {
+        const rawEvents = localStorage.getItem(STORE_KEY) || '[]';
+        await navigator.clipboard.writeText(rawEvents);
+        customAlert('Data copied to clipboard! Paste it on your other device.', 3000);
+      } catch (e) {
+        customAlert('Failed to copy. ' + e.message);
+      }
+    };
+
+    document.getElementById('importDataBtn').onclick = async () => {
+      try {
+        const txt = await navigator.clipboard.readText();
+        const importedEvents = JSON.parse(txt);
+        if (Array.isArray(importedEvents) && window.confirm(`Import ${importedEvents.length} events? This will replace your current events!`)) {
+          events = importedEvents;
+          await saveEvents();
+          render();
+          renderCalendar();
+          document.getElementById('settingsModalOverlay').classList.remove('active');
+          customAlert('Data imported successfully!');
+        } else {
+          customAlert('No valid event data found in clipboard.');
+        }
+      } catch (e) {
+        customAlert('Could not import. ' + e.message);
+      }
+    };
+
+
     function updateNotificationBtn() {
       const btn = document.getElementById('notificationBtn');
       if (!btn) return;
@@ -2633,6 +2695,10 @@
     }
 
     function getApiEndpoint() {
+      // In Capacitor native app, location.hostname is localhost
+      if (window.location.hostname === 'localhost' || window.location.protocol === 'file:') {
+        return 'https://someday-nu.vercel.app/api/gemini';
+      }
       return '/api/gemini';
     }
 
