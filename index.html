@@ -2181,9 +2181,32 @@
     };
     const NOTIFICATION_KEY = 'cue-notifications-v1';
 
+    function customAlert(msg) {
+      let box = document.getElementById('debugAlertBox');
+      if (!box) {
+        box = document.createElement('div');
+        box.id = 'debugAlertBox';
+        box.style.position = 'fixed';
+        box.style.bottom = '20px';
+        box.style.left = '50%';
+        box.style.transform = 'translateX(-50%)';
+        box.style.background = '#333';
+        box.style.color = '#fff';
+        box.style.padding = '12px 20px';
+        box.style.borderRadius = '8px';
+        box.style.zIndex = '99999';
+        box.style.boxShadow = '0 4px 12px rgba(0,0,0,0.5)';
+        box.style.textAlign = 'center';
+        document.body.appendChild(box);
+      }
+      box.textContent = msg;
+      box.style.display = 'block';
+      setTimeout(() => box.style.display = 'none', 5000);
+    }
+
     async function enableNotifications() {
       if (!('Notification' in window)) {
-        alert('Este dispositivo/browser não suporta Notificações Web. (Estás no iPhone? Tens de adicionar ao Ecrã Principal primeiro!)');
+        customAlert('O teu browser não suporta notificações nativas da Web.');
         return;
       }
 
@@ -2199,12 +2222,12 @@
           checkEventNotifications();
           openSettingsModal();
         } else if (permission === 'denied') {
-          alert('Tu ou o teu telemóvel bloquearam as notificações. Vai às definições do teu browser/aparelho para permitires.');
+          customAlert('Notificações bloqueadas! Vai às definições de permissões do site no teu browser para permitir.');
         } else {
-          alert('As notificações foram ignoradas. Estado: ' + permission);
+          customAlert('Estado das notificações: ' + permission);
         }
       } catch (e) {
-        alert('Erro ao pedir notificações: ' + e.message);
+        customAlert('Erro ao pedir notificações: ' + e.message);
       }
     }
 
