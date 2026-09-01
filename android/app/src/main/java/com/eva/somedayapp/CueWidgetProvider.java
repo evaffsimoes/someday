@@ -27,8 +27,30 @@ public class CueWidgetProvider extends AppWidgetProvider {
         }
     }
 
+    @Override
+    public void onAppWidgetOptionsChanged(Context context, AppWidgetManager appWidgetManager, int appWidgetId, android.os.Bundle newOptions) {
+        super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions);
+        updateWidget(context, appWidgetManager, appWidgetId);
+    }
+
     static void updateWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
+
+        // Calculate max items that fit current widget height on home screen (Default to 3-4, up to 6 when expanded)
+        android.os.Bundle options = appWidgetManager.getAppWidgetOptions(appWidgetId);
+        int minHeight = 120;
+        if (options != null && options.containsKey(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT)) {
+            minHeight = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT);
+        }
+
+        int maxItemsToShow = 4; // Default to 3-4 events for standard sizes
+        if (minHeight >= 210) {
+            maxItemsToShow = 6; // Half screen or larger
+        } else if (minHeight >= 160) {
+            maxItemsToShow = 5;
+        } else {
+            maxItemsToShow = 4;
+        }
 
         // Tap opens app
         Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(context.getPackageName());
@@ -41,23 +63,26 @@ public class CueWidgetProvider extends AppWidgetProvider {
         }
 
         // Clear all cells first
-        int[] artistIds = { R.id.w_item_0_artist, R.id.w_item_1_artist, R.id.w_item_2_artist };
-        int[] locIds    = { R.id.w_item_0_loc,    R.id.w_item_1_loc,    R.id.w_item_2_loc    };
-        int[] dayIds    = { R.id.w_item_0_day,    R.id.w_item_1_day,    R.id.w_item_2_day    };
-        int[] monthIds  = { R.id.w_item_0_month,  R.id.w_item_1_month,  R.id.w_item_2_month  };
-        int[] cardIds   = { R.id.w_card_0,        R.id.w_card_1,        R.id.w_card_2        };
+        int MAX_ITEMS = 6;
+        int[] artistIds = { R.id.w_item_0_artist, R.id.w_item_1_artist, R.id.w_item_2_artist, R.id.w_item_3_artist, R.id.w_item_4_artist, R.id.w_item_5_artist };
+        int[] locIds    = { R.id.w_item_0_loc,    R.id.w_item_1_loc,    R.id.w_item_2_loc,    R.id.w_item_3_loc,    R.id.w_item_4_loc,    R.id.w_item_5_loc    };
+        int[] dayIds    = { R.id.w_item_0_day,    R.id.w_item_1_day,    R.id.w_item_2_day,    R.id.w_item_3_day,    R.id.w_item_4_day,    R.id.w_item_5_day    };
+        int[] monthIds  = { R.id.w_item_0_month,  R.id.w_item_1_month,  R.id.w_item_2_month,  R.id.w_item_3_month,  R.id.w_item_4_month,  R.id.w_item_5_month  };
+        int[] cardIds   = { R.id.w_card_0,        R.id.w_card_1,        R.id.w_card_2,        R.id.w_card_3,        R.id.w_card_4,        R.id.w_card_5        };
 
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < MAX_ITEMS; i++) {
             views.setTextViewText(artistIds[i], "");
             views.setTextViewText(locIds[i], "");
             views.setTextViewText(dayIds[i], "");
             views.setTextViewText(monthIds[i], "");
+            views.setViewVisibility(cardIds[i], android.view.View.GONE);
         }
 
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         String eventsJson = prefs.getString(EVENTS_KEY, null);
 
         if (eventsJson == null || eventsJson.isEmpty()) {
+            views.setViewVisibility(R.id.w_card_0, android.view.View.VISIBLE);
             views.setTextViewText(R.id.w_item_0_artist, "cue setup");
             views.setTextViewText(R.id.w_item_0_loc, "Tap here to open & sync");
             appWidgetManager.updateAppWidget(appWidgetId, views);
@@ -68,17 +93,24 @@ public class CueWidgetProvider extends AppWidgetProvider {
             JSONArray all = new JSONArray(eventsJson);
             String todayStr = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
 
-            // Find upcoming events
-            JSONArray upcoming = new JSONArray();
+            // Filter upcoming events & sort chronologically by startDate
+            java.util.List<JSONObject> upcomingList = new java.util.ArrayList<>();
             for (int i = 0; i < all.length(); i++) {
                 JSONObject ev = all.getJSONObject(i);
                 String checkDate = ev.optString("endDate", ev.optString("startDate", ""));
                 if (!checkDate.isEmpty() && checkDate.compareTo(todayStr) >= 0) {
-                    upcoming.put(ev);
+                    upcomingList.add(ev);
                 }
             }
 
-            if (upcoming.length() == 0) {
+            java.util.Collections.sort(upcomingList, (a, b) -> {
+                String d1 = a.optString("startDate", "9999-99-99");
+                String d2 = b.optString("startDate", "9999-99-99");
+                return d1.compareTo(d2);
+            });
+
+            if (upcomingList.isEmpty()) {
+                views.setViewVisibility(R.id.w_card_0, android.view.View.VISIBLE);
                 views.setTextViewText(R.id.w_item_0_artist, "No upcoming events");
                 views.setTextViewText(R.id.w_item_0_loc, "Add one in cue");
             } else {
@@ -86,9 +118,10 @@ public class CueWidgetProvider extends AppWidgetProvider {
                 SimpleDateFormat dayFmt = new SimpleDateFormat("d", Locale.getDefault());
                 SimpleDateFormat monFmt = new SimpleDateFormat("MMM", Locale.getDefault());
 
-                for (int i = 0; i < 3; i++) {
-                    if (i < upcoming.length()) {
-                        JSONObject ev = upcoming.getJSONObject(i);
+                for (int i = 0; i < MAX_ITEMS; i++) {
+                    if (i < upcomingList.size() && i < maxItemsToShow) {
+                        JSONObject ev = upcomingList.get(i);
+                        views.setViewVisibility(cardIds[i], android.view.View.VISIBLE);
                         String artist = ev.optString("artist", ev.optString("name", "Event"));
                         String venue  = ev.optString("venue", "");
                         String city   = ev.optString("city", "");
@@ -109,6 +142,21 @@ public class CueWidgetProvider extends AppWidgetProvider {
                         views.setTextViewText(locIds[i], loc.length() > 0 ? loc.toString() : startDate);
                         views.setTextViewText(dayIds[i], dayStr2);
                         views.setTextViewText(monthIds[i], monStr);
+
+                        if (launchIntent != null) {
+                            String evId = ev.optString("id", "");
+                            Intent itemIntent = new Intent(launchIntent);
+                            itemIntent.putExtra("open_event_id", evId);
+                            itemIntent.putExtra("open_date", startDate);
+                            itemIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                            PendingIntent itemPending = PendingIntent.getActivity(
+                                context,
+                                appWidgetId * 10 + i + 5000,
+                                itemIntent,
+                                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+                            );
+                            views.setOnClickPendingIntent(cardIds[i], itemPending);
+                        }
                     }
                 }
             }

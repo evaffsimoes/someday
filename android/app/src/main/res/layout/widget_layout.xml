@@ -22,8 +22,7 @@
     <LinearLayout
         android:id="@+id/w_card_0"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:background="@drawable/cal_cell_bg_event"
         android:padding="8dp"
@@ -83,8 +82,7 @@
     <LinearLayout
         android:id="@+id/w_card_1"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:background="@drawable/cal_cell_bg_empty"
         android:padding="8dp"
@@ -143,11 +141,11 @@
     <LinearLayout
         android:id="@+id/w_card_2"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:background="@drawable/cal_cell_bg_empty"
         android:padding="8dp"
+        android:layout_marginBottom="4dp"
         android:gravity="center_vertical"
         android:baselineAligned="false">
 
@@ -188,6 +186,185 @@
                 android:maxLines="1"
                 android:ellipsize="end" />
             <TextView android:id="@+id/w_item_2_loc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#A1A1AA"
+                android:textSize="9sp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:layout_marginTop="1dp"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Event card 3 -->
+    <LinearLayout
+        android:id="@+id/w_card_3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="@drawable/cal_cell_bg_empty"
+        android:padding="8dp"
+        android:layout_marginBottom="4dp"
+        android:gravity="center_vertical"
+        android:visibility="gone"
+        android:baselineAligned="false">
+
+        <LinearLayout
+            android:layout_width="45dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="4dp"
+            android:layout_marginEnd="8dp">
+            <TextView android:id="@+id/w_item_3_day"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="#C084FC"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+            <TextView android:id="@+id/w_item_3_month"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="#71717A"
+                android:textSize="9sp"
+                android:textAllCaps="true" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <TextView android:id="@+id/w_item_3_artist"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#FFFFFF"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end" />
+            <TextView android:id="@+id/w_item_3_loc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#A1A1AA"
+                android:textSize="9sp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:layout_marginTop="1dp"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Event card 4 -->
+    <LinearLayout
+        android:id="@+id/w_card_4"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="@drawable/cal_cell_bg_empty"
+        android:padding="8dp"
+        android:layout_marginBottom="4dp"
+        android:gravity="center_vertical"
+        android:visibility="gone"
+        android:baselineAligned="false">
+
+        <LinearLayout
+            android:layout_width="45dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="4dp"
+            android:layout_marginEnd="8dp">
+            <TextView android:id="@+id/w_item_4_day"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="#C084FC"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+            <TextView android:id="@+id/w_item_4_month"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="#71717A"
+                android:textSize="9sp"
+                android:textAllCaps="true" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <TextView android:id="@+id/w_item_4_artist"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#FFFFFF"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end" />
+            <TextView android:id="@+id/w_item_4_loc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#A1A1AA"
+                android:textSize="9sp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:layout_marginTop="1dp"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Event card 5 -->
+    <LinearLayout
+        android:id="@+id/w_card_5"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="@drawable/cal_cell_bg_empty"
+        android:padding="8dp"
+        android:gravity="center_vertical"
+        android:visibility="gone"
+        android:baselineAligned="false">
+
+        <LinearLayout
+            android:layout_width="45dp"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="4dp"
+            android:layout_marginEnd="8dp">
+            <TextView android:id="@+id/w_item_5_day"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="#C084FC"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+            <TextView android:id="@+id/w_item_5_month"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="#71717A"
+                android:textSize="9sp"
+                android:textAllCaps="true" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+            <TextView android:id="@+id/w_item_5_artist"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#FFFFFF"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end" />
+            <TextView android:id="@+id/w_item_5_loc"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:textColor="#A1A1AA"

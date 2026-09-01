@@ -914,14 +914,17 @@
 
     .cal-day-label {
       font-size: 11px;
-      font-weight: 600;
+      font-weight: 700;
       color: var(--text-muted);
-      padding-bottom: 6px;
+      padding-bottom: 8px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
     }
 
     .cal-cell {
-      min-height: 60px;
-      border-radius: 8px;
+      min-height: 80px;
+      height: auto;
+      border-radius: 10px;
       border: 1px solid var(--border);
       background: var(--surface);
       display: flex;
@@ -932,53 +935,62 @@
       font-weight: 500;
       cursor: pointer;
       position: relative;
-      transition: all 0.2s;
-      padding-top: 4px;
-      padding-bottom: 4px;
-      overflow: hidden;
+      transition: all 0.2s ease;
+      padding: 4px 2px;
       gap: 2px;
     }
 
     .cal-cell:hover {
-      border-color: var(--purple);
+      border-color: var(--purple-light);
+      background: rgba(168, 85, 247, 0.08);
+      transform: translateY(-1px);
     }
 
     .cal-cell.empty-cell {
       background: transparent;
       border: none;
       cursor: default;
+      transform: none;
+    }
+
+    .cal-cell span.cal-day-num {
+      font-size: 12px;
+      font-weight: 600;
+      color: #e4e4e7;
     }
 
     .cal-cell.today span.cal-day-num {
-      background: var(--purple-light);
-      color: #fff;
+      background: linear-gradient(135deg, #a855f7, #c084fc);
+      color: #ffffff;
       border-radius: 50%;
-      width: 20px;
-      height: 20px;
+      width: 22px;
+      height: 22px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 700;
+      font-weight: 800;
+      box-shadow: 0 2px 8px rgba(168, 85, 247, 0.4);
     }
 
     .cal-cell.selected {
-      border-color: var(--purple);
-      background: rgba(168, 85, 247, 0.1);
+      border-color: var(--purple-light);
+      background: rgba(168, 85, 247, 0.15);
+      box-shadow: 0 0 14px rgba(168, 85, 247, 0.25);
     }
 
     .cal-event-pill {
-      width: 95%;
+      width: 96%;
       margin: 0 auto;
-      font-size: 8px;
-      line-height: 1.1;
+      font-size: 8.5px;
+      line-height: 1.15;
       padding: 2px 4px;
       border-radius: 4px;
-      color: #fff;
-      font-weight: 600;
+      font-weight: 700;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
       text-align: left;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     }
 
     .cal-event-pill-start {
@@ -1027,6 +1039,55 @@
       background: rgba(251, 191, 36, 0.15);
       border-color: rgba(251, 191, 36, 0.5);
       color: #fbbf24;
+    }
+
+    .days-left-badge-live {
+      font-size: 10px;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 99px;
+      letter-spacing: 0.02em;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      text-transform: uppercase;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      transition: all 0.3s ease;
+      white-space: nowrap;
+    }
+
+    .days-left-badge-live.badge-today {
+      background: linear-gradient(135deg, #ef4444, #f59e0b);
+      color: #ffffff;
+      box-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
+      animation: pulseGlow 1.5s infinite ease-in-out;
+    }
+
+    .days-left-badge-live.badge-tomorrow {
+      background: linear-gradient(135deg, #f59e0b, #eab308);
+      color: #09090b;
+    }
+
+    .days-left-badge-live.badge-soon {
+      background: linear-gradient(135deg, #a855f7, #ec4899);
+      color: #ffffff;
+    }
+
+    .days-left-badge-live.badge-upcoming {
+      background: rgba(168, 85, 247, 0.15);
+      border: 1px solid rgba(168, 85, 247, 0.3);
+      color: var(--purple-light);
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% {
+        box-shadow: 0 0 6px rgba(239, 68, 68, 0.5);
+        transform: scale(1);
+      }
+      50% {
+        box-shadow: 0 0 16px rgba(239, 68, 68, 0.9);
+        transform: scale(1.04);
+      }
     }
 
     @keyframes pulse {
@@ -1670,6 +1731,28 @@
       const dateStr = fmtDateRange(ev.startDate, ev.endDate);
       const locStr = [ev.venue, ev.city].filter(Boolean).join(', ');
       const imageSrc = safeImageUrl(ev.image);
+      const dl = daysLeft(ev.startDate);
+      const isP = isPast(ev);
+
+      let badgeHTML = '';
+      if (!isP && dl !== null && dl >= 0) {
+        let badgeClass = 'days-left-badge-live ';
+        let badgeLabel = '';
+        if (dl === 0) {
+          badgeClass += 'badge-today';
+          badgeLabel = '🔴 TODAY!';
+        } else if (dl === 1) {
+          badgeClass += 'badge-tomorrow';
+          badgeLabel = '⏰ TOMORROW';
+        } else if (dl <= 3) {
+          badgeClass += 'badge-soon';
+          badgeLabel = `⚡ ${dl} DAYS LEFT`;
+        } else {
+          badgeClass += 'badge-upcoming';
+          badgeLabel = `⏳ ${dl} DAYS`;
+        }
+        badgeHTML = `<span class="${badgeClass}">${badgeLabel}</span>`;
+      }
 
       const date = ev.startDate
         ? new Date(`${ev.startDate}T12:00:00`)
@@ -1690,8 +1773,11 @@
         ${imageHTML}
 
         <div class="queue-info">
-          <div class="queue-artist">
-            ${escapeHtml(ev.artist || 'Untitled event')}
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+            <div class="queue-artist">
+              ${escapeHtml(ev.artist || 'Untitled event')}
+            </div>
+            ${badgeHTML}
           </div>
 
           <div class="queue-date-row">
@@ -2244,32 +2330,58 @@
     }
 
     function openDetailModal(ev) {
-      const dateStr = fmtDate(ev.startDate);
+      const dateStr = fmtDateRange(ev.startDate, ev.endDate);
       const timeStr = ev.time ? ` · ${ev.time}` : '';
       const locStr = [ev.venue, ev.city].filter(Boolean).join(' · ');
       const overlay = document.getElementById('eventModalOverlay');
       const content = document.getElementById('eventModalContent');
 
       content.innerHTML = `
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
           ${categoryPillHTML(ev.category)}
-          <button class="icon-btn" id="closeModalBtn" style="font-size:18px; color:var(--text-muted);">✕</button>
+          <button class="icon-btn" id="closeModalBtn" style="font-size:18px; color:var(--text-muted); cursor:pointer; padding:4px;">✕</button>
         </div>
-        ${safeImageUrl(ev.image) ? `<img src="${escapeAttr(safeImageUrl(ev.image))}" class="full-modal-img" alt="Poster">` : ''}
-        <h2 style="margin: 8px 0 6px; font-weight:700; font-size:22px; color:#ffffff;">${escapeHtml(ev.artist || 'Untitled event')}</h2>
-        <div style="font-size:14px; color:var(--text-muted); margin-bottom:6px;">📅 ${escapeHtml(dateStr)}${escapeHtml(timeStr)}</div>
-        ${locStr ? `<div style="font-size:14px; color:var(--text-muted); margin-bottom:6px;">📍 <a href="https://maps.google.com/?q=${encodeURIComponent(locStr)}" target="_blank" rel="noopener noreferrer" class="map-link">${escapeHtml(locStr)}</a></div>` : ''}
-        ${ev.company ? `<div style="font-size:14px; color:var(--text-muted); margin-bottom:6px;">👥 ${escapeHtml(ev.company)}</div>` : ''}
-        ${ev.description ? `<div style="background:#09090b; padding:14px; border-radius:10px; border:1px solid var(--border); font-size:13px; margin-bottom:20px; margin-top:10px; white-space:pre-wrap; color:var(--text-main);"><strong>Lineup / Notes:</strong><br>${escapeHtml(ev.description)}</div>` : ''}
-        
-        <div class="btn-row">
-          <button class="btn btn-ghost" id="editFromModalBtn">Edit event</button>
+
+        ${safeImageUrl(ev.image) ? `
+          <div style="width:100%; max-height:130px; overflow:hidden; border-radius:12px; margin-bottom:14px; border:1px solid var(--border);">
+            <img src="${escapeAttr(safeImageUrl(ev.image))}" style="width:100%; height:130px; object-fit:cover; display:block;" alt="Poster">
+          </div>
+        ` : ''}
+
+        <h2 style="margin: 0 0 12px; font-weight:800; font-size:22px; color:#ffffff; line-height:1.25;">${escapeHtml(ev.artist || 'Untitled event')}</h2>
+
+        <div style="display:flex; flex-direction:column; gap:8px; background:rgba(255,255,255,0.03); padding:12px 14px; border-radius:12px; border:1px solid var(--border); margin-bottom:14px;">
+          <div style="font-size:13.5px; color:#e4e4e7; display:flex; align-items:center; gap:8px;">
+            <span>📅</span> <strong>${escapeHtml(dateStr)}${escapeHtml(timeStr)}</strong>
+          </div>
+          ${locStr ? `
+            <div style="font-size:13.5px; color:#e4e4e7; display:flex; align-items:center; gap:8px;">
+              <span>📍</span> <a href="https://maps.google.com/?q=${encodeURIComponent(locStr)}" target="_blank" rel="noopener noreferrer" class="map-link">${escapeHtml(locStr)}</a>
+            </div>
+          ` : ''}
+          ${ev.company ? `
+            <div style="font-size:13.5px; color:var(--text-muted); display:flex; align-items:center; gap:8px;">
+              <span>👥</span> <span>${escapeHtml(ev.company)}</span>
+            </div>
+          ` : ''}
+          ${ev.price ? `
+            <div style="font-size:13.5px; color:var(--purple-light); display:flex; align-items:center; gap:8px;">
+              <span>🎟️</span> <span>${escapeHtml(ev.price)}</span>
+            </div>
+          ` : ''}
         </div>
-        <div class="btn-row" style="margin-top: 10px;">
-          <button class="btn btn-primary" id="gcalFromModalBtn">Add to Google Cal</button>
-        </div>
-        <div class="btn-row" style="margin-top: 10px;">
-          <button class="btn btn-ghost" id="btnDelFromModal" style="color:var(--danger); border-color:rgba(239,68,68,0.3);">Delete</button>
+
+        ${ev.description ? `
+          <div style="background:#09090b; padding:14px; border-radius:12px; border:1px solid var(--border); font-size:13px; margin-bottom:14px; white-space:pre-wrap; color:var(--text-main); max-height:160px; overflow-y:auto;">
+            <strong style="color:var(--purple-light); font-size:11px; text-transform:uppercase; letter-spacing:0.05em; display:block; margin-bottom:6px;">Lineup / Notes</strong>
+            ${escapeHtml(ev.description)}
+          </div>
+        ` : ''}
+
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:16px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.08);">
+          <button class="btn btn-ghost" id="gcalFromModalBtn" style="font-size:12px; padding:6px 12px; color:var(--purple-light); border-color:rgba(168,85,247,0.3); flex:1;">📅 Add to Cal</button>
+          <button class="btn btn-ghost" id="editFromModalBtn" style="font-size:12px; padding:6px 12px; color:var(--text-muted); border-color:var(--border); flex:1;">✏️ Edit</button>
+          <button class="btn btn-ghost" id="btnDelFromModal" style="font-size:12px; padding:6px 12px; color:var(--danger); border-color:rgba(239,68,68,0.25); flex:1;">🗑️ Delete</button>
         </div>`;
 
       overlay.classList.add('active');
@@ -2338,18 +2450,30 @@
         });
 
         if (dayEvents.length > 0) {
-          // Render event pills
-          dayEvents.slice(0, 4).forEach((ev) => {
+          // If 3 or fewer events, show all of them. If more than 3, show 2 + "+N more" badge.
+          const showEvents = dayEvents.length <= 3 ? dayEvents : dayEvents.slice(0, 2);
+          showEvents.forEach((ev) => {
             const isMultiDay = ev.endDate && ev.endDate !== ev.startDate;
             const isStart = ev.startDate === dayStr;
             const isEnd = ev.endDate === dayStr;
-            const color = ev.category === 'Festival' ? '#d97706' : (ev.category === 'Other' ? '#0d9488' : '#7e22ce');
-            const bgColor = ev.category === 'Festival' ? '#fde68a' : (ev.category === 'Other' ? '#99f6e4' : '#e9d5ff'); // light pastel background
-            const textColor = ev.category === 'Festival' ? '#92400e' : (ev.category === 'Other' ? '#115e59' : '#581c87'); // dark text
+            let bgGradient = 'linear-gradient(135deg, rgba(168, 85, 247, 0.35), rgba(192, 132, 252, 0.45))';
+            let borderColor = 'rgba(168, 85, 247, 0.6)';
+            let textColor = '#ffffff';
+
+            if (ev.category === 'Festival') {
+              bgGradient = 'linear-gradient(135deg, rgba(245, 158, 11, 0.35), rgba(251, 191, 36, 0.45))';
+              borderColor = 'rgba(245, 158, 11, 0.7)';
+              textColor = '#fef08a';
+            } else if (ev.category === 'Other' || ev.category === 'Party') {
+              bgGradient = 'linear-gradient(135deg, rgba(20, 184, 166, 0.35), rgba(45, 212, 191, 0.45))';
+              borderColor = 'rgba(20, 184, 166, 0.7)';
+              textColor = '#99f6e4';
+            }
 
             const pill = document.createElement('div');
             pill.className = 'cal-event-pill';
-            pill.style.background = bgColor;
+            pill.style.background = bgGradient;
+            pill.style.border = `1px solid ${borderColor}`;
             pill.style.color = textColor;
             pill.textContent = ev.artist || 'Event';
 
@@ -2368,11 +2492,13 @@
             cell.appendChild(pill);
           });
 
-          if (dayEvents.length > 4) {
+          if (dayEvents.length > 3) {
             const more = document.createElement('div');
             more.style.fontSize = '8px';
-            more.style.color = 'var(--text-muted)';
-            more.textContent = `+${dayEvents.length - 4} more`;
+            more.style.fontWeight = '700';
+            more.style.color = 'var(--purple-light)';
+            more.style.marginTop = '1px';
+            more.textContent = `+${dayEvents.length - 2} more`;
             cell.appendChild(more);
           }
         }
@@ -2781,9 +2907,36 @@
         }
       };
 
+      // Native Android widget tap handler
+      window.checkForWidgetOpenIntentNative = async function () {
+        if (!window.Capacitor?.Plugins?.Preferences) return;
+        const { value: targetId } = await window.Capacitor.Plugins.Preferences.get({ key: 'pending-widget-open-event-id' });
+        const { value: targetDate } = await window.Capacitor.Plugins.Preferences.get({ key: 'pending-widget-open-date' });
+
+        if (targetId || targetDate) {
+          if (targetId) await window.Capacitor.Plugins.Preferences.remove({ key: 'pending-widget-open-event-id' });
+          if (targetDate) await window.Capacitor.Plugins.Preferences.remove({ key: 'pending-widget-open-date' });
+
+          let targetEvent = events.find(e => e.id === targetId);
+          if (!targetEvent && targetDate) {
+            targetEvent = events.find(e => e.startDate === targetDate || (e.startDate <= targetDate && e.endDate >= targetDate));
+          }
+
+          if (targetEvent) {
+            switchTab('queue');
+            openDetailModal(targetEvent);
+          } else if (targetDate) {
+            switchTab('calendar');
+            calSelectedDateStr = targetDate;
+            renderCalendar();
+          }
+        }
+      };
+
       // Execute the native check immediately on boot (to catch cold-start intents)
       if (window.Capacitor?.isNative) {
         window.checkForSharedDataNative();
+        window.checkForWidgetOpenIntentNative();
       }
 
       if (searchParams.get('shared') === '1') {

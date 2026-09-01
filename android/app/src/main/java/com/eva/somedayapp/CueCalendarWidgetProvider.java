@@ -147,10 +147,12 @@ public class CueCalendarWidgetProvider extends AppWidgetProvider {
             int numId = context.getResources().getIdentifier("cal_cell_num_" + cid, "id", context.getPackageName());
             int ev1Id = context.getResources().getIdentifier("cal_cell_ev1_" + cid, "id", context.getPackageName());
             int ev2Id = context.getResources().getIdentifier("cal_cell_ev2_" + cid, "id", context.getPackageName());
+            int ev3Id = context.getResources().getIdentifier("cal_cell_ev3_" + cid, "id", context.getPackageName());
             int todayId = context.getResources().getIdentifier("cal_cell_today_" + cid, "id", context.getPackageName());
 
             views.setTextViewText(ev1Id, "");
             views.setTextViewText(ev2Id, "");
+            views.setTextViewText(ev3Id, "");
             views.setViewVisibility(todayId, View.GONE);
             views.setInt(bgId, "setBackgroundResource", R.drawable.cal_cell_bg_empty);
             if (tapIntent != null) views.setOnClickPendingIntent(bgId, tapIntent);
@@ -185,15 +187,41 @@ public class CueCalendarWidgetProvider extends AppWidgetProvider {
                     
                     views.setInt(bgId, "setBackgroundResource", bgRes);
                     views.setTextColor(numId, 0xFFFFFFFF);
+
+                    if (launchIntent != null) {
+                        String firstEvId = evs.get(0).optString("id", "");
+                        String firstEvDate = String.format(Locale.getDefault(), "%04d-%02d-%02d", currentYear, currentMonth + 1, dayCounter);
+                        Intent cellIntent = new Intent(launchIntent);
+                        cellIntent.putExtra("open_event_id", firstEvId);
+                        cellIntent.putExtra("open_date", firstEvDate);
+                        cellIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                        PendingIntent cellPending = PendingIntent.getActivity(
+                            context,
+                            appWidgetId * 1000 + cid + 10000,
+                            cellIntent,
+                            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+                        );
+                        views.setOnClickPendingIntent(bgId, cellPending);
+                    }
                     
-                    String a1 = evs.get(0).optString("artist", "Event");
-                    views.setTextViewText(ev1Id, a1);
+                    if (evs.size() > 0) {
+                        String a1 = evs.get(0).optString("artist", "Event");
+                        views.setTextViewText(ev1Id, a1);
+                    }
                     if (evs.size() > 1) {
                         String a2 = evs.get(1).optString("artist", "Event");
                         views.setTextViewText(ev2Id, a2);
                     }
+                    if (evs.size() > 2) {
+                        if (evs.size() == 3) {
+                            String a3 = evs.get(2).optString("artist", "Event");
+                            views.setTextViewText(ev3Id, a3);
+                        } else {
+                            views.setTextViewText(ev3Id, "+" + (evs.size() - 2) + " more");
+                        }
+                    }
                 } else {
-                    views.setTextColor(numId, isToday ? 0xFFFBBF24 : 0xFFA1A1AA); // Gold if today, otherwise Zinc 400
+                    views.setTextColor(numId, isToday ? 0xFFC084FC : 0xFFA1A1AA); // Purple light if today, otherwise Zinc 400
                 }
                 
                 dayCounter++;

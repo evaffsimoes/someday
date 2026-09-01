@@ -19,6 +19,7 @@ public class MainActivity extends BridgeActivity {
 
         // Handle share intent if app was opened via share sheet
         handleShareIntent(getIntent());
+        handleWidgetOpenIntent(getIntent());
 
         // Listen for SharedPreferences changes → refresh widgets immediately
         SharedPreferences prefs = getSharedPreferences("CapacitorStorage", MODE_PRIVATE);
@@ -34,6 +35,7 @@ public class MainActivity extends BridgeActivity {
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         handleShareIntent(intent);
+        handleWidgetOpenIntent(intent);
     }
 
     @Override
@@ -67,6 +69,29 @@ public class MainActivity extends BridgeActivity {
                 getBridge().getWebView().post(() -> {
                     getBridge().getWebView().evaluateJavascript(
                         "if(typeof window.checkForSharedDataNative === 'function') window.checkForSharedDataNative();",
+                        null
+                    );
+                });
+            }
+        }
+    }
+
+    private void handleWidgetOpenIntent(Intent intent) {
+        if (intent == null) return;
+        String openEvId = intent.getStringExtra("open_event_id");
+        String openDate = intent.getStringExtra("open_date");
+
+        if ((openEvId != null && !openEvId.isEmpty()) || (openDate != null && !openDate.isEmpty())) {
+            SharedPreferences prefs = getSharedPreferences("CapacitorStorage", MODE_PRIVATE);
+            SharedPreferences.Editor ed = prefs.edit();
+            if (openEvId != null) ed.putString("pending-widget-open-event-id", openEvId);
+            if (openDate != null) ed.putString("pending-widget-open-date", openDate);
+            ed.apply();
+
+            if (getBridge() != null && getBridge().getWebView() != null) {
+                getBridge().getWebView().post(() -> {
+                    getBridge().getWebView().evaluateJavascript(
+                        "if(typeof window.checkForWidgetOpenIntentNative === 'function') window.checkForWidgetOpenIntentNative();",
                         null
                     );
                 });
