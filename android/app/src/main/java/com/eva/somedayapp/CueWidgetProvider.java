@@ -14,7 +14,6 @@ import org.json.JSONObject;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
-import java.util.concurrent.TimeUnit;
 
 public class CueWidgetProvider extends AppWidgetProvider {
 
@@ -41,15 +40,26 @@ public class CueWidgetProvider extends AppWidgetProvider {
             views.setOnClickPendingIntent(R.id.widget_root, pendingIntent);
         }
 
-        // Load events from Capacitor SharedPreferences
+        // Clear all cells first
+        int[] artistIds = { R.id.w_item_0_artist, R.id.w_item_1_artist, R.id.w_item_2_artist };
+        int[] locIds    = { R.id.w_item_0_loc,    R.id.w_item_1_loc,    R.id.w_item_2_loc    };
+        int[] dayIds    = { R.id.w_item_0_day,    R.id.w_item_1_day,    R.id.w_item_2_day    };
+        int[] monthIds  = { R.id.w_item_0_month,  R.id.w_item_1_month,  R.id.w_item_2_month  };
+        int[] cardIds   = { R.id.w_card_0,        R.id.w_card_1,        R.id.w_card_2        };
+
+        for (int i = 0; i < 3; i++) {
+            views.setTextViewText(artistIds[i], "");
+            views.setTextViewText(locIds[i], "");
+            views.setTextViewText(dayIds[i], "");
+            views.setTextViewText(monthIds[i], "");
+        }
+
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         String eventsJson = prefs.getString(EVENTS_KEY, null);
 
         if (eventsJson == null || eventsJson.isEmpty()) {
-            views.setTextViewText(R.id.widget_artist, "No upcoming events");
-            views.setTextViewText(R.id.widget_date_loc, "Open cue to add events");
-            views.setTextViewText(R.id.widget_days_badge, "");
-            views.setTextViewText(R.id.widget_next, "");
+            views.setTextViewText(R.id.w_item_0_artist, "cue setup");
+            views.setTextViewText(R.id.w_item_0_loc, "Tap here to open & sync");
             appWidgetManager.updateAppWidget(appWidgetId, views);
             return;
         }
@@ -58,7 +68,7 @@ public class CueWidgetProvider extends AppWidgetProvider {
             JSONArray all = new JSONArray(eventsJson);
             String todayStr = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
 
-            // Find upcoming events (startDate >= today)
+            // Find upcoming events
             JSONArray upcoming = new JSONArray();
             for (int i = 0; i < all.length(); i++) {
                 JSONObject ev = all.getJSONObject(i);
@@ -68,76 +78,43 @@ public class CueWidgetProvider extends AppWidgetProvider {
                 }
             }
 
-            // Sort by startDate (already sorted in app, but double-check first two)
             if (upcoming.length() == 0) {
-                views.setTextViewText(R.id.widget_artist, "No upcoming events");
-                views.setTextViewText(R.id.widget_date_loc, "Open cue to add one");
-                views.setTextViewText(R.id.widget_days_badge, "");
-                views.setTextViewText(R.id.widget_next, "");
+                views.setTextViewText(R.id.w_item_0_artist, "No upcoming events");
+                views.setTextViewText(R.id.w_item_0_loc, "Add one in cue");
             } else {
-                JSONObject next = upcoming.getJSONObject(0);
-                String artist = next.optString("artist", next.optString("name", "Event"));
-                String startDate = next.optString("startDate", "");
-                String venue = next.optString("venue", "");
-                String city = next.optString("city", "");
+                SimpleDateFormat inFmt = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+                SimpleDateFormat dayFmt = new SimpleDateFormat("d", Locale.getDefault());
+                SimpleDateFormat monFmt = new SimpleDateFormat("MMM", Locale.getDefault());
 
-                // Days until
-                String badge = "";
-                if (!startDate.isEmpty()) {
-                    try {
-                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-                        Date eventDate = sdf.parse(startDate);
-                        Date now = new Date();
-                        long diffMs = eventDate.getTime() - now.getTime();
-                        long days = TimeUnit.MILLISECONDS.toDays(diffMs);
-                        if (days == 0) badge = "TODAY";
-                        else if (days == 1) badge = "TOMORROW";
-                        else badge = days + " DAYS";
-                    } catch (Exception ignored) {}
-                }
+                for (int i = 0; i < 3; i++) {
+                    if (i < upcoming.length()) {
+                        JSONObject ev = upcoming.getJSONObject(i);
+                        String artist = ev.optString("artist", ev.optString("name", "Event"));
+                        String venue  = ev.optString("venue", "");
+                        String city   = ev.optString("city", "");
+                        String startDate = ev.optString("startDate", "");
 
-                // Location string
-                StringBuilder loc = new StringBuilder();
-                if (!venue.isEmpty()) loc.append(venue);
-                if (!city.isEmpty()) {
-                    if (loc.length() > 0) loc.append(", ");
-                    loc.append(city);
-                }
+                        StringBuilder loc = new StringBuilder();
+                        if (!venue.isEmpty()) loc.append(venue);
+                        if (!city.isEmpty()) { if (loc.length() > 0) loc.append(", "); loc.append(city); }
 
-                // Date display
-                String dateDisplay = startDate;
-                try {
-                    SimpleDateFormat inFmt = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-                    SimpleDateFormat outFmt = new SimpleDateFormat("d MMM yyyy", Locale.getDefault());
-                    dateDisplay = outFmt.format(inFmt.parse(startDate));
-                } catch (Exception ignored) {}
+                        String dayStr2 = "", monStr = "";
+                        try {
+                            Date d = inFmt.parse(startDate);
+                            dayStr2 = dayFmt.format(d);
+                            monStr  = monFmt.format(d);
+                        } catch (Exception ignored) {}
 
-                String dateLoc = dateDisplay + (loc.length() > 0 ? "  ·  " + loc : "");
-
-                views.setTextViewText(R.id.widget_artist, artist);
-                views.setTextViewText(R.id.widget_date_loc, dateLoc);
-                views.setTextViewText(R.id.widget_days_badge, badge);
-
-                // Next after that
-                if (upcoming.length() > 1) {
-                    JSONObject second = upcoming.getJSONObject(1);
-                    String a2 = second.optString("artist", second.optString("name", "Event"));
-                    String d2 = second.optString("startDate", "");
-                    try {
-                        SimpleDateFormat inFmt = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-                        SimpleDateFormat outFmt = new SimpleDateFormat("d MMM", Locale.getDefault());
-                        d2 = outFmt.format(inFmt.parse(d2));
-                    } catch (Exception ignored) {}
-                    views.setTextViewText(R.id.widget_next, "Next: " + a2 + "  ·  " + d2);
-                } else {
-                    views.setTextViewText(R.id.widget_next, "");
+                        views.setTextViewText(artistIds[i], artist);
+                        views.setTextViewText(locIds[i], loc.length() > 0 ? loc.toString() : startDate);
+                        views.setTextViewText(dayIds[i], dayStr2);
+                        views.setTextViewText(monthIds[i], monStr);
+                    }
                 }
             }
         } catch (Exception e) {
-            views.setTextViewText(R.id.widget_artist, "Error loading events");
-            views.setTextViewText(R.id.widget_date_loc, e.getMessage());
-            views.setTextViewText(R.id.widget_days_badge, "");
-            views.setTextViewText(R.id.widget_next, "");
+            views.setTextViewText(R.id.w_item_0_artist, "Error loading");
+            views.setTextViewText(R.id.w_item_0_loc, e.getMessage());
         }
 
         appWidgetManager.updateAppWidget(appWidgetId, views);

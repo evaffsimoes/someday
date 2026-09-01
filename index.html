@@ -1188,9 +1188,11 @@
         <p class="tagline">Never miss your <span class="tagline-purple">cue.</span></p>
       </div>
 
-      <button id="notificationBtn" class="notification-btn" type="button">
-        🔔 Alerts
-      </button>
+      <div style="display:flex; gap:8px;">
+        <button class="notification-btn" id="notificationBtn" onclick="enableNotifications()">🔕 Alertas</button>
+        <button class="notification-btn" onclick="openSettingsModal()"
+          style="font-size:16px; padding: 4px 10px;">⚙️</button>
+      </div>
     </header>
 
     <!-- TAB 1: QUEUE (HOME) -->
@@ -1358,13 +1360,44 @@
       </div>
 
       <div style="margin-top: 32px; border-top: 1px solid var(--border); padding-top: 24px;">
-        <h3 style="margin-bottom:12px;">Data Sync</h3>
-        <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">Copy your events to paste them into
-          another device, or import events you copied.</p>
+        <h3 style="margin-bottom:12px;">Cloud Sync (Fast)</h3>
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">Move events between phone and computer
+          using a temporary 10-letter code.</p>
         <div class="btn-row">
-          <button class="btn btn-ghost" id="exportDataBtn" style="flex:1;">📤 Copy Data</button>
-          <button class="btn btn-ghost" id="importDataBtn" style="flex:1;">📥 Paste Data</button>
+          <button class="btn btn-primary" id="cloudUploadBtn" style="flex:1;">☁️ Upload</button>
+          <button class="btn btn-ghost" id="cloudDownloadBtn" style="flex:1;">☁️ Download</button>
         </div>
+      </div>
+
+      <div style="margin-top: 32px; border-top: 1px solid var(--border); padding-top: 24px;">
+        <h3 style="margin-bottom:12px;">Data Backup (File)</h3>
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">Download a backup file of your events,
+          or load a previously saved backup file.</p>
+        <div class="btn-row">
+          <button class="btn btn-ghost" id="exportFileBtn" style="flex:1;">📤 Download Backup</button>
+          <button class="btn btn-ghost" id="importFileBtn" style="flex:1;">📥 Load Backup</button>
+          <input type="file" id="fileInputBackup" accept=".json" style="display:none;" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manual Import Modal Overlay -->
+  <div id="importModalOverlay" class="modal-overlay">
+    <div class="modal-content">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3 style="margin:0;">Paste Data</h3>
+        <button class="icon-btn" onclick="document.getElementById('importModalOverlay').classList.remove('active')"
+          style="font-size:18px; color:var(--text-muted);">✕</button>
+      </div>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">Paste the event code you copied below:</p>
+
+      <textarea id="importTextArea"
+        style="width:100%; height:150px; background:rgba(0,0,0,0.5); color:white; border:1px solid var(--border); border-radius:8px; padding:10px; font-family:monospace; font-size:11px;"
+        placeholder='[{"id":"cue_..."}]'></textarea>
+
+      <div class="btn-row" style="margin-top: 24px;">
+        <button class="btn btn-primary" id="confirmImportBtn">Import now</button>
       </div>
     </div>
   </div>
@@ -1439,7 +1472,7 @@
       // Build dynamic venues (seeded with well-known PT venues)
       const dVenue = document.getElementById('dynamic-venues') || document.createElement('datalist');
       dVenue.id = 'dynamic-venues';
-      const knownVenues = new Set(["NOS Alive", "Super Bock Super Rock", "Rock in Rio Lisboa", "Coliseu do Porto", "Coliseu de Lisboa", "Altice Arena", "MEO Arena", "Primavera Sound Porto", "Parque da Cidade", "Palácio do Cristal", "Hard Club", "Casa da Música", "Pavilhão Rosa Mota", "Lisboa ao Vivo", "Parque Eduardo VII", "Meo Marés Vivas", "Vodafone Paredes de Coura", "Boom Festival", "Queijo Dunas"]);
+      const knownVenues = new Set(["NOS Alive", "Super Bock Super Rock", "Rock in Rio Lisboa", "Coliseu do Porto", "Coliseu de Lisboa", "Altice Arena", "MEO Arena", "Primavera Sound Porto", "Parque da Cidade", "Palácio do Cristal", "Hard Club", "Casa da Música", "Pavilhão Rosa Mota", "Lisboa ao Vivo", "Parque Eduardo VII", "Queijo Dunas", "Meo Marés Vivas", "Vodafone Paredes de Coura", "Boom Festival"]);
       events.forEach(e => { if (e.venue) knownVenues.add(e.venue.trim()); });
       dVenue.innerHTML = Array.from(knownVenues).sort().map(v => `<option value="${escapeAttr(v)}">`).join('');
       document.body.appendChild(dVenue);
@@ -2531,32 +2564,94 @@
       customAlert('Preferências guardadas!');
     };
 
-    document.getElementById('exportDataBtn').onclick = async () => {
+    document.getElementById('exportFileBtn').onclick = () => {
+      const rawEvents = localStorage.getItem(STORE_KEY) || '[]';
+      const blob = new Blob([rawEvents], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'cue-backup.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    };
+
+    const fileInputBackup = document.getElementById('fileInputBackup');
+    document.getElementById('importFileBtn').onclick = () => {
+      fileInputBackup.click();
+    };
+
+    fileInputBackup.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        try {
+          const txt = event.target.result;
+          const importedEvents = JSON.parse(txt);
+          if (Array.isArray(importedEvents) && window.confirm(`Import ${importedEvents.length} events? This will replace your current events!`)) {
+            events = importedEvents;
+            await saveEvents();
+            render();
+            renderCalendar();
+            document.getElementById('settingsModalOverlay').classList.remove('active');
+            customAlert('Data loaded successfully from file!');
+          } else {
+            customAlert('No valid event data found in file.');
+          }
+        } catch (err) {
+          customAlert('Invalid file format. ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+      fileInputBackup.value = ''; // Reset
+    };
+
+    // Cloud Sync Handlers
+    document.getElementById('cloudUploadBtn').onclick = async () => {
+      const rawEvents = localStorage.getItem(STORE_KEY) || '[]';
       try {
-        const rawEvents = localStorage.getItem(STORE_KEY) || '[]';
-        await navigator.clipboard.writeText(rawEvents);
-        customAlert('Data copied to clipboard! Paste it on your other device.', 3000);
-      } catch (e) {
-        customAlert('Failed to copy. ' + e.message);
+        const btn = document.getElementById('cloudUploadBtn');
+        btn.textContent = 'Uploading...';
+        const res = await fetch('https://api.pastes.dev/post', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: rawEvents
+        });
+        if (!res.ok) throw new Error('Upload failed');
+        const data = await res.json();
+        const code = data.key;
+        btn.textContent = '☁️ Upload';
+        window.prompt('Upload successful! Write down this code to download your events on another device. (It expires soon)', code);
+      } catch (err) {
+        document.getElementById('cloudUploadBtn').textContent = '☁️ Upload';
+        customAlert('Error uploading to cloud: ' + err.message);
       }
     };
 
-    document.getElementById('importDataBtn').onclick = async () => {
+    document.getElementById('cloudDownloadBtn').onclick = async () => {
+      const code = window.prompt('Enter your Cloud Sync Code:');
+      if (!code) return;
       try {
-        const txt = await navigator.clipboard.readText();
+        const btn = document.getElementById('cloudDownloadBtn');
+        btn.textContent = 'Downloading...';
+        const res = await fetch(`https://api.pastes.dev/${code}`);
+        if (!res.ok) throw new Error('Code not found or expired');
+        const txt = await res.text();
         const importedEvents = JSON.parse(txt);
-        if (Array.isArray(importedEvents) && window.confirm(`Import ${importedEvents.length} events? This will replace your current events!`)) {
+        if (Array.isArray(importedEvents) && window.confirm(`Found ${importedEvents.length} events! Download and overwrite local data?`)) {
           events = importedEvents;
           await saveEvents();
           render();
           renderCalendar();
           document.getElementById('settingsModalOverlay').classList.remove('active');
-          customAlert('Data imported successfully!');
-        } else {
-          customAlert('No valid event data found in clipboard.');
+          customAlert('Sync successful!');
         }
-      } catch (e) {
-        customAlert('Could not import. ' + e.message);
+        btn.textContent = '☁️ Download';
+      } catch (err) {
+        document.getElementById('cloudDownloadBtn').textContent = '☁️ Download';
+        customAlert('Download failed: ' + err.message);
       }
     };
 
@@ -2673,6 +2768,22 @@
         switchTab('add');
         handleSharedText(sharedText);
         return;
+      }
+
+      // Native Android share handler
+      window.checkForSharedDataNative = async function () {
+        if (!window.Capacitor?.Plugins?.Preferences) return;
+        const { value } = await window.Capacitor.Plugins.Preferences.get({ key: 'pending-share-intent' });
+        if (value) {
+          await window.Capacitor.Plugins.Preferences.remove({ key: 'pending-share-intent' });
+          switchTab('add');
+          handleSharedText(value);
+        }
+      };
+
+      // Execute the native check immediately on boot (to catch cold-start intents)
+      if (window.Capacitor?.isNative) {
+        window.checkForSharedDataNative();
       }
 
       if (searchParams.get('shared') === '1') {

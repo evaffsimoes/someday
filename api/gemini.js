@@ -73,6 +73,14 @@ function validatePayload(body) {
 }
 
 export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
@@ -102,15 +110,19 @@ export default async function handler(req, res) {
       const sharedUrl = readUrl(sharedUrlStr);
       if (isInstagramUrl(sharedUrl)) {
         try {
-          const pageRes = await fetch(sharedUrl, {
+          // Rewrite Instagram URL to a proxy that provides unauthenticated OG tags (like ddinstagram)
+          // This avoids the Instagram login wall which blocks server-side scraping.
+          const fetchUrl = new URL(sharedUrl);
+          fetchUrl.hostname = fetchUrl.hostname.replace('instagram.com', 'ddinstagram.com');
+
+          const pageRes = await fetch(fetchUrl.toString(), {
             headers: {
-              'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
-              'Accept': 'text/html',
-              'Accept-Language': 'pt-PT,pt;q=0.9,en;q=0.8'
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+              'Accept': 'text/html'
             },
             signal: AbortSignal.timeout(5000)
           });
-          if (!pageRes.ok || !pageRes.headers.get('content-type')?.includes('text/html')) throw new Error('Instagram page could not be read');
+          if (!pageRes.ok || !pageRes.headers.get('content-type')?.includes('text/html')) throw new Error('Proxy page could not be read');
           const html = new TextDecoder().decode(await readLimited(pageRes, MAX_PAGE_BYTES));
 
           const ogTitle = (html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i) || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:title["']/i) || [])[1] || '';
@@ -156,7 +168,7 @@ If the year is not mentioned, assume the next upcoming occurrence after today ($
 If the year isn't shown, assume the next upcoming occurrence after today (${today}).`;
     }
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
