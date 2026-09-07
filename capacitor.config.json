@@ -1,5 +1,9 @@
 {
   "appId": "com.eva.cue",
   "appName": "cue",
-  "webDir": "www"
+  "webDir": "www",
+  "server": {
+    "url": "https://someday-nu.vercel.app",
+    "cleartext": true
+  }
 }

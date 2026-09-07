@@ -5,14 +5,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>cue widget</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --purple: #a855f7;
             --purple-light: #c084fc;
-            --bg: #000;
-            --surface: #121214;
-            --border: #27272a;
-            --text-muted: #a1a1aa;
+            --bg: #09090b;
+            --surface: #141417;
+            --surface-hover: #1c1c21;
+            --border: rgba(255, 255, 255, 0.08);
+            --text-main: #f5f5f5;
+            --text-muted: #94949e;
         }
 
         * {
@@ -22,92 +25,112 @@
         }
 
         body {
-            font-family: -apple-system, 'Inter', BlinkMacSystemFont, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: var(--bg);
-            color: #fff;
-            border-radius: 16px;
+            color: var(--text-main);
+            border-radius: 20px;
             overflow: hidden;
-            padding: 14px;
-            min-height: 120px;
+            padding: 14px 16px;
+            min-height: 140px;
+            line-height: 1.4;
         }
 
         #widgetContent {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 10px;
         }
 
         .widget-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
         }
 
         .widget-logo {
+            font-family: 'Outfit', sans-serif;
             font-weight: 800;
-            font-size: 16px;
-            color: var(--purple);
+            font-size: 18px;
+            color: #fff;
             letter-spacing: -0.04em;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .widget-logo .gem {
+            color: var(--purple);
+            font-size: 16px;
         }
 
         .widget-badge {
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 700;
-            background: rgba(168, 85, 247, 0.2);
+            background: rgba(168, 85, 247, 0.15);
             color: var(--purple-light);
-            border: 1px solid rgba(168, 85, 247, 0.35);
+            border: 1px solid rgba(168, 85, 247, 0.3);
             border-radius: 99px;
-            padding: 2px 8px;
+            padding: 3px 10px;
+            letter-spacing: 0.02em;
         }
 
         .widget-event {
             background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 10px;
+            border-radius: 14px;
+            padding: 10px 12px;
             display: grid;
-            grid-template-columns: 42px minmax(0, 1fr);
-            grid-template-rows: auto auto auto;
-            column-gap: 10px;
-            row-gap: 3px;
+            grid-template-columns: 46px minmax(0, 1fr);
+            column-gap: 12px;
+            row-gap: 2px;
+            align-items: center;
+            transition: background 0.2s ease;
         }
 
         .widget-event-image {
-            width: 42px;
-            height: 42px;
+            width: 46px;
+            height: 46px;
             grid-row: 1 / span 3;
-            border-radius: 8px;
+            border-radius: 10px;
             object-fit: cover;
-            background: #27272a;
+            background: rgba(255, 255, 255, 0.04);
             border: 1px solid var(--border);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .widget-event-placeholder {
+            width: 46px;
+            height: 46px;
+            grid-row: 1 / span 3;
+            border-radius: 10px;
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(192, 132, 252, 0.05));
+            border: 1px solid rgba(168, 85, 247, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--purple-light);
+            font-size: 18px;
         }
 
         .widget-event-name {
-            min-width: 0;
-            display: block;
-            width: 100%;
-            box-sizing: border-box;
-            padding: 2px 4px;
-            font-size: 14px;
-            line-height: 1.1;
+            font-family: 'Outfit', sans-serif;
             font-weight: 700;
-            letter-spacing: 0.02em;
+            font-size: 14px;
+            color: #fff;
+            letter-spacing: -0.01em;
             white-space: nowrap;
             overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .widget-event-name span {
-            display: block;
-            overflow: hidden;
-            white-space: nowrap;
             text-overflow: ellipsis;
         }
 
         .widget-event-date {
             font-size: 11px;
-            color: var(--text-muted);
+            font-weight: 600;
+            color: var(--purple-light);
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
 
         .widget-event-location {
@@ -123,32 +146,38 @@
             font-size: 11px;
             font-weight: 700;
             text-align: center;
-            padding: 2px 0 4px;
+            padding: 4px 0 2px;
+            letter-spacing: 0.02em;
         }
 
         .widget-empty {
             color: var(--text-muted);
-            font-size: 12px;
+            font-size: 13px;
             text-align: center;
-            padding: 20px 0;
+            padding: 24px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
         }
 
-        .days-badge {
-            font-size: 10px;
-            font-weight: 700;
-            color: var(--purple-light);
-            align-self: flex-start;
+        .widget-empty-icon {
+            font-size: 24px;
+            opacity: 0.6;
         }
     </style>
 </head>
 
 <body>
     <div class="widget-header">
-        <div class="widget-logo">cue✦</div>
+        <div class="widget-logo">cue<span class="gem">✦</span></div>
         <div class="widget-badge" id="widgetBadge">0 upcoming</div>
     </div>
     <div id="widgetContent">
-        <div class="widget-empty">No upcoming events</div>
+        <div class="widget-empty">
+            <span class="widget-empty-icon">✨</span>
+            <span>No upcoming events</span>
+        </div>
     </div>
 
     <script>
@@ -156,7 +185,13 @@
             if (!dStr) return '';
             const d = new Date(dStr + 'T00:00:00');
             if (isNaN(d)) return dStr;
-            return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+            const now = new Date();
+            now.setHours(0,0,0,0);
+            const diffDays = Math.round((d - now) / (1000 * 60 * 60 * 24));
+            if (diffDays === 0) return 'Today';
+            if (diffDays === 1) return 'Tomorrow';
+            if (diffDays > 1 && diffDays <= 7) return `In ${diffDays} days`;
+            return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
         }
 
         function isPast(ev) {
@@ -171,38 +206,46 @@
             return '';
         }
 
-                function renderWidget() {
-                    try {
-            const raw = localStorage.getItem('cue-events-v12');
-            const events = raw ? JSON.parse(raw) : [];
-            const upcoming = events
-                .filter(e => !isPast(e) && e.startDate)
-                .sort((a, b) => a.startDate.localeCompare(b.startDate));
+        function renderWidget() {
+            try {
+                const raw = localStorage.getItem('cue-events-v12');
+                const events = raw ? JSON.parse(raw) : [];
+                const upcoming = events
+                    .filter(e => !isPast(e) && e.startDate)
+                    .sort((a, b) => a.startDate.localeCompare(b.startDate));
 
-            document.getElementById('widgetBadge').textContent =
-                upcoming.length + ' upcoming';
+                document.getElementById('widgetBadge').textContent =
+                    upcoming.length + (upcoming.length === 1 ? ' upcoming' : ' upcoming');
 
-            if (upcoming.length > 0) {
-                const availableHeight = window.innerHeight || document.documentElement.clientHeight || 160;
-                const visibleCount = Math.max(1, Math.floor((availableHeight - 54) / 70));
-                const visibleEvents = upcoming.slice(0, visibleCount);
-                                const cards = visibleEvents.map(event => `
-                    <div class="widget-event">
-                        ${imageUrl(event) ? `<img class="widget-event-image" src="${imageUrl(event)}" alt="">` : '<div class="widget-event-image"></div>'}
-                        <div class="widget-event-name" title="${event.artist || 'Untitled event'}"><span>${event.artist || 'Untitled event'}</span></div>
-                        <div class="widget-event-date">${fmtDate(event.startDate)}</div>
-                        ${event.venue || event.city ? `<div class="widget-event-location">${[event.venue, event.city].filter(Boolean).join(', ')}</div>` : ''}
-                    </div>`).join('');
-                                const remaining = upcoming.length - visibleEvents.length;
-                                document.getElementById('widgetContent').innerHTML = cards + (remaining > 0
-                                        ? `<div class="widget-more">+${remaining} more events</div>`
-                                        : '');
-            }
-                    } catch (e) { }
+                if (upcoming.length > 0) {
+                    const availableHeight = window.innerHeight || document.documentElement.clientHeight || 160;
+                    const visibleCount = Math.max(1, Math.floor((availableHeight - 54) / 72));
+                    const visibleEvents = upcoming.slice(0, visibleCount);
+                    const cards = visibleEvents.map(event => `
+                        <div class="widget-event">
+                            ${imageUrl(event) 
+                                ? `<img class="widget-event-image" src="${imageUrl(event)}" alt="">` 
+                                : '<div class="widget-event-placeholder">✦</div>'}
+                            <div class="widget-event-name" title="${event.artist || 'Untitled event'}">${event.artist || 'Untitled event'}</div>
+                            <div class="widget-event-date"><span>📅</span> ${fmtDate(event.startDate)}${event.time ? ` • ${event.time}` : ''}</div>
+                            ${event.venue || event.city ? `<div class="widget-event-location">📍 ${[event.venue, event.city].filter(Boolean).join(', ')}</div>` : ''}
+                        </div>`).join('');
+                    const remaining = upcoming.length - visibleEvents.length;
+                    document.getElementById('widgetContent').innerHTML = cards + (remaining > 0
+                        ? `<div class="widget-more">+${remaining} more events</div>`
+                        : '');
+                } else {
+                    document.getElementById('widgetContent').innerHTML = `
+                        <div class="widget-empty">
+                            <span class="widget-empty-icon">✨</span>
+                            <span>No upcoming events</span>
+                        </div>`;
                 }
+            } catch (e) { }
+        }
 
-                renderWidget();
-                new ResizeObserver(renderWidget).observe(document.body);
+        renderWidget();
+        new ResizeObserver(renderWidget).observe(document.body);
     </script>
 </body>
 

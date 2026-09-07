@@ -5,48 +5,77 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>cue - Calendar Widget</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #000;
-            --surface: #121214;
+            --bg: #09090b;
+            --surface: #141417;
             --purple: #a855f7;
-            --border: #27272a;
+            --purple-light: #c084fc;
+            --border: rgba(255, 255, 255, 0.08);
+            --text-main: #f5f5f5;
+            --text-muted: #8a8a93;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             margin: 0;
-            padding: 12px;
+            padding: 14px;
             background: var(--bg);
-            color: #fff;
-            border-radius: 16px;
+            color: var(--text-main);
+            border-radius: 20px;
+        }
+
+        .header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
         }
 
         .month-title {
-            font-weight: 700;
-            font-size: 14px;
-            margin-bottom: 8px;
-            color: var(--purple);
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 15px;
+            color: var(--purple-light);
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.06em;
+        }
+
+        .widget-branding {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 15px;
+            color: #fff;
+            letter-spacing: -0.04em;
+        }
+
+        .widget-branding .gem {
+            color: var(--purple);
         }
 
         .weekday-grid,
         .grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 3px;
+            gap: 4px;
             text-align: left;
         }
 
         .weekday-grid {
-            margin-bottom: 3px;
+            margin-bottom: 4px;
         }
 
         .weekday {
-            padding: 3px 0;
-            color: #a1a1aa;
-            font-size: 8px;
+            padding: 2px 0;
+            color: var(--text-muted);
+            font-size: 9px;
             font-weight: 700;
             letter-spacing: 0.08em;
             text-align: center;
@@ -54,19 +83,20 @@
         }
 
         .cell {
-            min-height: clamp(44px, 12vw, 64px);
+            min-height: clamp(48px, 13vw, 68px);
             border: 1px solid var(--border);
-            border-radius: 9px;
+            border-radius: 10px;
             padding: clamp(5px, 1.2vw, 7px) clamp(4px, 1vw, 6px);
             display: flex;
             flex-direction: column;
             align-items: flex-start;
             gap: 3px;
-            font-size: clamp(9px, 2.4vw, 12px);
-            font-weight: 500;
-            background: rgba(255,255,255,0.02);
+            font-size: clamp(10px, 2.4vw, 12px);
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.02);
             color: #d4d4d8;
             overflow: hidden;
+            transition: border-color 0.2s ease, background 0.2s ease;
         }
 
         .empty-cell {
@@ -76,27 +106,36 @@
 
         .day-number {
             line-height: 1;
+            font-size: 11px;
+            font-weight: 700;
         }
 
         .has-event {
             background: rgba(168, 85, 247, 0.08);
+            border-color: rgba(168, 85, 247, 0.25);
         }
 
         .today {
-            font-weight: 800;
-            border-color: rgba(168,85,247,0.6);
-            box-shadow: inset 0 0 0 1px rgba(168,85,247,0.18);
+            border-color: rgba(168, 85, 247, 0.7);
+            background: rgba(168, 85, 247, 0.12);
+            box-shadow: inset 0 0 0 1px rgba(168, 85, 247, 0.3);
+        }
+
+        .today .day-number {
+            color: var(--purple-light);
         }
 
         .event-name {
-            display: block;
+            display: flex;
+            align-items: center;
+            gap: 4px;
             box-sizing: border-box;
             min-height: 18px;
             width: 100%;
-            border-radius: 4px;
-            padding: 2px 4px 2px 17px;
-            background: linear-gradient(135deg, rgba(168,85,247,0.35), rgba(192,132,252,0.45));
-            border: 1px solid rgba(168,85,247,0.6);
+            border-radius: 5px;
+            padding: 2px 5px;
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.4), rgba(192, 132, 252, 0.5));
+            border: 1px solid rgba(168, 85, 247, 0.6);
             color: #fff;
             font-size: clamp(7px, 1.8vw, 9px);
             line-height: 1.1;
@@ -105,18 +144,14 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            position: relative;
         }
 
         .event-name img {
-            position: absolute;
-            left: 4px;
-            top: 50%;
             width: 10px;
             height: 10px;
-            transform: translateY(-50%);
             border-radius: 2px;
             object-fit: cover;
+            flex-shrink: 0;
         }
 
         .event-name-text {
@@ -129,7 +164,7 @@
         }
 
         .event-more {
-            color: #c084fc;
+            color: var(--purple-light);
             font-size: 8px;
             font-weight: 700;
         }
@@ -137,7 +172,10 @@
 </head>
 
 <body>
-    <div class="month-title" id="mTitle">March 2026</div>
+    <div class="header-row">
+        <div class="month-title" id="mTitle">March 2026</div>
+        <div class="widget-branding">cue<span class="gem">✦</span></div>
+    </div>
     <div class="weekday-grid" aria-hidden="true">
         <div class="weekday">Sun</div>
         <div class="weekday">Mon</div>
@@ -148,6 +186,7 @@
         <div class="weekday">Sat</div>
     </div>
     <div class="grid" id="cGrid"></div>
+
     <script>
         const now = new Date();
         document.getElementById('mTitle').textContent = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
