@@ -318,16 +318,20 @@
     .event-image-editor {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 14px;
+      padding: 10px 12px;
+      border: 1px dashed var(--border);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.01);
     }
 
     .event-image-preview-wrapper {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 72px;
-      height: 72px;
-      flex: 0 0 72px;
+      width: 64px;
+      height: 64px;
+      flex: 0 0 64px;
       overflow: hidden;
       border: 1px solid var(--border);
       border-radius: 12px;
@@ -345,9 +349,8 @@
 
     .event-image-actions {
       display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 5px;
+      align-items: center;
+      flex: 1;
       min-width: 0;
     }
 
@@ -363,19 +366,21 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 7px;
-      width: 112px;
-      min-height: 32px;
-      padding: 0 11px;
-      border: 1px solid var(--border);
-      border-radius: 9px;
-      background: var(--surface-strong);
-      color: var(--text-main);
-      font-size: 12px;
-      font-weight: 700;
-      line-height: 1;
-      text-align: center;
+      gap: 8px;
+      padding: 8px 14px;
+      border: 1px solid rgba(168, 85, 247, 0.35);
+      border-radius: 10px;
+      background: var(--accent-soft);
+      color: var(--accent-strong);
+      font-size: 13px;
+      font-weight: 600;
       cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .event-image-upload:hover {
+      background: rgba(168, 85, 247, 0.25);
+      border-color: rgba(168, 85, 247, 0.6);
     }
 
     .event-image-upload:hover {
@@ -2322,7 +2327,7 @@
                 <div class="event-image-actions">
                   <input class="event-image-input" id="eventImageInput" type="file" accept="image/jpeg,image/png,image/webp">
                   <label class="event-image-upload" for="eventImageInput">
-                    ${safeImageUrl(prefill.image) ? 'Change image' : 'Upload image'}
+                    ${iconSvg('upload')} <span>${safeImageUrl(prefill.image) ? 'Change poster' : 'Upload poster'}</span>
                   </label>
                 </div>
               </div>
@@ -2353,13 +2358,14 @@
               <div class="field"><label>Time</label><input id="f_time" type="time" value="${escapeAttr(prefill.time || '')}"></div>
               <div class="field">
                 <label>City</label>
-                <div>
-                  <select id="f_city">${selectOptionsHTML('pt-cities', prefill.city, 'Select a city')}</select>
-                </div>
+                <input id="f_city" type="text" list="pt-cities" value="${escapeAttr(prefill.city || '')}" placeholder="e.g. Porto, Lisboa" autocomplete="off">
               </div>
             </div>
 
-            <div class="field"><label>Venue</label><select id="f_venue">${selectOptionsHTML('pt-venues', prefill.venue, 'Select a venue')}</select></div>
+            <div class="field">
+              <label>Venue</label>
+              <input id="f_venue" type="text" list="pt-venues" value="${escapeAttr(prefill.venue || '')}" placeholder="e.g. Hard Club, MEO Arena" autocomplete="off">
+            </div>
 
             <div class="form-section-title">3. Tickets, Friends & Notes</div>
 
