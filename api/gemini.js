@@ -225,31 +225,34 @@ If the year isn't shown, assume the next upcoming occurrence after today (${toda
     }
 
     const models = [
-      'gemini-2.0-flash',
-      'gemini-1.5-flash'
+      'gemini-3.6-flash',
+      'gemini-2.5-flash'
     ];
 
     let lastError = null;
     let data = null;
 
     for (const model of models) {
-      try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        });
+      for (const apiVersion of ['v1beta', 'v1']) {
+        try {
+          const response = await fetch(`https://generativelanguage.googleapis.com/${apiVersion}/models/${model}:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          });
 
-        const resData = await response.json();
-        if (response.ok && resData?.candidates?.[0]?.content) {
-          data = resData;
-          break;
-        } else {
-          lastError = resData?.error?.message || resData?.error || `Model ${model} failed (${response.status})`;
+          const resData = await response.json();
+          if (response.ok && resData?.candidates?.[0]?.content) {
+            data = resData;
+            break;
+          } else {
+            lastError = resData?.error?.message || resData?.error || `Model ${model} failed (${response.status})`;
+          }
+        } catch (err) {
+          lastError = err.message;
         }
-      } catch (err) {
-        lastError = err.message;
       }
+      if (data) break;
     }
 
     if (!data) {
