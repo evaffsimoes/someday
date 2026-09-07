@@ -2410,7 +2410,7 @@
               </div>
             </div>
 
-            <div class="field" id="ticketInfoField">
+            <div class="field" id="ticketInfoField" style="display: ${(prefill.ticketStatus || prefill.ticketInfo) ? 'block' : 'none'};">
               <label>Ticket Link / Seat / Note</label>
               <input id="f_ticket_info" value="${escapeAttr(prefill.ticketInfo || prefill.ticketNote || '')}" placeholder="Ticket URL, seat #, barcode or ticket note...">
             </div>
@@ -2458,6 +2458,8 @@
 
         const statusChips = document.querySelectorAll('#ticketStatusChips .status-chip');
         const ticketStatusInput = document.getElementById('f_ticket_status');
+        const ticketInfoField = document.getElementById('ticketInfoField');
+
         statusChips.forEach(chip => {
           chip.onclick = () => {
             const val = chip.getAttribute('data-val');
@@ -2468,6 +2470,9 @@
               ticketStatusInput.value = val;
               statusChips.forEach(c => c.classList.remove('selected'));
               chip.classList.add('selected');
+            }
+            if (ticketInfoField) {
+              ticketInfoField.style.display = ticketStatusInput.value ? 'block' : 'none';
             }
           };
         });
