@@ -1691,7 +1691,7 @@
 
       function renderQueueItem(event) {
         const dateStr = fmtDateRange(event.startDate, event.endDate);
-        const locStr = [event.venue, event.city].filter(Boolean).join(', ');
+        const locStr = [event.city, event.venue].filter(Boolean).join(' · ');
         const imageSrc = safeImageUrl(event.image);
 
         const date = event.startDate ? new Date(`${event.startDate}T12:00:00`) : null;
@@ -2387,65 +2387,80 @@
       function openDetailModal(event) {
         const dateStr = fmtDateRange(event.startDate, event.endDate);
         const timeStr = event.time ? ` · ${event.time}` : '';
-        const locationText = [event.venue, event.city].filter(Boolean).join(' · ');
+        const locationText = [event.city, event.venue].filter(Boolean).join(' · ');
         const overlay = document.getElementById('eventModalOverlay');
         const content = document.getElementById('eventModalContent');
 
+        let dayBadgeHTML = '';
+        if (event.startDate) {
+          const d = new Date(event.startDate + 'T00:00:00');
+          const now = new Date();
+          now.setHours(0,0,0,0);
+          const diffDays = Math.round((d - now) / 86400000);
+          if (diffDays === 0) dayBadgeHTML = `<span style="font-size:10px; font-weight:700; background:rgba(168,85,247,0.2); color:var(--accent-strong); padding:3px 8px; border-radius:99px; border:1px solid rgba(168,85,247,0.35); letter-spacing:0.04em;">TODAY</span>`;
+          else if (diffDays === 1) dayBadgeHTML = `<span style="font-size:10px; font-weight:700; background:rgba(168,85,247,0.18); color:var(--accent-strong); padding:3px 8px; border-radius:99px; border:1px solid rgba(168,85,247,0.3); letter-spacing:0.04em;">TOMORROW</span>`;
+          else if (diffDays > 1 && diffDays <= 30) dayBadgeHTML = `<span style="font-size:10px; font-weight:700; background:rgba(255,255,255,0.06); color:var(--text-soft); padding:3px 8px; border-radius:99px; border:1px solid var(--border); letter-spacing:0.04em;">IN ${diffDays} DAYS</span>`;
+        }
+
         content.innerHTML = `
-          <div class="event-modal-header">
+          <div class="event-modal-header" style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+            ${dayBadgeHTML ? dayBadgeHTML : '<div></div>'}
             <button class="modal-close" id="closeModalBtn" type="button" aria-label="Close event details">${iconSvg('close')}</button>
           </div>
 
           ${safeImageUrl(event.image)
-            ? `<img class="event-detail-image" src="${escapeAttr(safeImageUrl(event.image))}" alt="Poster">`
-            : `<div class="event-detail-placeholder" aria-label="No event photo">${iconSvg('ticket')}</div>`}
+            ? `<img class="event-detail-image" src="${escapeAttr(safeImageUrl(event.image))}" alt="Poster" style="height:180px; width:100%; object-fit:cover; border-radius:14px; margin-bottom:14px;">`
+            : `<div class="event-detail-placeholder" aria-label="No event photo" style="height:110px; border-radius:14px; margin-bottom:14px;">${iconSvg('ticket')}</div>`}
 
-          <h2 class="event-detail-title">${escapeHtml(event.artist || 'Untitled event')}</h2>
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:16px;">
+            <h2 class="event-detail-title" style="margin:0; font-family:'Outfit', sans-serif; font-size:22px; font-weight:800; line-height:1.25; color:#ffffff;">${escapeHtml(event.artist || 'Untitled event')}</h2>
+            ${event.category ? `<span style="font-size:11px; font-weight:700; background:var(--accent-soft); color:var(--accent-strong); border:1px solid rgba(168,85,247,0.3); border-radius:99px; padding:4px 10px; white-space:nowrap; flex-shrink:0;">${escapeHtml(event.category)}</span>` : ''}
+          </div>
 
-          <div class="event-meta-list">
-            <div class="event-meta-row">
-              <span class="event-meta-icon">${iconSvg('calendar')}</span>
+          <div class="event-meta-list" style="display:flex; flex-direction:column; gap:12px; padding:14px; border:1px solid var(--border); border-radius:14px; background:var(--surface); margin-bottom:18px;">
+            <div class="event-meta-row" style="display:flex; align-items:flex-start; gap:12px;">
+              <span class="event-meta-icon" style="color:var(--accent-strong); margin-top:2px;">${iconSvg('calendar')}</span>
               <div class="event-meta-content">
-                <span style="font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">Date & Time</span>
-                <span style="font-size:14px; font-weight:600; color:#ffffff;">${escapeHtml(dateStr)}${escapeHtml(timeStr)}</span>
+                <span style="display:block; font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:2px;">Date & Time</span>
+                <span style="display:block; font-size:14px; font-weight:600; color:#ffffff;">${escapeHtml(dateStr)}${escapeHtml(timeStr)}</span>
               </div>
             </div>
 
             ${locationText ? `
-              <div class="event-meta-row">
-                <span class="event-meta-icon">${iconSvg('location')}</span>
+              <div class="event-meta-row" style="display:flex; align-items:flex-start; gap:12px;">
+                <span class="event-meta-icon" style="color:var(--accent-strong); margin-top:2px;">${iconSvg('location')}</span>
                 <div class="event-meta-content">
-                  <span style="font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">Venue</span>
-                  <a href="https://maps.google.com/?q=${encodeURIComponent(locationText)}" target="_blank" rel="noopener noreferrer" class="map-link" style="font-size:14px; font-weight:600; color:var(--purple-light);">${escapeHtml(locationText)}</a>
+                  <span style="display:block; font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:2px;">Location</span>
+                  <a href="https://maps.google.com/?q=${encodeURIComponent(locationText)}" target="_blank" rel="noopener noreferrer" class="map-link" style="display:inline-flex; align-items:center; gap:4px; font-size:14px; font-weight:600; color:var(--accent-strong); text-decoration:none;">${escapeHtml(locationText)} <span style="font-size:11px;">↗</span></a>
                 </div>
               </div>
             ` : ''}
 
             ${event.company ? `
-              <div class="event-meta-row">
-                <span class="event-meta-icon">${iconSvg('users')}</span>
+              <div class="event-meta-row" style="display:flex; align-items:flex-start; gap:12px;">
+                <span class="event-meta-icon" style="color:var(--accent-strong); margin-top:2px;">${iconSvg('users')}</span>
                 <div class="event-meta-content">
-                  <span style="font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">Company</span>
-                  <span style="font-size:14px; font-weight:600; color:#ffffff;">${escapeHtml(event.company)}</span>
+                  <span style="display:block; font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:2px;">Going With</span>
+                  <span style="display:block; font-size:14px; font-weight:600; color:#ffffff;">${escapeHtml(event.company)}</span>
                 </div>
               </div>
             ` : ''}
 
             ${event.description ? `
-              <div class="event-meta-row">
-                <span class="event-meta-icon">${iconSvg('ticket')}</span>
+              <div class="event-meta-row" style="display:flex; align-items:flex-start; gap:12px;">
+                <span class="event-meta-icon" style="color:var(--accent-strong); margin-top:2px;">${iconSvg('ticket')}</span>
                 <div class="event-meta-content" style="width:100%;">
-                  <span style="font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:2px;">Notes</span>
-                  <span style="font-size:13.5px; font-weight:500; color:#e4e4e7; white-space:pre-wrap; word-break:break-word; line-height:1.4;">${escapeHtml(event.description)}</span>
+                  <span style="display:block; font-size:10px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:2px;">Notes</span>
+                  <span style="display:block; font-size:13.5px; font-weight:500; color:#e4e4e7; white-space:pre-wrap; word-break:break-word; line-height:1.4;">${escapeHtml(event.description)}</span>
                 </div>
               </div>
             ` : ''}
           </div>
 
-          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.08);">
-            <button class="btn btn-ghost" id="gcalFromModalBtn" style="font-size:12px; padding:8px 12px; color:var(--purple-light); border-color:rgba(168,85,247,0.3); flex:1;">Calendar</button>
-            <button class="btn btn-ghost" id="editFromModalBtn" style="font-size:12px; padding:8px 12px; color:var(--text-muted); border-color:var(--border); flex:1;">Edit</button>
-            <button class="btn btn-ghost" id="btnDelFromModal" style="font-size:12px; padding:8px 12px; color:var(--danger); border-color:rgba(239,68,68,0.25); flex:1;">Delete</button>
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.08);">
+            <button class="btn btn-ghost" id="gcalFromModalBtn" style="font-size:13px; padding:10px 14px; color:var(--accent-strong); border-color:rgba(168,85,247,0.35); background:rgba(168,85,247,0.08); flex:1.2; display:flex; align-items:center; justify-content:center; gap:6px;">Calendar 📅</button>
+            <button class="btn btn-ghost" id="editFromModalBtn" style="font-size:13px; padding:10px 14px; color:var(--text-main); border-color:var(--border); flex:1;">Edit ✏️</button>
+            <button class="btn btn-ghost" id="btnDelFromModal" style="font-size:13px; padding:10px 14px; color:var(--danger); border-color:rgba(239,68,68,0.25); flex:1;">Delete 🗑️</button>
           </div>
         `;
 
