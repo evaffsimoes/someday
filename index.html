@@ -855,6 +855,67 @@
       color: var(--text-main);
     }
 
+    .status-chip-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .status-chip {
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 6px 12px;
+      background: var(--surface-strong);
+      color: var(--text-muted);
+      font: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .status-chip:hover,
+    .status-chip.selected {
+      border-color: rgba(168, 85, 247, 0.6);
+      background: var(--accent-soft);
+      color: var(--accent-strong);
+    }
+
+    .ticket-badge {
+      display: inline-flex;
+      align-items: center;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 99px;
+      letter-spacing: 0.02em;
+    }
+
+    .ticket-badge.has_ticket {
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+      border: 1px solid rgba(34, 197, 94, 0.35);
+    }
+
+    .ticket-badge.need_ticket {
+      background: rgba(234, 179, 8, 0.15);
+      color: #fde047;
+      border: 1px solid rgba(234, 179, 8, 0.35);
+    }
+
+    .ticket-badge.maybe {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-soft);
+      border: 1px solid var(--border);
+    }
+
+    .ticket-badge.going {
+      background: rgba(168, 85, 247, 0.15);
+      color: var(--accent-strong);
+      border: 1px solid rgba(168, 85, 247, 0.35);
+    }
+
     .review-row {
       display: flex;
       gap: 10px;
@@ -1233,6 +1294,7 @@
         <button class="feed-tab active" type="button" data-filter="all">All</button>
         <button class="feed-tab" type="button" data-filter="week">This week</button>
         <button class="feed-tab" type="button" data-filter="month">This month</button>
+        <button class="feed-tab" type="button" data-filter="past">Past</button>
       </div>
 
       <div class="section-title">
@@ -1533,6 +1595,7 @@
       }
 
       function matchesQueueFilter(event) {
+        if (state.queueFilter === 'past') return isPast(event);
         if (state.queueFilter === 'all') return true;
 
         const today = dateOnly(new Date());
@@ -1598,6 +1661,16 @@
         if (value === 'Festival') className += ' category-pill-festival';
         else if (value === 'Other') className += ' category-pill-other';
         return `<span class="${className}">${escapeHtml(value)}</span>`;
+      }
+
+      function ticketLabel(status) {
+        const map = {
+          has_ticket: 'Has ticket',
+          need_ticket: 'Need ticket',
+          going: 'Going',
+          maybe: 'Maybe'
+        };
+        return map[status] || '';
       }
 
       function eventFingerprint(event) {
@@ -1761,6 +1834,10 @@
           ? `<img src="${escapeAttr(imageSrc)}" class="queue-img" alt="Event image">`
           : '<div class="queue-img-placeholder">' + iconSvg('ticket') + '</div>';
 
+        const ticketBadgeHTML = event.ticketStatus && ticketLabel(event.ticketStatus)
+          ? `<span class="ticket-badge ${escapeAttr(event.ticketStatus)}">${escapeHtml(ticketLabel(event.ticketStatus))}</span>`
+          : '';
+
         return `
           <div class="queue-swipe-wrapper">
             <div class="queue-item" data-view="${escapeAttr(event.id)}">
@@ -1769,6 +1846,7 @@
               <div class="queue-info">
                 <div class="queue-topline">
                   <div class="queue-artist">${escapeHtml(event.artist || 'Untitled event')}</div>
+                  ${ticketBadgeHTML}
                 </div>
 
                 <div class="queue-date-row">
@@ -1801,9 +1879,14 @@
       }
 
       function render() {
+        const isPastFilter = state.queueFilter === 'past';
+
         const upcoming = state.events
-          .filter(event => !isPast(event) && matchesQueueFilter(event))
-          .sort((a, b) => (a.startDate || '9999').localeCompare(b.startDate || '9999'));
+          .filter(event => isPastFilter ? isPast(event) : (!isPast(event) && matchesQueueFilter(event)))
+          .sort((a, b) => {
+            if (isPastFilter) return (b.startDate || '').localeCompare(a.startDate || '');
+            return (a.startDate || '9999').localeCompare(b.startDate || '9999');
+          });
 
         const past = state.events
           .filter(event => isPast(event))
@@ -1823,8 +1906,24 @@
           </div>
         `;
 
+        const titleLeft = document.querySelector('.section-title-left');
+        const seeAllButton = document.querySelector('.section-see-all');
+        const secondSectionTitle = document.querySelectorAll('.section-title')[1];
+        const pastListEl = document.getElementById('pastList');
+
+        if (isPastFilter) {
+          if (titleLeft) titleLeft.textContent = 'Past events';
+          if (seeAllButton) seeAllButton.style.display = 'none';
+          if (secondSectionTitle) secondSectionTitle.style.display = 'none';
+          if (pastListEl) pastListEl.style.display = 'none';
+        } else {
+          if (titleLeft) titleLeft.textContent = 'Your events';
+          if (secondSectionTitle) secondSectionTitle.style.display = '';
+          if (pastListEl) pastListEl.style.display = '';
+        }
+
         let currentMonthStr = '';
-        const upcomingHTML = upcoming.slice(0, state.showAllUpcoming ? undefined : undefined).map(event => {
+        const upcomingHTML = upcoming.map(event => {
           let markup = '';
           if (event.startDate) {
             const date = new Date(event.startDate + 'T12:00:00');
@@ -1842,10 +1941,9 @@
 
         document.getElementById('upcomingList').innerHTML = upcoming.length
           ? upcomingHTML
-          : '<div class="empty">Your queue is empty. Tap "+" to add a concert or festival!</div>';
+          : `<div class="empty">${isPastFilter ? 'No past events in your history.' : 'Your queue is empty. Tap "+" to add a concert or festival!'}</div>`;
 
-        const seeAllButton = document.querySelector('.section-see-all');
-        if (seeAllButton) {
+        if (!isPastFilter && seeAllButton) {
           if (upcoming.length <= 3) {
             seeAllButton.style.display = 'none';
           } else {
@@ -1858,9 +1956,11 @@
           }
         }
 
-        document.getElementById('pastList').innerHTML = past.length
-          ? past.map(renderQueueItem).join('')
-          : '<div class="empty">Past events will land here.</div>';
+        if (!isPastFilter && pastListEl) {
+          pastListEl.innerHTML = past.length
+            ? past.map(renderQueueItem).join('')
+            : '<div class="empty">Past events will land here.</div>';
+        }
 
         document.querySelectorAll('[data-view]').forEach(element => {
           element.addEventListener('click', () => {
@@ -2245,6 +2345,17 @@
             </div>
 
             <div class="field">
+              <label>Ticket Status</label>
+              <input type="hidden" id="f_ticket_status" value="${escapeAttr(prefill.ticketStatus || '')}">
+              <div class="status-chip-group" id="ticketStatusChips">
+                <button type="button" class="status-chip ${(prefill.ticketStatus === 'has_ticket') ? 'selected' : ''}" data-val="has_ticket">Has ticket</button>
+                <button type="button" class="status-chip ${(prefill.ticketStatus === 'need_ticket') ? 'selected' : ''}" data-val="need_ticket">Need ticket</button>
+                <button type="button" class="status-chip ${(prefill.ticketStatus === 'going') ? 'selected' : ''}" data-val="going">Going</button>
+                <button type="button" class="status-chip ${(prefill.ticketStatus === 'maybe') ? 'selected' : ''}" data-val="maybe">Maybe</button>
+              </div>
+            </div>
+
+            <div class="field">
               <label>Note</label>
               <textarea id="f_desc" placeholder="Anything worth remembering">${escapeHtml(prefill.description || '')}</textarea>
             </div>
@@ -2283,6 +2394,22 @@
           mode: 'range',
           dateFormat: 'Y-m-d',
           defaultDate: defaultDates
+        });
+
+        const statusChips = document.querySelectorAll('#ticketStatusChips .status-chip');
+        const ticketStatusInput = document.getElementById('f_ticket_status');
+        statusChips.forEach(chip => {
+          chip.onclick = () => {
+            const val = chip.getAttribute('data-val');
+            if (ticketStatusInput.value === val) {
+              ticketStatusInput.value = '';
+              chip.classList.remove('selected');
+            } else {
+              ticketStatusInput.value = val;
+              statusChips.forEach(c => c.classList.remove('selected'));
+              chip.classList.add('selected');
+            }
+          };
         });
 
         if (focusField) {
@@ -2395,6 +2522,7 @@
             venue: document.getElementById('f_venue').value.trim(),
             city: document.getElementById('f_city').value.trim(),
             category: document.getElementById('f_category').value,
+            ticketStatus: document.getElementById('f_ticket_status').value,
             description: document.getElementById('f_desc').value.trim(),
             image: editedImage
           };
@@ -2482,7 +2610,10 @@
             ? `<img class="event-detail-image" src="${escapeAttr(safeImageUrl(event.image))}" alt="Poster" style="height:190px; width:100%; object-fit:cover; border-radius:14px; margin-bottom:14px;">`
             : `<div class="event-detail-placeholder" aria-label="No event photo" style="height:110px; border-radius:14px; margin-bottom:14px;">${iconSvg('ticket')}</div>`}
 
-          <h2 class="event-detail-title" style="margin:0 0 12px; font-family:'Outfit', sans-serif; font-size:24px; font-weight:800; color:#ffffff; line-height:1.2;">${escapeHtml(event.artist || 'Untitled event')}</h2>
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px;">
+            <h2 class="event-detail-title" style="margin:0; font-family:'Outfit', sans-serif; font-size:24px; font-weight:800; color:#ffffff; line-height:1.2;">${escapeHtml(event.artist || 'Untitled event')}</h2>
+            ${event.ticketStatus && ticketLabel(event.ticketStatus) ? `<span class="ticket-badge ${escapeAttr(event.ticketStatus)}">${escapeHtml(ticketLabel(event.ticketStatus))}</span>` : ''}
+          </div>
 
           <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px;">
             <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:14px; font-weight:600; color:#ffffff;">
