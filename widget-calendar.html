@@ -5,16 +5,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>cue - Calendar Widget</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #09090b;
-            --surface: #141417;
             --purple: #a855f7;
             --purple-light: #c084fc;
+            --bg: #09090b;
+            --surface: #141417;
+            --surface-hover: #1c1c21;
             --border: rgba(255, 255, 255, 0.08);
             --text-main: #f5f5f5;
-            --text-muted: #8a8a93;
+            --text-muted: #94949e;
         }
 
         * {
@@ -25,39 +26,47 @@
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            margin: 0;
-            padding: 14px;
             background: var(--bg);
             color: var(--text-main);
             border-radius: 20px;
+            overflow: hidden;
+            padding: 14px 16px;
+            line-height: 1.4;
         }
 
-        .header-row {
+        .widget-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
         }
 
-        .month-title {
+        .widget-logo {
             font-family: 'Outfit', sans-serif;
             font-weight: 800;
-            font-size: 15px;
-            color: var(--purple-light);
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-        }
-
-        .widget-branding {
-            font-family: 'Outfit', sans-serif;
-            font-weight: 800;
-            font-size: 15px;
+            font-size: 18px;
             color: #fff;
             letter-spacing: -0.04em;
+            display: flex;
+            align-items: center;
+            gap: 2px;
         }
 
-        .widget-branding .gem {
+        .widget-logo .gem {
             color: var(--purple);
+            font-size: 16px;
+        }
+
+        .widget-badge {
+            font-size: 11px;
+            font-weight: 700;
+            background: rgba(168, 85, 247, 0.15);
+            color: var(--purple-light);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            border-radius: 99px;
+            padding: 3px 10px;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
         }
 
         .weekday-grid,
@@ -83,7 +92,7 @@
         }
 
         .cell {
-            min-height: clamp(48px, 13vw, 68px);
+            min-height: clamp(46px, 12vw, 64px);
             border: 1px solid var(--border);
             border-radius: 10px;
             padding: clamp(5px, 1.2vw, 7px) clamp(4px, 1vw, 6px);
@@ -93,8 +102,8 @@
             gap: 3px;
             font-size: clamp(10px, 2.4vw, 12px);
             font-weight: 600;
-            background: rgba(255, 255, 255, 0.02);
-            color: #d4d4d8;
+            background: var(--surface);
+            color: var(--text-main);
             overflow: hidden;
             transition: border-color 0.2s ease, background 0.2s ease;
         }
@@ -108,11 +117,12 @@
             line-height: 1;
             font-size: 11px;
             font-weight: 700;
+            color: var(--text-main);
         }
 
         .has-event {
-            background: rgba(168, 85, 247, 0.08);
-            border-color: rgba(168, 85, 247, 0.25);
+            background: rgba(168, 85, 247, 0.06);
+            border-color: rgba(168, 85, 247, 0.2);
         }
 
         .today {
@@ -172,9 +182,9 @@
 </head>
 
 <body>
-    <div class="header-row">
-        <div class="month-title" id="mTitle">March 2026</div>
-        <div class="widget-branding">cue<span class="gem">✦</span></div>
+    <div class="widget-header">
+        <div class="widget-logo">cue<span class="gem">✦</span></div>
+        <div class="widget-badge" id="mTitle">March 2026</div>
     </div>
     <div class="weekday-grid" aria-hidden="true">
         <div class="weekday">Sun</div>
@@ -221,7 +231,23 @@
             const isT = (str === todayStr);
             const cls = 'cell' + (hasE ? ' has-event' : '') + (isT ? ' today' : '');
             const visible = dayEvents.slice(0, 2);
-            const names = visible.map(event => `<div class="event-name" title="${event.artist || 'Event'}">${imageUrl(event) ? `<img src="${imageUrl(event)}" alt="">` : ''}<span class="event-name-text">${event.artist || 'Event'}</span></div>`).join('');
+            const names = visible.map(event => {
+                let bg = 'linear-gradient(135deg, rgba(168, 85, 247, 0.35), rgba(192, 132, 252, 0.45))';
+                let border = 'rgba(168, 85, 247, 0.6)';
+                let textCol = '#ffffff';
+
+                if (event.category === 'Festival') {
+                    bg = 'linear-gradient(135deg, rgba(245, 158, 11, 0.35), rgba(251, 191, 36, 0.45))';
+                    border = 'rgba(245, 158, 11, 0.7)';
+                    textCol = '#fef08a';
+                } else if (event.category === 'Other' || event.category === 'Party') {
+                    bg = 'linear-gradient(135deg, rgba(20, 184, 166, 0.35), rgba(45, 212, 191, 0.45))';
+                    border = 'rgba(20, 184, 166, 0.7)';
+                    textCol = '#99f6e4';
+                }
+
+                return `<div class="event-name" style="background:${bg}; border-color:${border}; color:${textCol};" title="${event.artist || 'Event'}">${imageUrl(event) ? `<img src="${imageUrl(event)}" alt="">` : ''}<span class="event-name-text">${event.artist || 'Event'}</span></div>`;
+            }).join('');
             const remaining = dayEvents.length - visible.length;
             grid += `<div class="${cls}"><span class="day-number">${i}</span>${names}${remaining > 0 ? `<span class="event-more">+${remaining} more</span>` : ''}</div>`;
         }
