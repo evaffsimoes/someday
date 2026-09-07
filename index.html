@@ -1392,9 +1392,10 @@
       <p style="font-size:13px; color:var(--text-muted); margin:0;">Choose any reminder days for your events.</p>
 
       <div class="reminder-options">
-        <label class="reminder-option"><input type="checkbox" id="pref-7" checked> 7 days before</label>
-        <label class="reminder-option"><input type="checkbox" id="pref-3" checked> 3 days before</label>
-        <label class="reminder-option"><input type="checkbox" id="pref-1" checked> 1 day before</label>
+        <label class="reminder-option"><input type="checkbox" id="pref-14"> 2 weeks before</label>
+        <label class="reminder-option"><input type="checkbox" id="pref-7"> 1 week before</label>
+        <label class="reminder-option"><input type="checkbox" id="pref-3"> 3 days before</label>
+        <label class="reminder-option"><input type="checkbox" id="pref-1"> 1 day before</label>
         <label class="reminder-option"><input type="checkbox" id="pref-0"> Day of event</label>
       </div>
 
@@ -2783,12 +2784,12 @@
         } catch (error) {
           // Fall through.
         }
-        return [7, 3, 1];
+        return [14, 7, 3, 1];
       }
 
       function openSettingsModal() {
         const prefs = loadNotificationPrefs();
-        [7, 3, 1, 0].forEach(day => {
+        [14, 7, 3, 1, 0].forEach(day => {
           const checkbox = document.getElementById(`pref-${day}`);
           if (checkbox) checkbox.checked = prefs.includes(day);
         });
@@ -3106,7 +3107,10 @@
         };
 
         document.getElementById('saveSettingsBtn').onclick = () => {
-          const prefs = [7, 3, 1, 0].filter(day => document.getElementById(`pref-${day}`).checked);
+          const prefs = [14, 7, 3, 1, 0].filter(day => {
+            const el = document.getElementById(`pref-${day}`);
+            return el && el.checked;
+          });
           localStorage.setItem('cue-notification-prefs', JSON.stringify(prefs));
           document.getElementById('settingsModalOverlay').classList.remove('active');
           checkEventNotifications();
