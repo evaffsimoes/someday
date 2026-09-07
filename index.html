@@ -2428,21 +2428,20 @@
                 <a href="https://maps.google.com/?q=${encodeURIComponent(locationText)}" target="_blank" rel="noopener noreferrer" class="map-link" style="color:var(--purple-light); font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">${escapeHtml(locationText)} <span style="font-size:11px; opacity:0.7;">↗</span></a>
               </div>
             ` : ''}
+
+            ${event.company ? `
+              <div style="display:flex; align-items:center; gap:8px; font-size:14px; font-weight:500; color:var(--text-muted);">
+                <span style="color:var(--text-muted); display:inline-flex; align-items:center;">${iconSvg('users')}</span>
+                <span>With <strong style="color:#ffffff; font-weight:600;">${escapeHtml(event.company)}</strong></span>
+              </div>
+            ` : ''}
           </div>
 
-          <hr style="border:0; border-top:1px solid rgba(255,255,255,0.08); margin:16px 0;">
-
           ${event.description ? `
+            <hr style="border:0; border-top:1px solid rgba(255,255,255,0.08); margin:16px 0;">
             <div style="margin-bottom:16px;">
               <div style="font-size:11px; font-weight:700; letter-spacing:0.08em; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">ABOUT</div>
               <p style="margin:0; font-size:14px; line-height:1.5; color:#d4d4d8; white-space:pre-wrap; word-break:break-word;">${escapeHtml(event.description)}</p>
-            </div>
-          ` : ''}
-
-          ${event.company ? `
-            <div style="margin-bottom:16px;">
-              <div style="font-size:11px; font-weight:700; letter-spacing:0.08em; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">GOING</div>
-              <span style="font-size:14px; font-weight:600; color:#ffffff;">${escapeHtml(event.company)}</span>
             </div>
           ` : ''}
 
