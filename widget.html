@@ -31,6 +31,12 @@
             min-height: 120px;
         }
 
+        #widgetContent {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
         .widget-header {
             display: flex;
             align-items: center;
@@ -59,23 +65,65 @@
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 10px;
-            padding: 10px 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
+            padding: 10px;
+            display: grid;
+            grid-template-columns: 42px minmax(0, 1fr);
+            grid-template-rows: auto auto auto;
+            column-gap: 10px;
+            row-gap: 3px;
+        }
+
+        .widget-event-image {
+            width: 42px;
+            height: 42px;
+            grid-row: 1 / span 3;
+            border-radius: 8px;
+            object-fit: cover;
+            background: #27272a;
+            border: 1px solid var(--border);
         }
 
         .widget-event-name {
+            min-width: 0;
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 2px 4px;
             font-size: 14px;
+            line-height: 1.1;
             font-weight: 700;
+            letter-spacing: 0.02em;
             white-space: nowrap;
             overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .widget-event-name span {
+            display: block;
+            overflow: hidden;
+            white-space: nowrap;
             text-overflow: ellipsis;
         }
 
         .widget-event-date {
             font-size: 11px;
             color: var(--text-muted);
+        }
+
+        .widget-event-location {
+            font-size: 11px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .widget-more {
+            color: var(--purple-light);
+            font-size: 11px;
+            font-weight: 700;
+            text-align: center;
+            padding: 2px 0 4px;
         }
 
         .widget-empty {
@@ -116,12 +164,15 @@
             return d < new Date();
         }
 
-        function daysLeft(dateStr) {
-            const d = new Date(dateStr + 'T00:00:00');
-            return Math.ceil((d - new Date()) / 86400000);
+        function imageUrl(event) {
+            const value = String(event.image || '');
+            if (/^data:image\/(jpeg|png|webp);base64,[a-z0-9+/=]+$/i.test(value)) return value;
+            if (/^https:\/\//i.test(value)) return value;
+            return '';
         }
 
-        try {
+                function renderWidget() {
+                    try {
             const raw = localStorage.getItem('cue-events-v12');
             const events = raw ? JSON.parse(raw) : [];
             const upcoming = events
@@ -132,18 +183,26 @@
                 upcoming.length + ' upcoming';
 
             if (upcoming.length > 0) {
-                const next = upcoming[0];
-                const dl = daysLeft(next.startDate);
-                const dLabel = dl === 0 ? 'TODAY!' : dl === 1 ? 'Tomorrow' : `${dl} days left`;
-
-                document.getElementById('widgetContent').innerHTML = `
-          <div class="widget-event">
-            <div class="widget-event-name">${next.artist || 'Untitled event'}</div>
-            <div class="widget-event-date">📅 ${fmtDate(next.startDate)}</div>
-            <div class="days-badge">${dLabel}</div>
-          </div>`;
+                const availableHeight = window.innerHeight || document.documentElement.clientHeight || 160;
+                const visibleCount = Math.max(1, Math.floor((availableHeight - 54) / 70));
+                const visibleEvents = upcoming.slice(0, visibleCount);
+                                const cards = visibleEvents.map(event => `
+                    <div class="widget-event">
+                        ${imageUrl(event) ? `<img class="widget-event-image" src="${imageUrl(event)}" alt="">` : '<div class="widget-event-image"></div>'}
+                        <div class="widget-event-name" title="${event.artist || 'Untitled event'}"><span>${event.artist || 'Untitled event'}</span></div>
+                        <div class="widget-event-date">${fmtDate(event.startDate)}</div>
+                        ${event.venue || event.city ? `<div class="widget-event-location">${[event.venue, event.city].filter(Boolean).join(', ')}</div>` : ''}
+                    </div>`).join('');
+                                const remaining = upcoming.length - visibleEvents.length;
+                                document.getElementById('widgetContent').innerHTML = cards + (remaining > 0
+                                        ? `<div class="widget-more">+${remaining} more events</div>`
+                                        : '');
             }
-        } catch (e) { }
+                    } catch (e) { }
+                }
+
+                renderWidget();
+                new ResizeObserver(renderWidget).observe(document.body);
     </script>
 </body>
 

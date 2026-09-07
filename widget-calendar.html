@@ -28,42 +28,125 @@
             margin-bottom: 8px;
             color: var(--purple);
             text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
+        .weekday-grid,
         .grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 2px;
+            gap: 3px;
+            text-align: left;
+        }
+
+        .weekday-grid {
+            margin-bottom: 3px;
+        }
+
+        .weekday {
+            padding: 3px 0;
+            color: #a1a1aa;
+            font-size: 8px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
             text-align: center;
+            text-transform: uppercase;
         }
 
         .cell {
-            aspect-ratio: 1;
-            border-radius: 4px;
+            min-height: clamp(44px, 12vw, 64px);
+            border: 1px solid var(--border);
+            border-radius: 9px;
+            padding: clamp(5px, 1.2vw, 7px) clamp(4px, 1vw, 6px);
             display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 3px;
+            font-size: clamp(9px, 2.4vw, 12px);
             font-weight: 500;
-            background: var(--surface);
-            color: #ccc;
+            background: rgba(255,255,255,0.02);
+            color: #d4d4d8;
+            overflow: hidden;
+        }
+
+        .empty-cell {
+            background: transparent;
+            border-color: transparent;
+        }
+
+        .day-number {
+            line-height: 1;
         }
 
         .has-event {
-            background: rgba(168, 85, 247, 0.2);
-            color: #fff;
-            border: 1px solid var(--purple);
+            background: rgba(168, 85, 247, 0.08);
         }
 
         .today {
             font-weight: 800;
-            border-bottom: 2px solid var(--purple);
+            border-color: rgba(168,85,247,0.6);
+            box-shadow: inset 0 0 0 1px rgba(168,85,247,0.18);
+        }
+
+        .event-name {
+            display: block;
+            box-sizing: border-box;
+            min-height: 18px;
+            width: 100%;
+            border-radius: 4px;
+            padding: 2px 4px 2px 17px;
+            background: linear-gradient(135deg, rgba(168,85,247,0.35), rgba(192,132,252,0.45));
+            border: 1px solid rgba(168,85,247,0.6);
+            color: #fff;
+            font-size: clamp(7px, 1.8vw, 9px);
+            line-height: 1.1;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            position: relative;
+        }
+
+        .event-name img {
+            position: absolute;
+            left: 4px;
+            top: 50%;
+            width: 10px;
+            height: 10px;
+            transform: translateY(-50%);
+            border-radius: 2px;
+            object-fit: cover;
+        }
+
+        .event-name-text {
+            display: block;
+            width: 100%;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .event-more {
+            color: #c084fc;
+            font-size: 8px;
+            font-weight: 700;
         }
     </style>
 </head>
 
 <body>
     <div class="month-title" id="mTitle">March 2026</div>
+    <div class="weekday-grid" aria-hidden="true">
+        <div class="weekday">Sun</div>
+        <div class="weekday">Mon</div>
+        <div class="weekday">Tue</div>
+        <div class="weekday">Wed</div>
+        <div class="weekday">Thu</div>
+        <div class="weekday">Fri</div>
+        <div class="weekday">Sat</div>
+    </div>
     <div class="grid" id="cGrid"></div>
     <script>
         const now = new Date();
@@ -71,23 +154,37 @@
 
         let events = [];
         try { events = JSON.parse(localStorage.getItem('cue-events-v12')) || []; } catch (e) { }
-        const eventDates = new Set(events.filter(e => !isPast(e) && e.startDate).map(e => e.startDate));
-
         function isPast(ev) {
             const d = new Date((ev.endDate || ev.startDate) + 'T23:59:59'); return d < new Date();
+        }
+
+        function imageUrl(event) {
+            const value = String(event.image || '');
+            if (/^data:image\/(jpeg|png|webp);base64,[a-z0-9+/=]+$/i.test(value)) return value;
+            if (/^https:\/\//i.test(value)) return value;
+            return '';
         }
 
         const y = now.getFullYear(); const m = now.getMonth();
         const daysInM = new Date(y, m + 1, 0).getDate();
         const todayStr = new Date().toISOString().slice(0, 10);
 
+        const firstDay = new Date(y, m, 1).getDay();
         let grid = '';
+        for (let i = 0; i < firstDay; i++) grid += '<div class="cell empty-cell"></div>';
         for (let i = 1; i <= daysInM; i++) {
             const str = `${y}-${String(m + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-            const hasE = eventDates.has(str);
+            const dayEvents = events.filter(event => {
+                if (!event.startDate || isPast(event)) return false;
+                return str >= event.startDate && str <= (event.endDate || event.startDate);
+            });
+            const hasE = dayEvents.length > 0;
             const isT = (str === todayStr);
             const cls = 'cell' + (hasE ? ' has-event' : '') + (isT ? ' today' : '');
-            grid += `<div class="${cls}">${i}</div>`;
+            const visible = dayEvents.slice(0, 2);
+            const names = visible.map(event => `<div class="event-name" title="${event.artist || 'Event'}">${imageUrl(event) ? `<img src="${imageUrl(event)}" alt="">` : ''}<span class="event-name-text">${event.artist || 'Event'}</span></div>`).join('');
+            const remaining = dayEvents.length - visible.length;
+            grid += `<div class="${cls}"><span class="day-number">${i}</span>${names}${remaining > 0 ? `<span class="event-more">+${remaining} more</span>` : ''}</div>`;
         }
         document.getElementById('cGrid').innerHTML = grid;
     </script>
