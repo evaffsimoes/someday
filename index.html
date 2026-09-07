@@ -749,8 +749,71 @@
       position: relative;
     }
 
-    .friend-picker-search {
-      margin-top: 8px;
+    .friend-tag-container {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 10px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      min-height: 44px;
+      cursor: text;
+    }
+
+    .friend-tag-container:focus-within {
+      border-color: rgba(168, 85, 247, 0.45);
+      box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.08);
+    }
+
+    .selected-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .selected-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--accent-soft);
+      border: 1px solid rgba(168, 85, 247, 0.4);
+      color: var(--text-main);
+      padding: 4px 10px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .selected-pill-remove {
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.15s ease;
+    }
+
+    .selected-pill-remove:hover {
+      color: var(--danger);
+    }
+
+    .friend-input-field {
+      border: none !important;
+      background: transparent !important;
+      outline: none !important;
+      box-shadow: none !important;
+      padding: 2px 4px !important;
+      font: inherit;
+      font-size: 13px;
+      color: var(--text-main);
+      flex: 1;
+      min-width: 120px;
     }
 
     .friend-picker-list {
@@ -762,12 +825,6 @@
       margin-top: 8px;
       padding: 2px;
       scrollbar-width: none;
-    }
-
-    #f_company {
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
     }
 
     .friend-picker-list::-webkit-scrollbar {
@@ -2152,8 +2209,11 @@
             <div class="field">
               <label>Going with</label>
               <div class="friend-picker">
-                <input id="f_company" value="${escapeAttr(prefill.company || '')}" placeholder="Select friends" readonly>
-                <input id="friendsSearch" class="friend-picker-search" placeholder="Search or add a friend">
+                <div class="friend-tag-container" onclick="document.getElementById('friendsSearch').focus()">
+                  <div id="selectedPills" class="selected-pills"></div>
+                  <input id="friendsSearch" class="friend-input-field" placeholder="Add friends or group..." autocomplete="off">
+                </div>
+                <input type="hidden" id="f_company" value="${escapeAttr(prefill.company || '')}">
                 <div id="friends-chips" class="friend-picker-list"></div>
               </div>
             </div>
@@ -2231,12 +2291,24 @@
 
         const renderFriendChips = () => {
           const container = document.getElementById('friends-chips');
-          if (!container) return;
+          const pillsContainer = document.getElementById('selectedPills');
+          if (!container || !pillsContainer) return;
 
-          const currentValues = companyInput.value.split(',').map(value => value.trim().toLowerCase()).filter(Boolean);
+          const currentValues = companyInput.value.split(',').map(v => v.trim()).filter(Boolean);
+          const currentLower = currentValues.map(v => v.toLowerCase());
+
+          // Render selected pills inside the tag input box
+          pillsContainer.innerHTML = currentValues.map(friend => `
+            <span class="selected-pill">
+              ${escapeHtml(friend)}
+              <span class="selected-pill-remove" onclick="event.stopPropagation(); window.toggleFriend('${escapeAttr(friend)}')">✕</span>
+            </span>
+          `).join('');
+
+          // Render quick-select chips below
           const query = friendsSearch.value.trim().toLowerCase();
           container.innerHTML = state.savedFriends.filter(friend => !query || friend.toLowerCase().includes(query)).map(friend => {
-            const isSelected = currentValues.includes(friend.toLowerCase());
+            const isSelected = currentLower.includes(friend.toLowerCase());
             return `<button type="button" class="friend-chip ${isSelected ? 'selected' : ''}" data-friend="${escapeAttr(friend)}">${escapeHtml(friend)}</button>`;
           }).join('');
 
@@ -2259,12 +2331,11 @@
           renderFriendChips();
         };
 
-        companyInput.addEventListener('input', renderFriendChips);
         friendsSearch.addEventListener('input', renderFriendChips);
         friendsSearch.addEventListener('keydown', event => {
-          if (event.key !== 'Enter') return;
+          if (event.key !== 'Enter' && event.key !== ',') return;
           event.preventDefault();
-          const friend = friendsSearch.value.trim();
+          const friend = friendsSearch.value.trim().replace(/,/g, '');
           if (!friend) return;
 
           const existingFriend = state.savedFriends.find(item => item.toLowerCase() === friend.toLowerCase());
