@@ -912,16 +912,10 @@
       letter-spacing: 0.02em;
     }
 
-    .ticket-badge.has_ticket {
-      background: rgba(34, 197, 94, 0.15);
-      color: #4ade80;
-      border: 1px solid rgba(34, 197, 94, 0.35);
-    }
-
     .ticket-badge.need_ticket {
-      background: rgba(234, 179, 8, 0.15);
-      color: #fde047;
-      border: 1px solid rgba(234, 179, 8, 0.35);
+      background: rgba(239, 68, 68, 0.14);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.35);
     }
 
     .ticket-badge.maybe {
@@ -1694,7 +1688,6 @@
 
       function ticketLabel(status) {
         const map = {
-          has_ticket: 'Has ticket',
           need_ticket: 'Need ticket',
           going: 'Going',
           maybe: 'Maybe'
@@ -1863,10 +1856,6 @@
           ? `<img src="${escapeAttr(imageSrc)}" class="queue-img" alt="Event image">`
           : '<div class="queue-img-placeholder">' + iconSvg('ticket') + '</div>';
 
-        const ticketBadgeHTML = event.ticketStatus && ticketLabel(event.ticketStatus)
-          ? `<span class="ticket-badge ${escapeAttr(event.ticketStatus)}">${escapeHtml(ticketLabel(event.ticketStatus))}</span>`
-          : '';
-
         return `
           <div class="queue-swipe-wrapper">
             <div class="queue-item" data-view="${escapeAttr(event.id)}">
@@ -1875,13 +1864,13 @@
               <div class="queue-info">
                 <div class="queue-topline">
                   <div class="queue-artist">${escapeHtml(event.artist || 'Untitled event')}</div>
-                  ${ticketBadgeHTML}
                 </div>
 
                 <div class="queue-date-row">
                   ${iconSvg('calendar')}
                   <span>${escapeHtml(dateStr)}</span>
                   ${event.time ? `<span>· ${escapeHtml(event.time)}</span>` : ''}
+                  ${event.ticketStatus === 'need_ticket' ? `<span class="ticket-badge need_ticket" style="margin-left: 6px;">Need ticket</span>` : ''}
                 </div>
 
                 ${locStr ? `
@@ -2390,7 +2379,6 @@
               <label>Ticket Status</label>
               <input type="hidden" id="f_ticket_status" value="${escapeAttr(prefill.ticketStatus || '')}">
               <div class="status-chip-group" id="ticketStatusChips">
-                <button type="button" class="status-chip ${(prefill.ticketStatus === 'has_ticket') ? 'selected' : ''}" data-val="has_ticket">Has ticket</button>
                 <button type="button" class="status-chip ${(prefill.ticketStatus === 'need_ticket') ? 'selected' : ''}" data-val="need_ticket">Need ticket</button>
                 <button type="button" class="status-chip ${(prefill.ticketStatus === 'going') ? 'selected' : ''}" data-val="going">Going</button>
                 <button type="button" class="status-chip ${(prefill.ticketStatus === 'maybe') ? 'selected' : ''}" data-val="maybe">Maybe</button>
