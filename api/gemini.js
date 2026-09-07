@@ -17,7 +17,7 @@ function isRateLimited(req) {
 
 function extractInstagramUrl(sharedText) {
   if (!sharedText) return null;
-  const match = sharedText.match(/https?:\/\/(?:www\.)?instagram\.com\/(?:p|reel|tv)\/[\w-]+/i);
+  const match = sharedText.match(/https?:\/\/(?:www\.)?instagram\.com\/(?:p|reel|reels|tv)\/[\w.-]+/i);
   return match ? match[0] : null;
 }
 
@@ -28,38 +28,27 @@ async function scrapeInstagramMetadata(sharedText) {
   const instaUrl = extractInstagramUrl(sharedText);
   if (!instaUrl) return { enrichedText, posterImageDataUrl };
 
-  const matchCode = instaUrl.match(/(?:p|reel|tv)\/([\w-]+)/i);
+  const matchCode = instaUrl.match(/(?:p|reel|reels|tv)\/([\w.-]+)/i);
   const code = matchCode ? matchCode[1] : null;
 
   if (code) {
-    // 1. Try Instagram official embed captioned page (unauthenticated public HTML)
-    const embedUrl = `https://www.instagram.com/p/${code}/embed/captioned/`;
+    const cleanUrl = `https://www.instagram.com/p/${code}/`;
+
+    // 1. Try official Instagram public oEmbed endpoint
     try {
-      const res = await fetch(embedUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-          'Accept': 'text/html'
-        },
-        signal: AbortSignal.timeout(6000)
+      const oembedRes = await fetch(`https://api.instagram.com/oembed/?url=${encodeURIComponent(cleanUrl)}`, {
+        headers: { 'User-Agent': 'Mozilla/5.0' },
+        signal: AbortSignal.timeout(5000)
       });
-      if (res.ok) {
-        const html = await res.text();
-        const captionMatch = html.match(/<div[^>]*class=["']Caption["'][^>]*>(.*?)<\/div>/s) || html.match(/<div[^>]*class=["']CaptionText["'][^>]*>(.*?)<\/div>/s);
-        let captionText = captionMatch ? captionMatch[1].replace(/<[^>]+>/g, ' ').trim() : '';
-
-        const titleMatch = html.match(/<div[^>]*class=["']Header["'][^>]*>(.*?)<\/div>/s);
-        let headerText = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, ' ').trim() : '';
-
-        const imgMatch = html.match(/<img[^>]*class=["']EmbeddedMediaImage["'][^>]*src=["']([^"']+)["']/i) || html.match(/<img[^>]*src=["']([^"']+)["'][^>]*class=["']EmbeddedMediaImage["']/i);
-        let imgUrl = imgMatch ? imgMatch[1].replace(/&amp;/g, '&') : '';
-
-        if (captionText || headerText) {
-          enrichedText = [headerText, captionText, sharedText].filter(Boolean).join(' | ');
+      if (oembedRes.ok) {
+        const oembedData = await oembedRes.json();
+        if (oembedData.title) {
+          const authorStr = oembedData.author_name ? `Post by @${oembedData.author_name}` : '';
+          enrichedText = [authorStr, oembedData.title, sharedText].filter(Boolean).join(' | ');
         }
-
-        if (imgUrl) {
+        if (oembedData.thumbnail_url && !posterImageDataUrl) {
           try {
-            const imgRes = await fetch(imgUrl, { signal: AbortSignal.timeout(5000) });
+            const imgRes = await fetch(oembedData.thumbnail_url, { signal: AbortSignal.timeout(5000) });
             if (imgRes.ok) {
               const mime = imgRes.headers.get('content-type')?.split(';')[0].toLowerCase() || 'image/jpeg';
               const buf = Buffer.from(await imgRes.arrayBuffer());
@@ -72,28 +61,35 @@ async function scrapeInstagramMetadata(sharedText) {
       }
     } catch (_) {}
 
-    // 2. Fallback to vxinstagram proxy if embed yielded no text
+    // 2. Try Instagram official embed captioned page (unauthenticated public HTML)
     if (enrichedText === sharedText) {
+      const embedUrl = `https://www.instagram.com/p/${code}/embed/captioned/`;
       try {
-        const proxyUrl = `https://vxinstagram.com/p/${code}`;
-        const proxyRes = await fetch(proxyUrl, {
-          headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html' },
-          signal: AbortSignal.timeout(5000)
+        const res = await fetch(embedUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            'Accept': 'text/html'
+          },
+          signal: AbortSignal.timeout(6000)
         });
-        if (proxyRes.ok) {
-          const html = await proxyRes.text();
-          const ogTitle = (html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i) || [])[1] || '';
-          const ogDesc = (html.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i) || [])[1] || '';
-          let ogImage = (html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) || [])[1] || '';
-          ogImage = ogImage.replace(/&amp;/g, '&');
+        if (res.ok) {
+          const html = await res.text();
+          const captionMatch = html.match(/<div[^>]*class=["']Caption["'][^>]*>(.*?)<\/div>/s) || html.match(/<div[^>]*class=["']CaptionText["'][^>]*>(.*?)<\/div>/s);
+          let captionText = captionMatch ? captionMatch[1].replace(/<[^>]+>/g, ' ').trim() : '';
 
-          if (ogTitle || ogDesc) {
-            enrichedText = [ogTitle, ogDesc, sharedText].filter(Boolean).join(' | ');
+          const titleMatch = html.match(/<div[^>]*class=["']Header["'][^>]*>(.*?)<\/div>/s);
+          let headerText = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, ' ').trim() : '';
+
+          const imgMatch = html.match(/<img[^>]*class=["']EmbeddedMediaImage["'][^>]*src=["']([^"']+)["']/i) || html.match(/<img[^>]*src=["']([^"']+)["'][^>]*class=["']EmbeddedMediaImage["']/i);
+          let imgUrl = imgMatch ? imgMatch[1].replace(/&amp;/g, '&') : '';
+
+          if (captionText || headerText) {
+            enrichedText = [headerText, captionText, sharedText].filter(Boolean).join(' | ');
           }
 
-          if (ogImage && !posterImageDataUrl) {
+          if (imgUrl && !posterImageDataUrl) {
             try {
-              const imgRes = await fetch(ogImage, { signal: AbortSignal.timeout(5000) });
+              const imgRes = await fetch(imgUrl, { signal: AbortSignal.timeout(5000) });
               if (imgRes.ok) {
                 const mime = imgRes.headers.get('content-type')?.split(';')[0].toLowerCase() || 'image/jpeg';
                 const buf = Buffer.from(await imgRes.arrayBuffer());
@@ -105,6 +101,43 @@ async function scrapeInstagramMetadata(sharedText) {
           }
         }
       } catch (_) {}
+    }
+
+    // 3. Fallback to ddinstagram / vxinstagram proxies
+    if (enrichedText === sharedText) {
+      for (const domain of ['ddinstagram.com', 'vxinstagram.com']) {
+        try {
+          const proxyUrl = `https://${domain}/p/${code}`;
+          const proxyRes = await fetch(proxyUrl, {
+            headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html' },
+            signal: AbortSignal.timeout(5000)
+          });
+          if (proxyRes.ok) {
+            const html = await proxyRes.text();
+            const ogTitle = (html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i) || [])[1] || '';
+            const ogDesc = (html.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i) || [])[1] || '';
+            let ogImage = (html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) || [])[1] || '';
+            ogImage = ogImage.replace(/&amp;/g, '&');
+
+            if (ogTitle || ogDesc) {
+              enrichedText = [ogTitle, ogDesc, sharedText].filter(Boolean).join(' | ');
+              if (ogImage && !posterImageDataUrl) {
+                try {
+                  const imgRes = await fetch(ogImage, { signal: AbortSignal.timeout(5000) });
+                  if (imgRes.ok) {
+                    const mime = imgRes.headers.get('content-type')?.split(';')[0].toLowerCase() || 'image/jpeg';
+                    const buf = Buffer.from(await imgRes.arrayBuffer());
+                    if (buf.byteLength <= MAX_POSTER_BYTES) {
+                      posterImageDataUrl = `data:${mime};base64,${buf.toString('base64')}`;
+                    }
+                  }
+                } catch (_) {}
+              }
+              break;
+            }
+          }
+        } catch (_) {}
+      }
     }
   }
 
@@ -191,15 +224,41 @@ If the year is not mentioned, assume the next upcoming occurrence after today ($
 If the year isn't shown, assume the next upcoming occurrence after today (${today}).`;
     }
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
+    const models = [
+      'gemini-1.5-flash',
+      'gemini-2.0-flash',
+      'gemini-1.5-pro'
+    ];
 
-    const data = await response.json();
+    let lastError = null;
+    let data = null;
+
+    for (const model of models) {
+      try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        const resData = await response.json();
+        if (response.ok && resData?.candidates?.[0]?.content) {
+          data = resData;
+          break;
+        } else {
+          lastError = resData?.error?.message || resData?.error || `Model ${model} failed (${response.status})`;
+        }
+      } catch (err) {
+        lastError = err.message;
+      }
+    }
+
+    if (!data) {
+      return res.status(503).json({ error: lastError || 'Gemini service temporarily unavailable.' });
+    }
+
     if (extractedImageDataUrl) data._extractedImage = extractedImageDataUrl;
-    return res.status(response.status).json(data);
+    return res.status(200).json(data);
 
   } catch (error) {
     return res.status(500).json({ error: error.message });
