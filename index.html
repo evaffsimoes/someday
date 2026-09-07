@@ -2219,30 +2219,40 @@
           throw new Error('That image is too large. Please choose one under 12 MB.');
         }
 
-        const objectUrl = URL.createObjectURL(file);
         try {
-          const image = new Image();
-          await new Promise((resolve, reject) => {
-            image.onload = resolve;
-            image.onerror = () => reject(new Error('Failed to load image file.'));
-            image.src = objectUrl;
-          });
+          const objectUrl = URL.createObjectURL(file);
+          try {
+            const image = new Image();
+            await new Promise((resolve, reject) => {
+              image.onload = resolve;
+              image.onerror = reject;
+              image.src = objectUrl;
+            });
 
-          const maxDimension = 1600;
-          const scale = Math.min(1, maxDimension / Math.max(image.naturalWidth || image.width, image.naturalHeight || image.height));
-          const canvas = document.createElement('canvas');
-          canvas.width = Math.max(1, Math.round((image.naturalWidth || image.width) * scale));
-          canvas.height = Math.max(1, Math.round((image.naturalHeight || image.height) * scale));
-          canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+            const maxDimension = 1600;
+            const width = image.naturalWidth || image.width || 800;
+            const height = image.naturalHeight || image.height || 600;
+            const scale = Math.min(1, maxDimension / Math.max(width, height));
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.max(1, Math.round(width * scale));
+            canvas.height = Math.max(1, Math.round(height * scale));
+            canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
 
-          const compressed = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.82));
-          if (!compressed) throw new Error('Could not process that image.');
-
-          const base64 = await fileToBase64(compressed);
-          return { base64, mediaType: 'image/jpeg' };
-        } finally {
-          URL.revokeObjectURL(objectUrl);
+            const compressed = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.82));
+            if (compressed) {
+              const base64 = await fileToBase64(compressed);
+              return { base64, mediaType: 'image/jpeg' };
+            }
+          } finally {
+            URL.revokeObjectURL(objectUrl);
+          }
+        } catch (_) {
+          // Fallback to direct file reading if canvas/objectURL fails
         }
+
+        const base64 = await fileToBase64(file);
+        const mediaType = file.type || 'image/jpeg';
+        return { base64, mediaType };
       }
 
       async function handleFile(file) {
