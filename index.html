@@ -1399,6 +1399,15 @@
         <label class="reminder-option"><input type="checkbox" id="pref-0"> Day of event</label>
       </div>
 
+      <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--border);">
+        <label style="font-size:11px; font-weight:700; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; display:block; margin-bottom:8px;">Add Custom Reminder</label>
+        <div style="display:flex; gap:8px;">
+          <input type="number" id="customDayInput" min="1" max="365" placeholder="Enter days before..." style="flex:1; padding:9px 12px; border-radius:10px; background:rgba(255,255,255,0.02); border:1px solid var(--border); color:#fff; font-size:13px;">
+          <button type="button" class="btn btn-ghost" id="addCustomDayBtn" style="font-size:12px; padding:8px 14px; border-radius:10px; color:var(--accent-strong); border-color:rgba(168,85,247,0.4); background:rgba(168,85,247,0.1); font-weight:700;">+ Add</button>
+        </div>
+        <div id="customDayTags" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;"></div>
+      </div>
+
       <div class="btn-row" style="margin-top: 24px;">
         <button class="btn btn-primary" id="saveSettingsBtn">Save</button>
       </div>
@@ -2787,12 +2796,33 @@
         return [14, 7, 3, 1];
       }
 
+      let customReminderDays = [];
+
+      function renderCustomDayTags() {
+        const container = document.getElementById('customDayTags');
+        if (!container) return;
+        container.innerHTML = customReminderDays.map(days => `
+          <span style="font-size:12px; font-weight:600; color:var(--purple-light); background:var(--accent-soft); border:1px solid rgba(168,85,247,0.4); padding:3px 9px; border-radius:99px; display:inline-flex; align-items:center; gap:5px;">
+            ${days} ${days === 1 ? 'day' : 'days'} before
+            <span onclick="window.removeCustomDay(${days})" style="cursor:pointer; font-weight:700; color:var(--text-muted); font-size:12px;">✕</span>
+          </span>
+        `).join('');
+      }
+
+      window.removeCustomDay = days => {
+        customReminderDays = customReminderDays.filter(d => d !== days);
+        renderCustomDayTags();
+      };
+
       function openSettingsModal() {
         const prefs = loadNotificationPrefs();
-        [14, 7, 3, 1, 0].forEach(day => {
+        const standardDays = [14, 7, 3, 1, 0];
+        standardDays.forEach(day => {
           const checkbox = document.getElementById(`pref-${day}`);
           if (checkbox) checkbox.checked = prefs.includes(day);
         });
+        customReminderDays = prefs.filter(d => !standardDays.includes(d)).sort((a, b) => b - a);
+        renderCustomDayTags();
         document.getElementById('settingsModalOverlay').classList.add('active');
       }
 
@@ -3106,12 +3136,43 @@
           }
         };
 
+        const addCustomDayHandler = () => {
+          const input = document.getElementById('customDayInput');
+          if (!input) return;
+          const val = parseInt(input.value, 10);
+          const standardDays = [14, 7, 3, 1, 0];
+          if (!isNaN(val) && val > 0 && !customReminderDays.includes(val) && !standardDays.includes(val)) {
+            customReminderDays.push(val);
+            customReminderDays.sort((a, b) => b - a);
+            input.value = '';
+            renderCustomDayTags();
+          } else if (standardDays.includes(val)) {
+            const checkbox = document.getElementById(`pref-${val}`);
+            if (checkbox) checkbox.checked = true;
+            input.value = '';
+          }
+        };
+
+        const addCustomBtn = document.getElementById('addCustomDayBtn');
+        if (addCustomBtn) addCustomBtn.onclick = addCustomDayHandler;
+        const customInput = document.getElementById('customDayInput');
+        if (customInput) {
+          customInput.onkeydown = e => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              addCustomDayHandler();
+            }
+          };
+        }
+
         document.getElementById('saveSettingsBtn').onclick = () => {
-          const prefs = [14, 7, 3, 1, 0].filter(day => {
+          const standardDays = [14, 7, 3, 1, 0];
+          const checkedStandard = standardDays.filter(day => {
             const el = document.getElementById(`pref-${day}`);
             return el && el.checked;
           });
-          localStorage.setItem('cue-notification-prefs', JSON.stringify(prefs));
+          const allPrefs = Array.from(new Set([...checkedStandard, ...customReminderDays])).sort((a, b) => b - a);
+          localStorage.setItem('cue-notification-prefs', JSON.stringify(allPrefs));
           document.getElementById('settingsModalOverlay').classList.remove('active');
           checkEventNotifications();
           customAlert('Preferences saved!');
