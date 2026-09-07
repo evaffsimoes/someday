@@ -36,6 +36,48 @@
       --danger: #ef4444;
     }
 
+    [data-theme="bright"] {
+      --bg: #f4effa;
+      --surface: #ffffff;
+      --surface-strong: #faf6fd;
+      --surface-soft: #eae0f5;
+      --border: rgba(130, 80, 170, 0.16);
+      --text-main: #1d1628;
+      --text-muted: #6e617d;
+      --text-soft: #4e425c;
+      --accent: #9333ea;
+      --accent-soft: rgba(147, 51, 234, 0.12);
+      --accent-strong: #7e22ce;
+      --danger: #dc2626;
+    }
+
+    [data-theme="bright"] .month-header {
+      background: rgba(244, 239, 250, 0.88);
+    }
+
+    [data-theme="bright"] .bottom-nav {
+      background: rgba(244, 239, 250, 0.92);
+      border-top-color: rgba(130, 80, 170, 0.16);
+    }
+
+    [data-theme="bright"] .cue-logo {
+      color: #1d1628;
+    }
+
+    [data-theme="bright"] .field input,
+    [data-theme="bright"] .field select,
+    [data-theme="bright"] .field textarea {
+      background: #ffffff;
+      border-color: rgba(130, 80, 170, 0.2);
+      color: #1d1628;
+    }
+
+    [data-theme="bright"] .status-chip {
+      background: #ffffff;
+      color: #6e617d;
+      border-color: rgba(130, 80, 170, 0.2);
+    }
+
     * {
       box-sizing: border-box;
     }
@@ -1350,10 +1392,14 @@
     <!-- TAB 3: CALENDAR -->
     <div id="screen-calendar" class="tab-screen">
       <div class="cal-header">
-        <button class="btn btn-ghost" id="calPrevBtn" style="padding: 6px 14px; font-size:12px; flex:none; display:inline-flex; align-items:center; justify-content:center; gap:6px; line-height:1;"><span style="display:inline-block; transform:translateY(-0.5px);">←</span> Prev</button>
+        <button class="btn btn-ghost" id="calPrevBtn"
+          style="padding: 6px 14px; font-size:12px; flex:none; display:inline-flex; align-items:center; justify-content:center; gap:6px; line-height:1;"><span
+            style="display:inline-block; transform:translateY(-0.5px);">←</span> Prev</button>
         <h3 id="calMonthTitle"
           style="margin:0; font-size:16px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em;"></h3>
-        <button class="btn btn-ghost" id="calNextBtn" style="padding: 6px 14px; font-size:12px; flex:none; display:inline-flex; align-items:center; justify-content:center; gap:6px; line-height:1;">Next <span style="display:inline-block; transform:translateY(-0.5px);">→</span></button>
+        <button class="btn btn-ghost" id="calNextBtn"
+          style="padding: 6px 14px; font-size:12px; flex:none; display:inline-flex; align-items:center; justify-content:center; gap:6px; line-height:1;">Next
+          <span style="display:inline-block; transform:translateY(-0.5px);">→</span></button>
       </div>
       <div class="cal-grid" id="calDaysHeader">
         <div class="cal-day-label">Sun</div>
@@ -1419,7 +1465,7 @@
       </svg>
       <span>Cue</span>
     </button>
-    <button class="nav-btn-center" id="navBtnPlus" data-tab="add" title="Add to cue" aria-label="Add event">
+    <button class="nav-btn-center" id="navBtnPlus" data-tab="add" title="Save" aria-label="Add event">
       <svg class="cue-icon" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M12 5v14M5 12h14" />
       </svg>
@@ -1458,6 +1504,15 @@
         <label class="reminder-option"><input type="checkbox" id="pref-3" checked> 3 days before</label>
         <label class="reminder-option"><input type="checkbox" id="pref-1" checked> 1 day before</label>
         <label class="reminder-option"><input type="checkbox" id="pref-0"> Day of event</label>
+      </div>
+
+      <div style="margin-top: 24px; border-top: 1px solid var(--border); padding-top: 20px;">
+        <h3 style="margin-bottom:8px;">Appearance</h3>
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">Choose your preferred app style.</p>
+        <div style="display:flex; gap:10px;">
+          <button type="button" class="btn btn-ghost" id="themeDarkBtn" style="flex:1;">Dark</button>
+          <button type="button" class="btn btn-ghost" id="themeBrightBtn" style="flex:1;">Bright (Lilac)</button>
+        </div>
       </div>
 
       <div class="btn-row" style="margin-top: 24px;">
@@ -2355,6 +2410,11 @@
               </div>
             </div>
 
+            <div class="field" id="ticketInfoField">
+              <label>Ticket Link / Seat / Note</label>
+              <input id="f_ticket_info" value="${escapeAttr(prefill.ticketInfo || prefill.ticketNote || '')}" placeholder="Ticket URL, seat #, barcode or ticket note...">
+            </div>
+
             <div class="field">
               <label>Note</label>
               <textarea id="f_desc" placeholder="Anything worth remembering">${escapeHtml(prefill.description || '')}</textarea>
@@ -2523,6 +2583,7 @@
             city: document.getElementById('f_city').value.trim(),
             category: document.getElementById('f_category').value,
             ticketStatus: document.getElementById('f_ticket_status').value,
+            ticketInfo: document.getElementById('f_ticket_info').value.trim(),
             description: document.getElementById('f_desc').value.trim(),
             image: editedImage
           };
@@ -2594,7 +2655,7 @@
         if (event.startDate) {
           const d = new Date(event.startDate + 'T00:00:00');
           const now = new Date();
-          now.setHours(0,0,0,0);
+          now.setHours(0, 0, 0, 0);
           const diffDays = Math.round((d - now) / 86400000);
           if (diffDays === 0) dayBadgeText = 'today';
           else if (diffDays === 1) dayBadgeText = 'tomorrow';
@@ -2611,9 +2672,27 @@
             : `<div class="event-detail-placeholder" aria-label="No event photo" style="height:110px; border-radius:14px; margin-bottom:14px;">${iconSvg('ticket')}</div>`}
 
           <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px;">
-            <h2 class="event-detail-title" style="margin:0; font-family:'Outfit', sans-serif; font-size:24px; font-weight:800; color:#ffffff; line-height:1.2;">${escapeHtml(event.artist || 'Untitled event')}</h2>
+            <h2 class="event-detail-title" style="margin:0; font-family:'Outfit', sans-serif; font-size:24px; font-weight:800; color:var(--text-main); line-height:1.2;">${escapeHtml(event.artist || 'Untitled event')}</h2>
             ${event.ticketStatus && ticketLabel(event.ticketStatus) ? `<span class="ticket-badge ${escapeAttr(event.ticketStatus)}">${escapeHtml(ticketLabel(event.ticketStatus))}</span>` : ''}
           </div>
+
+          ${(() => {
+            if (!event.ticketInfo) return '';
+            const info = event.ticketInfo.trim();
+            const isUrl = /^https?:\/\//i.test(info) || /^www\./i.test(info);
+            const hrefUrl = /^www\./i.test(info) ? `https://${info}` : info;
+            if (isUrl) {
+              return `<div style="margin-bottom:14px;">
+                <a href="${escapeAttr(hrefUrl)}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost" style="font-size:12px; display:inline-flex; align-items:center; gap:6px; color:var(--accent-strong); border-color:rgba(168,85,247,0.3); text-decoration:none;">
+                  ${iconSvg('ticket')} Open Ticket ↗
+                </a>
+              </div>`;
+            }
+            return `<div style="font-size:13px; color:var(--text-main); background:var(--surface-soft); padding:8px 12px; border-radius:10px; border:1px solid var(--border); margin-bottom:14px;">
+              <strong style="color:var(--text-muted); font-size:10px; letter-spacing:0.08em; text-transform:uppercase; display:block; margin-bottom:2px;">TICKET DETAILS</strong>
+              ${escapeHtml(info)}
+            </div>`;
+          })()}
 
           <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px;">
             <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:14px; font-weight:600; color:#ffffff;">
@@ -2917,12 +2996,38 @@
         return [7, 3, 1];
       }
 
+      function setTheme(theme) {
+        if (theme === 'bright') {
+          document.documentElement.setAttribute('data-theme', 'bright');
+        } else {
+          document.documentElement.removeAttribute('data-theme');
+        }
+        localStorage.setItem('cue-theme-v1', theme);
+        updateThemeButtons();
+      }
+
+      function updateThemeButtons() {
+        const current = localStorage.getItem('cue-theme-v1') || 'dark';
+        const darkBtn = document.getElementById('themeDarkBtn');
+        const brightBtn = document.getElementById('themeBrightBtn');
+        if (darkBtn && brightBtn) {
+          if (current === 'bright') {
+            brightBtn.className = 'btn btn-primary';
+            darkBtn.className = 'btn btn-ghost';
+          } else {
+            darkBtn.className = 'btn btn-primary';
+            brightBtn.className = 'btn btn-ghost';
+          }
+        }
+      }
+
       function openSettingsModal() {
         const prefs = loadNotificationPrefs();
         [7, 3, 1, 0].forEach(day => {
           const checkbox = document.getElementById(`pref-${day}`);
           if (checkbox) checkbox.checked = prefs.includes(day);
         });
+        updateThemeButtons();
         document.getElementById('settingsModalOverlay').classList.add('active');
       }
 
@@ -3219,6 +3324,9 @@
           openReview({});
         };
 
+        document.getElementById('themeDarkBtn').onclick = () => setTheme('dark');
+        document.getElementById('themeBrightBtn').onclick = () => setTheme('bright');
+
         document.getElementById('closeSettingsBtn').onclick = () => {
           document.getElementById('settingsModalOverlay').classList.remove('active');
         };
@@ -3297,6 +3405,7 @@
       }
 
       function initializeApp() {
+        setTheme(localStorage.getItem('cue-theme-v1') || 'dark');
         bindStaticEventHandlers();
         loadEvents();
         checkForSharedData();
