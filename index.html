@@ -317,27 +317,28 @@
 
     .event-image-editor {
       display: flex;
-      align-items: center;
-      gap: 14px;
-      padding: 10px 12px;
+      flex-direction: column;
+      gap: 10px;
+      padding: 10px;
       border: 1px dashed var(--border);
       border-radius: 14px;
       background: rgba(255, 255, 255, 0.01);
+      width: 100%;
+      box-sizing: border-box;
     }
 
     .event-image-preview-wrapper {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 64px;
-      height: 64px;
-      flex: 0 0 64px;
+      width: 100%;
+      height: 180px;
       overflow: hidden;
       border: 1px solid var(--border);
       border-radius: 12px;
       background: var(--surface-soft);
       color: var(--text-muted);
-      font-size: 11px;
+      font-size: 13px;
       text-align: center;
     }
 
@@ -350,8 +351,8 @@
     .event-image-actions {
       display: flex;
       align-items: center;
-      flex: 1;
-      min-width: 0;
+      justify-content: flex-end;
+      width: 100%;
     }
 
     .event-image-input {
@@ -2168,10 +2169,10 @@
             <div class="parsed-field"><strong>Location:</strong> <span>${escapeHtml(locationText)}</span></div>
             <div class="parsed-field"><strong>Category:</strong> <span class="category-pill">${escapeHtml(parsed.category || 'Concert')}</span></div>
             ${missingMessage}
-            <div style="font-size: 13px; font-weight: 600; color: #ffffff; margin: 16px 0 12px;">${missingFields.length ? 'Complete the missing details' : 'Review and save'}</div>
+            <div style="font-size: 13px; font-weight: 600; color: #ffffff; margin: 16px 0 12px;">${missingFields.length ? 'Complete the missing details' : ''}</div>
             <div class="btn-row">
               <button class="btn btn-ghost" id="btnCancelParsed">Cancel</button>
-              <button class="btn btn-primary" id="btnConfirmParsed">${missingFields.length ? 'Continue →' : 'Review and save →'}</button>
+              <button class="btn btn-primary" id="btnConfirmParsed">${missingFields.length ? 'Continue' : 'Review and save'}</button>
             </div>
           </div>`;
 
