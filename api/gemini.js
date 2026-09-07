@@ -225,9 +225,9 @@ If the year isn't shown, assume the next upcoming occurrence after today (${toda
     }
 
     const models = [
-      'gemini-1.5-flash',
       'gemini-2.0-flash',
-      'gemini-1.5-pro'
+      'gemini-1.5-flash-8b',
+      'gemini-1.5-flash-latest'
     ];
 
     let lastError = null;
