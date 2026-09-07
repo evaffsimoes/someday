@@ -175,7 +175,6 @@
     </div>
     <div id="widgetContent">
         <div class="widget-empty">
-            <span class="widget-empty-icon">✨</span>
             <span>No upcoming events</span>
         </div>
     </div>
@@ -227,8 +226,8 @@
                                 ? `<img class="widget-event-image" src="${imageUrl(event)}" alt="">` 
                                 : '<div class="widget-event-placeholder">✦</div>'}
                             <div class="widget-event-name" title="${event.artist || 'Untitled event'}">${event.artist || 'Untitled event'}</div>
-                            <div class="widget-event-date"><span>📅</span> ${fmtDate(event.startDate)}${event.time ? ` • ${event.time}` : ''}</div>
-                            ${event.venue || event.city ? `<div class="widget-event-location">📍 ${[event.venue, event.city].filter(Boolean).join(', ')}</div>` : ''}
+                            <div class="widget-event-date">${fmtDate(event.startDate)}${event.time ? ` • ${event.time}` : ''}</div>
+                            ${event.venue || event.city ? `<div class="widget-event-location">${[event.city, event.venue].filter(Boolean).join(' · ')}</div>` : ''}
                         </div>`).join('');
                     const remaining = upcoming.length - visibleEvents.length;
                     document.getElementById('widgetContent').innerHTML = cards + (remaining > 0
@@ -237,7 +236,6 @@
                 } else {
                     document.getElementById('widgetContent').innerHTML = `
                         <div class="widget-empty">
-                            <span class="widget-empty-icon">✨</span>
                             <span>No upcoming events</span>
                         </div>`;
                 }
