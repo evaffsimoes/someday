@@ -2132,58 +2132,17 @@
         closeLinkInput();
         elements.reviewSlot.innerHTML = '';
         elements.aiParsingSlot.innerHTML = `
-          <div class="ai-parsing-card">
-            <div class="parsing-status-bar">
-              <div class="spinner"></div>
-              <span>Reading your post…</span>
-            </div>
-            <div class="parsed-field"><strong>Artist:</strong> <span class="field-loading"><div class="spinner" style="width:12px;height:12px;border-width:2px;display:inline-block;vertical-align:middle;"></div></span></div>
-            <div class="parsed-field"><strong>Date:</strong> <span class="field-loading"><div class="spinner" style="width:12px;height:12px;border-width:2px;display:inline-block;vertical-align:middle;"></div></span></div>
-            <div class="parsed-field"><strong>Time:</strong> <span class="field-loading"><div class="spinner" style="width:12px;height:12px;border-width:2px;display:inline-block;vertical-align:middle;"></div></span></div>
-            <div class="parsed-field"><strong>Venue & City:</strong> <span class="field-loading"><div class="spinner" style="width:12px;height:12px;border-width:2px;display:inline-block;vertical-align:middle;"></div></span></div>
+          <div class="ai-parsing-card" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px 16px; text-align:center;">
+            <div class="spinner" style="width:28px; height:28px; border-width:3px; margin-bottom:12px; border-top-color:var(--purple-light);"></div>
+            <div style="font-size:14px; font-weight:600; color:var(--text-main); font-family:'Outfit', sans-serif;">Reading event poster...</div>
+            <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Extracting event details</div>
           </div>`;
         elements.aiParsingSlot.scrollIntoView({ behavior: 'smooth' });
       }
 
       function renderAiParsedSuccess(parsed) {
-        const locationText = [parsed.venue, parsed.city].filter(Boolean).join(', ') || 'Venue not specified';
-        const missingFields = [
-          { key: 'artist', label: 'event name', inputId: 'f_artist' },
-          { key: 'startDate', label: 'date', inputId: 'f_daterange' },
-          { key: 'venue', label: 'venue', inputId: 'f_venue' },
-          { key: 'city', label: 'city', inputId: 'f_city' }
-        ].filter(field => !String(parsed[field.key] || '').trim());
-
-        const missingMessage = missingFields.length
-          ? `<div class="missing-fields">Falta confirmar: <strong>${escapeHtml(missingFields.map(field => field.label).join(', '))}</strong>.</div>`
-          : '';
-
-        elements.aiParsingSlot.innerHTML = `
-          <div class="ai-parsing-card">
-            <div class="parsing-status-bar" style="color: var(--purple-light);">
-              <span>Event detected</span>
-            </div>
-            <div class="parsed-field"><strong>Artist:</strong> <span>${escapeHtml(parsed.artist || 'Untitled event')}</span></div>
-            <div class="parsed-field"><strong>Date:</strong> <span>${fmtDate(parsed.startDate)}</span></div>
-            <div class="parsed-field"><strong>Time:</strong> <span>${escapeHtml(parsed.time || 'Not specified')}</span></div>
-            <div class="parsed-field"><strong>Location:</strong> <span>${escapeHtml(locationText)}</span></div>
-            <div class="parsed-field"><strong>Category:</strong> <span class="category-pill">${escapeHtml(parsed.category || 'Concert')}</span></div>
-            ${missingMessage}
-            <div style="font-size: 13px; font-weight: 600; color: #ffffff; margin: 16px 0 12px;">${missingFields.length ? 'Complete the missing details' : ''}</div>
-            <div class="btn-row">
-              <button class="btn btn-ghost" id="btnCancelParsed">Cancel</button>
-              <button class="btn btn-primary" id="btnConfirmParsed">${missingFields.length ? 'Continue' : 'Review and save'}</button>
-            </div>
-          </div>`;
-
-        document.getElementById('btnCancelParsed').onclick = () => {
-          elements.aiParsingSlot.innerHTML = '';
-        };
-
-        document.getElementById('btnConfirmParsed').onclick = () => {
-          elements.aiParsingSlot.innerHTML = '';
-          openReview(parsed, missingFields[0]?.inputId);
-        };
+        elements.aiParsingSlot.innerHTML = '';
+        openReview(parsed);
       }
 
       function openLinkInput() {
