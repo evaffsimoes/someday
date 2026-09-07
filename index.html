@@ -2217,7 +2217,7 @@
       }
 
       async function prepareImage(file) {
-        if (!file?.type?.match(/^image\/(jpeg|png|webp)$/i)) {
+        if (!file?.type?.match(/^image\/(jpeg|png|webp|heic|heif)$/i) && !file?.name?.match(/\.(jpe?g|png|webp|heic|heif)$/i)) {
           throw new Error('Please choose a JPEG, PNG, or WebP image.');
         }
         if (file.size > MAX_SOURCE_IMAGE_BYTES) {
@@ -2227,18 +2227,21 @@
         const objectUrl = URL.createObjectURL(file);
         try {
           const image = new Image();
-          image.src = objectUrl;
-          await image.decode();
+          await new Promise((resolve, reject) => {
+            image.onload = resolve;
+            image.onerror = () => reject(new Error('Failed to load image file.'));
+            image.src = objectUrl;
+          });
 
           const maxDimension = 1600;
-          const scale = Math.min(1, maxDimension / Math.max(image.naturalWidth, image.naturalHeight));
+          const scale = Math.min(1, maxDimension / Math.max(image.naturalWidth || image.width, image.naturalHeight || image.height));
           const canvas = document.createElement('canvas');
-          canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
-          canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+          canvas.width = Math.max(1, Math.round((image.naturalWidth || image.width) * scale));
+          canvas.height = Math.max(1, Math.round((image.naturalHeight || image.height) * scale));
           canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
 
           const compressed = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.82));
-          if (!compressed) throw new Error('Could not prepare that image.');
+          if (!compressed) throw new Error('Could not process that image.');
 
           const base64 = await fileToBase64(compressed);
           return { base64, mediaType: 'image/jpeg' };
@@ -2285,9 +2288,9 @@
           parsed.image = `data:${mediaType};base64,${base64}`;
           renderAiParsedSuccess(parsed);
         } catch (error) {
-          console.error(error);
+          console.error('OCR Error:', error);
           elements.aiParsingSlot.innerHTML = '';
-          elements.statusEl.textContent = 'Error reading poster — please add details below.';
+          elements.statusEl.textContent = `Error: ${error.message || 'Could not read poster details'}`;
           openReview({});
         }
       }
