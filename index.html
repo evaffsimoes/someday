@@ -747,6 +747,17 @@
       margin-top: 9px;
     }
 
+    .form-section-title {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent-strong);
+      margin: 18px 0 10px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
     .friend-picker {
       position: relative;
     }
@@ -1602,22 +1613,22 @@
           && eventStart <= rangeEnd && eventEnd >= rangeStart;
       }
 
-      function matchesQueueFilter(event) {
-        if (state.queueFilter === 'past') return isPast(event);
-        if (state.queueFilter === 'all') return true;
+      function matchesQueueFilter(event, targetFilter = state.queueFilter) {
+        if (targetFilter === 'past') return isPast(event);
+        if (targetFilter === 'all') return true;
 
         const today = dateOnly(new Date());
         let rangeStart = today;
         let rangeEnd = today;
 
-        if (state.queueFilter === 'week') {
+        if (targetFilter === 'week') {
           const day = today.getDay();
           const mondayOffset = day === 0 ? -6 : 1 - day;
           rangeStart.setDate(rangeStart.getDate() + mondayOffset);
           rangeEnd = new Date(rangeStart);
           rangeEnd.setDate(rangeEnd.getDate() + 6);
           rangeEnd.setHours(23, 59, 59, 999);
-        } else if (state.queueFilter === 'month') {
+        } else if (targetFilter === 'month') {
           rangeStart = new Date(today.getFullYear(), today.getMonth(), 1);
           rangeEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
         }
@@ -1903,8 +1914,17 @@
         const spotlightSlot = document.getElementById('spotlightSlot');
         spotlightSlot.innerHTML = '';
 
+        const allCount = state.events.filter(e => !isPast(e)).length;
+        const weekCount = state.events.filter(e => !isPast(e) && matchesQueueFilter(e, 'week')).length;
+        const monthCount = state.events.filter(e => !isPast(e) && matchesQueueFilter(e, 'month')).length;
+        const pastCount = state.events.filter(e => isPast(e)).length;
+
         document.querySelectorAll('.feed-tab').forEach(button => {
-          button.classList.toggle('active', button.dataset.filter === state.queueFilter);
+          const filter = button.dataset.filter;
+          button.classList.toggle('active', filter === state.queueFilter);
+          const label = filter === 'all' ? 'All' : filter === 'week' ? 'This week' : filter === 'month' ? 'This month' : 'Past';
+          const count = filter === 'all' ? allCount : filter === 'week' ? weekCount : filter === 'month' ? monthCount : pastCount;
+          button.textContent = count > 0 ? `${label} · ${count}` : label;
         });
 
         document.getElementById('undoToastHTML').innerHTML = `
@@ -2291,6 +2311,10 @@
 
         elements.reviewSlot.innerHTML = `
           <div class="review">
+            <h3 style="margin-top:0; margin-bottom:14px;">Confirm event details</h3>
+
+            <div class="form-section-title">1. Event Basics</div>
+
             <div class="field">
               <div class="event-image-editor">
                 <div id="eventImagePreviewWrapper" class="event-image-preview-wrapper">
@@ -2307,24 +2331,21 @@
               </div>
             </div>
 
-            <h3>Confirm event details</h3>
-
             <div class="field">
               <label>Artist / Event Name</label>
               <input id="f_artist" value="${escapeAttr(prefill.artist || prefill.name || '')}" placeholder="e.g. Branko, Slow J, Festival X">
             </div>
 
             <div class="field">
-              <label>Going with</label>
-              <div class="friend-picker">
-                <div class="friend-tag-container" onclick="document.getElementById('friendsSearch').focus()">
-                  <div id="selectedPills" class="selected-pills"></div>
-                  <input id="friendsSearch" class="friend-input-field" placeholder="Add friends or group..." autocomplete="off">
-                </div>
-                <input type="hidden" id="f_company" value="${escapeAttr(prefill.company || '')}">
-                <div id="friends-chips" class="friend-picker-list"></div>
-              </div>
+              <label>Category</label>
+              <select id="f_category">
+                <option value="Concert" ${(prefill.category === 'Concert' || !prefill.category) ? 'selected' : ''}>Concert</option>
+                <option value="Festival" ${prefill.category === 'Festival' ? 'selected' : ''}>Festival</option>
+                <option value="Other" ${prefill.category === 'Other' || prefill.category === 'Party' ? 'selected' : ''}>Other</option>
+              </select>
             </div>
+
+            <div class="form-section-title">2. When & Where</div>
 
             <div class="field">
               <label>Dates (Start - End)</label>
@@ -2343,13 +2364,18 @@
 
             <div class="field"><label>Venue</label><select id="f_venue">${selectOptionsHTML('pt-venues', prefill.venue, 'Select a venue')}</select></div>
 
+            <div class="form-section-title">3. Tickets, Friends & Notes</div>
+
             <div class="field">
-              <label>Category</label>
-              <select id="f_category">
-                <option value="Concert" ${(prefill.category === 'Concert' || !prefill.category) ? 'selected' : ''}>Concert</option>
-                <option value="Festival" ${prefill.category === 'Festival' ? 'selected' : ''}>Festival</option>
-                <option value="Other" ${prefill.category === 'Other' || prefill.category === 'Party' ? 'selected' : ''}>Other</option>
-              </select>
+              <label>Going with</label>
+              <div class="friend-picker">
+                <div class="friend-tag-container" onclick="document.getElementById('friendsSearch').focus()">
+                  <div id="selectedPills" class="selected-pills"></div>
+                  <input id="friendsSearch" class="friend-input-field" placeholder="Add friends or group..." autocomplete="off">
+                </div>
+                <input type="hidden" id="f_company" value="${escapeAttr(prefill.company || '')}">
+                <div id="friends-chips" class="friend-picker-list"></div>
+              </div>
             </div>
 
             <div class="field">
