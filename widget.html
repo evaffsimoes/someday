@@ -180,10 +180,22 @@
     </div>
 
     <script>
-        function fmtDate(dStr) {
+        function fmtDate(dStr, endStr) {
             if (!dStr) return '';
             const d = new Date(dStr + 'T00:00:00');
             if (isNaN(d)) return dStr;
+
+            if (endStr && endStr !== dStr) {
+                const endD = new Date(endStr + 'T00:00:00');
+                if (!isNaN(endD) && endD > d) {
+                    const startFmt = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                    const endFmt = endD.getMonth() === d.getMonth()
+                        ? endD.getDate()
+                        : endD.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                    return `${startFmt}–${endFmt}`;
+                }
+            }
+
             const now = new Date();
             now.setHours(0,0,0,0);
             const diffDays = Math.round((d - now) / (1000 * 60 * 60 * 24));
@@ -226,7 +238,7 @@
                                 ? `<img class="widget-event-image" src="${imageUrl(event)}" alt="">` 
                                 : '<div class="widget-event-placeholder">✦</div>'}
                             <div class="widget-event-name" title="${event.artist || 'Untitled event'}">${event.artist || 'Untitled event'}</div>
-                            <div class="widget-event-date">${fmtDate(event.startDate)}${event.time ? ` • ${event.time}` : ''}</div>
+                            <div class="widget-event-date">${fmtDate(event.startDate, event.endDate)}${event.time ? ` • ${event.time}` : ''}</div>
                             ${event.venue || event.city ? `<div class="widget-event-location">${[event.city, event.venue].filter(Boolean).join(' · ')}</div>` : ''}
                         </div>`).join('');
                     const remaining = upcoming.length - visibleEvents.length;

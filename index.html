@@ -1858,6 +1858,11 @@
           ? date.toLocaleDateString(undefined, { month: 'short' })
           : 'date';
 
+        const hasMultiDay = event.endDate && event.endDate !== event.startDate;
+        const endDateObj = hasMultiDay ? new Date(`${event.endDate}T12:00:00`) : null;
+        const endDay = endDateObj && !Number.isNaN(endDateObj.getTime()) ? endDateObj.getDate() : null;
+
+        const badgeDayText = hasMultiDay && endDay ? `${day}–${endDay}` : day;
         const imageHTML = imageSrc
           ? `<img src="${escapeAttr(imageSrc)}" class="queue-img" alt="Event image">`
           : '<div class="queue-img-placeholder">' + iconSvg('ticket') + '</div>';
@@ -1895,7 +1900,7 @@
               </div>
 
               <div class="queue-date-badge" aria-label="${escapeAttr(dateStr)}">
-                <strong>${day}</strong>
+                <strong style="${hasMultiDay ? 'font-size:13px;' : ''}">${badgeDayText}</strong>
                 <small>${escapeHtml(month)}</small>
               </div>
             </div>
@@ -1918,6 +1923,50 @@
 
         const spotlightSlot = document.getElementById('spotlightSlot');
         spotlightSlot.innerHTML = '';
+
+        if (!isPastFilter && upcoming.length > 0) {
+          const nextEvent = upcoming[0];
+          const now = new Date();
+          const startDtStr = nextEvent.startDate + (nextEvent.time ? ('T' + (nextEvent.time.length === 5 ? nextEvent.time + ':00' : nextEvent.time)) : 'T00:00:00');
+          const startDt = new Date(startDtStr);
+          const diffMs = startDt - now;
+
+          let countdownText = '';
+          if (diffMs <= 0) {
+            countdownText = 'Happening today / right now!';
+          } else {
+            const totalHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const days = Math.floor(totalHours / 24);
+            const hours = totalHours % 24;
+
+            if (days > 0) {
+              countdownText = `Starts in ${days} day${days > 1 ? 's' : ''}${hours > 0 ? ` / ${hours} hour${hours > 1 ? 's' : ''}` : ''}`;
+            } else if (hours > 0) {
+              const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+              countdownText = `Starts in ${hours} hour${hours > 1 ? 's' : ''}${mins > 0 ? ` / ${mins} min${mins > 1 ? 's' : ''}` : ''}`;
+            } else {
+              const mins = Math.max(1, Math.floor(diffMs / (1000 * 60)));
+              countdownText = `Starts in ${mins} minute${mins > 1 ? 's' : ''}`;
+            }
+          }
+
+          spotlightSlot.innerHTML = `
+            <div class="countdown-spotlight-banner" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.16) 0%, rgba(20, 20, 23, 0.8) 100%); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 16px; padding: 14px 16px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer;" onclick="openReview(state.events.find(e => e.id === '${nextEvent.id}'))">
+              <div style="display: flex; flex-direction: column; gap: 4px; overflow: hidden;">
+                <div style="font-size: 11px; font-weight: 700; color: #c084fc; text-transform: uppercase; letter-spacing: 0.08em; display: flex; align-items: center; gap: 6px;">
+                  <span style="width: 6px; height: 6px; border-radius: 50%; background: #c084fc; display: inline-block;"></span>
+                  ${countdownText}
+                </div>
+                <div style="font-size: 15px; font-weight: 700; color: #f5f5f5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                  ${escapeHtml(nextEvent.artist || 'Next Event')}
+                </div>
+              </div>
+              <div style="font-size: 12px; font-weight: 600; color: #94949e; flex-shrink: 0; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 99px; padding: 6px 12px;">
+                View
+              </div>
+            </div>
+          `;
+        }
 
         const allCount = state.events.filter(e => !isPast(e)).length;
         const weekCount = state.events.filter(e => !isPast(e) && matchesQueueFilter(e, 'week')).length;
