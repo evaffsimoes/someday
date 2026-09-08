@@ -34,62 +34,32 @@ async function scrapeInstagramMetadata(sharedText) {
   if (code) {
     const cleanUrl = `https://www.instagram.com/p/${code}/`;
 
-    // 1. Try official Instagram public oEmbed endpoint
-    try {
-      const oembedRes = await fetch(`https://api.instagram.com/oembed/?url=${encodeURIComponent(cleanUrl)}`, {
-        headers: { 'User-Agent': 'Mozilla/5.0' },
-        signal: AbortSignal.timeout(5000)
-      });
-      if (oembedRes.ok) {
-        const oembedData = await oembedRes.json();
-        if (oembedData.title) {
-          const authorStr = oembedData.author_name ? `Post by @${oembedData.author_name}` : '';
-          enrichedText = [authorStr, oembedData.title, sharedText].filter(Boolean).join(' | ');
-        }
-        if (oembedData.thumbnail_url && !posterImageDataUrl) {
-          try {
-            const imgRes = await fetch(oembedData.thumbnail_url, { signal: AbortSignal.timeout(5000) });
-            if (imgRes.ok) {
-              const mime = imgRes.headers.get('content-type')?.split(';')[0].toLowerCase() || 'image/jpeg';
-              const buf = Buffer.from(await imgRes.arrayBuffer());
-              if (buf.byteLength <= MAX_POSTER_BYTES) {
-                posterImageDataUrl = `data:${mime};base64,${buf.toString('base64')}`;
-              }
-            }
-          } catch (_) {}
-        }
-      }
-    } catch (_) {}
-
-    // 2. Try Instagram official embed captioned page (unauthenticated public HTML)
-    if (enrichedText === sharedText) {
-      const embedUrl = `https://www.instagram.com/p/${code}/embed/captioned/`;
+    // 1. Try public Instagram GraphQL / JSON-LD / Meta scraper via proxy & direct fetch
+    for (const fetchUrl of [
+      `https://ddinstagram.com/p/${code}`,
+      `https://vxinstagram.com/p/${code}`,
+      `https://www.instagram.com/p/${code}/embed/captioned/`,
+      `https://api.instagram.com/oembed/?url=${encodeURIComponent(cleanUrl)}`
+    ]) {
       try {
-        const res = await fetch(embedUrl, {
+        const isJsonApi = fetchUrl.includes('api.instagram.com');
+        const res = await fetch(fetchUrl, {
           headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-            'Accept': 'text/html'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            'Accept': isJsonApi ? 'application/json' : 'text/html'
           },
           signal: AbortSignal.timeout(6000)
         });
+
         if (res.ok) {
-          const html = await res.text();
-          const captionMatch = html.match(/<div[^>]*class=["']Caption["'][^>]*>(.*?)<\/div>/s) || html.match(/<div[^>]*class=["']CaptionText["'][^>]*>(.*?)<\/div>/s);
-          let captionText = captionMatch ? captionMatch[1].replace(/<[^>]+>/g, ' ').trim() : '';
-
-          const titleMatch = html.match(/<div[^>]*class=["']Header["'][^>]*>(.*?)<\/div>/s);
-          let headerText = titleMatch ? titleMatch[1].replace(/<[^>]+>/g, ' ').trim() : '';
-
-          const imgMatch = html.match(/<img[^>]*class=["']EmbeddedMediaImage["'][^>]*src=["']([^"']+)["']/i) || html.match(/<img[^>]*src=["']([^"']+)["'][^>]*class=["']EmbeddedMediaImage["']/i);
-          let imgUrl = imgMatch ? imgMatch[1].replace(/&amp;/g, '&') : '';
-
-          if (captionText || headerText) {
-            enrichedText = [headerText, captionText, sharedText].filter(Boolean).join(' | ');
-          }
-
-          if (imgUrl && !posterImageDataUrl) {
-            try {
-              const imgRes = await fetch(imgUrl, { signal: AbortSignal.timeout(5000) });
+          if (isJsonApi) {
+            const oembedData = await res.json();
+            if (oembedData.title) {
+              const authorStr = oembedData.author_name ? `Post by @${oembedData.author_name}` : '';
+              enrichedText = [authorStr, oembedData.title, sharedText].filter(Boolean).join(' | ');
+            }
+            if (oembedData.thumbnail_url && !posterImageDataUrl) {
+              const imgRes = await fetch(oembedData.thumbnail_url, { signal: AbortSignal.timeout(5000) });
               if (imgRes.ok) {
                 const mime = imgRes.headers.get('content-type')?.split(';')[0].toLowerCase() || 'image/jpeg';
                 const buf = Buffer.from(await imgRes.arrayBuffer());
@@ -97,47 +67,47 @@ async function scrapeInstagramMetadata(sharedText) {
                   posterImageDataUrl = `data:${mime};base64,${buf.toString('base64')}`;
                 }
               }
-            } catch (_) {}
-          }
-        }
-      } catch (_) {}
-    }
+            }
+          } else {
+            const html = await res.text();
 
-    // 3. Fallback to ddinstagram / vxinstagram proxies
-    if (enrichedText === sharedText) {
-      for (const domain of ['ddinstagram.com', 'vxinstagram.com']) {
-        try {
-          const proxyUrl = `https://${domain}/p/${code}`;
-          const proxyRes = await fetch(proxyUrl, {
-            headers: { 'User-Agent': 'Mozilla/5.0', 'Accept': 'text/html' },
-            signal: AbortSignal.timeout(5000)
-          });
-          if (proxyRes.ok) {
-            const html = await proxyRes.text();
+            // Extract Og Title & Description
             const ogTitle = (html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i) || [])[1] || '';
             const ogDesc = (html.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i) || [])[1] || '';
-            let ogImage = (html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) || [])[1] || '';
-            ogImage = ogImage.replace(/&amp;/g, '&');
+            const captionMatch = html.match(/<div[^>]*class=["']Caption["'][^>]*>(.*?)<\/div>/s) || html.match(/<div[^>]*class=["']CaptionText["'][^>]*>(.*?)<\/div>/s);
+            const captionText = captionMatch ? captionMatch[1].replace(/<[^>]+>/g, ' ').trim() : '';
 
-            if (ogTitle || ogDesc) {
-              enrichedText = [ogTitle, ogDesc, sharedText].filter(Boolean).join(' | ');
-              if (ogImage && !posterImageDataUrl) {
-                try {
-                  const imgRes = await fetch(ogImage, { signal: AbortSignal.timeout(5000) });
-                  if (imgRes.ok) {
-                    const mime = imgRes.headers.get('content-type')?.split(';')[0].toLowerCase() || 'image/jpeg';
-                    const buf = Buffer.from(await imgRes.arrayBuffer());
-                    if (buf.byteLength <= MAX_POSTER_BYTES) {
-                      posterImageDataUrl = `data:${mime};base64,${buf.toString('base64')}`;
-                    }
+            if (ogTitle || ogDesc || captionText) {
+              enrichedText = [ogTitle, ogDesc, captionText, sharedText].filter(Boolean).join(' | ');
+            }
+
+            // Extract Og Image URL (First photo of carousel)
+            let imgUrl = (html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) || [])[1]
+              || (html.match(/<img[^>]*class=["']EmbeddedMediaImage["'][^>]*src=["']([^"']+)["']/i) || [])[1]
+              || (html.match(/<img[^>]*src=["']([^"']+)["'][^>]*class=["']EmbeddedMediaImage["']/i) || [])[1] || '';
+
+            imgUrl = imgUrl.replace(/&amp;/g, '&');
+
+            if (imgUrl && !posterImageDataUrl) {
+              try {
+                const imgRes = await fetch(imgUrl, {
+                  headers: { 'User-Agent': 'Mozilla/5.0' },
+                  signal: AbortSignal.timeout(5000)
+                });
+                if (imgRes.ok) {
+                  const mime = imgRes.headers.get('content-type')?.split(';')[0].toLowerCase() || 'image/jpeg';
+                  const buf = Buffer.from(await imgRes.arrayBuffer());
+                  if (buf.byteLength <= MAX_POSTER_BYTES) {
+                    posterImageDataUrl = `data:${mime};base64,${buf.toString('base64')}`;
                   }
-                } catch (_) {}
-              }
-              break;
+                }
+              } catch (_) {}
             }
           }
-        } catch (_) {}
-      }
+
+          if (posterImageDataUrl || enrichedText !== sharedText) break;
+        }
+      } catch (_) {}
     }
   }
 
