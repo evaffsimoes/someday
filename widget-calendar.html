@@ -12,7 +12,7 @@
             --purple-light: #c084fc;
             --bg: #09090b;
             --surface: #141417;
-            --surface-hover: #1c1c21;
+            --surface-soft: rgba(255, 255, 255, 0.02);
             --border: rgba(255, 255, 255, 0.08);
             --text-main: #f5f5f5;
             --text-muted: #94949e;
@@ -34,14 +34,21 @@
             line-height: 1.4;
         }
 
-        .widget-header {
+        .cal-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 12px;
             margin-bottom: 12px;
         }
 
-        .widget-logo {
+        .cal-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .cal-logo {
             font-family: 'Outfit', sans-serif;
             font-weight: 800;
             font-size: 18px;
@@ -52,111 +59,92 @@
             gap: 2px;
         }
 
-        .widget-logo .gem {
+        .cal-logo .gem {
             color: var(--purple);
             font-size: 16px;
         }
 
-        .widget-badge {
-            font-size: 11px;
+        .cal-month-title {
+            margin: 0;
+            font-size: 14px;
             font-weight: 700;
-            background: rgba(168, 85, 247, 0.15);
-            color: var(--purple-light);
-            border: 1px solid rgba(168, 85, 247, 0.3);
-            border-radius: 99px;
-            padding: 3px 10px;
-            letter-spacing: 0.02em;
             text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-main);
         }
 
-        .weekday-grid,
-        .grid {
+        .cal-grid {
             display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 4px;
-            text-align: left;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 3px;
         }
 
-        .weekday-grid {
-            margin-bottom: 4px;
-        }
-
-        .weekday {
-            padding: 2px 0;
-            color: var(--text-muted);
-            font-size: 9px;
-            font-weight: 700;
-            letter-spacing: 0.08em;
-            text-align: center;
+        .cal-day-label {
+            font-size: 10px;
+            letter-spacing: 0.12em;
             text-transform: uppercase;
+            color: var(--text-muted);
+            text-align: center;
+            padding: 4px 0;
         }
 
-        .cell {
-            min-height: clamp(46px, 12vw, 64px);
+        .cal-cell {
+            min-height: clamp(52px, 13vw, 68px);
+            background: var(--surface-soft);
             border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: clamp(5px, 1.2vw, 7px) clamp(4px, 1vw, 6px);
+            border-radius: 9px;
+            padding: 5px 4px;
             display: flex;
             flex-direction: column;
-            align-items: flex-start;
+            justify-content: flex-start;
             gap: 3px;
-            font-size: clamp(10px, 2.4vw, 12px);
-            font-weight: 600;
-            background: var(--surface);
-            color: var(--text-main);
+            position: relative;
             overflow: hidden;
-            transition: border-color 0.2s ease, background 0.2s ease;
         }
 
-        .empty-cell {
+        .cal-cell.empty-cell {
             background: transparent;
             border-color: transparent;
+            pointer-events: none;
         }
 
-        .day-number {
-            line-height: 1;
+        .cal-day-num {
             font-size: 11px;
             font-weight: 700;
-            color: var(--text-main);
+            color: var(--text-muted);
+            line-height: 1;
+            display: block;
+            margin-bottom: 2px;
         }
 
-        .has-event {
-            background: rgba(168, 85, 247, 0.06);
-            border-color: rgba(168, 85, 247, 0.2);
+        .cal-cell.today {
+            border-color: rgba(168, 85, 247, 0.5);
+            box-shadow: inset 0 0 0 1px rgba(168, 85, 247, 0.18);
         }
 
-        .today {
-            border-color: rgba(168, 85, 247, 0.7);
-            background: rgba(168, 85, 247, 0.12);
-            box-shadow: inset 0 0 0 1px rgba(168, 85, 247, 0.3);
-        }
-
-        .today .day-number {
+        .cal-cell.today .cal-day-num {
             color: var(--purple-light);
         }
 
-        .event-name {
+        .cal-event-pill {
             display: flex;
             align-items: center;
-            gap: 4px;
-            box-sizing: border-box;
-            min-height: 18px;
+            gap: 3px;
             width: 100%;
-            border-radius: 5px;
-            padding: 2px 5px;
-            background: linear-gradient(135deg, rgba(168, 85, 247, 0.4), rgba(192, 132, 252, 0.5));
-            border: 1px solid rgba(168, 85, 247, 0.6);
-            color: #fff;
-            font-size: clamp(7px, 1.8vw, 9px);
+            border-radius: 6px;
+            min-height: 16px;
+            padding: 2px 4px;
+            font-size: clamp(7.5px, 1.8vw, 9px);
             line-height: 1.1;
             font-weight: 700;
             letter-spacing: 0.02em;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            box-sizing: border-box;
         }
 
-        .event-name img {
+        .cal-event-pill img {
             width: 10px;
             height: 10px;
             border-radius: 2px;
@@ -164,47 +152,54 @@
             flex-shrink: 0;
         }
 
-        .event-name-text {
-            display: block;
-            width: 100%;
-            min-width: 0;
+        .cal-event-pill-text {
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            width: 100%;
         }
 
-        .event-more {
-            color: var(--purple-light);
+        .cal-more-text {
             font-size: 8px;
             font-weight: 700;
+            color: var(--purple-light);
+            margin-top: 1px;
         }
     </style>
 </head>
 
 <body>
-    <div class="widget-header">
-        <div class="widget-logo">cue<span class="gem">✦</span></div>
-        <div class="widget-badge" id="mTitle">March 2026</div>
+    <div class="cal-header">
+        <div class="cal-title-wrap">
+            <div class="cal-logo">cue<span class="gem">✦</span></div>
+        </div>
+        <h3 class="cal-month-title" id="calMonthTitle">March 2026</h3>
     </div>
-    <div class="weekday-grid" aria-hidden="true">
-        <div class="weekday">Sun</div>
-        <div class="weekday">Mon</div>
-        <div class="weekday">Tue</div>
-        <div class="weekday">Wed</div>
-        <div class="weekday">Thu</div>
-        <div class="weekday">Fri</div>
-        <div class="weekday">Sat</div>
+
+    <div class="cal-grid">
+        <div class="cal-day-label">Sun</div>
+        <div class="cal-day-label">Mon</div>
+        <div class="cal-day-label">Tue</div>
+        <div class="cal-day-label">Wed</div>
+        <div class="cal-day-label">Thu</div>
+        <div class="cal-day-label">Fri</div>
+        <div class="cal-day-label">Sat</div>
     </div>
-    <div class="grid" id="cGrid"></div>
+    <div class="cal-grid" id="calGrid" style="margin-top: 4px;"></div>
 
     <script>
         const now = new Date();
-        document.getElementById('mTitle').textContent = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        const year = now.getFullYear();
+        const month = now.getMonth();
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        document.getElementById('calMonthTitle').textContent = `${monthNames[month]} ${year}`;
 
         let events = [];
         try { events = JSON.parse(localStorage.getItem('cue-events-v12')) || []; } catch (e) { }
+
         function isPast(ev) {
-            const d = new Date((ev.endDate || ev.startDate) + 'T23:59:59'); return d < new Date();
+            const d = new Date((ev.endDate || ev.startDate) + 'T23:59:59');
+            return d < new Date();
         }
 
         function imageUrl(event) {
@@ -214,44 +209,60 @@
             return '';
         }
 
-        const y = now.getFullYear(); const m = now.getMonth();
-        const daysInM = new Date(y, m + 1, 0).getDate();
-        const todayStr = new Date().toISOString().slice(0, 10);
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const todayStr = now.toISOString().slice(0, 10);
+        const firstDay = new Date(year, month, 1).getDay();
 
-        const firstDay = new Date(y, m, 1).getDay();
-        let grid = '';
-        for (let i = 0; i < firstDay; i++) grid += '<div class="cell empty-cell"></div>';
-        for (let i = 1; i <= daysInM; i++) {
-            const str = `${y}-${String(m + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+        const grid = document.getElementById('calGrid');
+        let gridHtml = '';
+
+        for (let i = 0; i < firstDay; i++) {
+            gridHtml += '<div class="cal-cell empty-cell"></div>';
+        }
+
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const dayEvents = events.filter(event => {
-                if (!event.startDate || isPast(event)) return false;
-                return str >= event.startDate && str <= (event.endDate || event.startDate);
+                if (!event.startDate) return false;
+                if (event.endDate) return dateKey >= event.startDate && dateKey <= event.endDate;
+                return event.startDate === dateKey;
+            }).sort((a, b) => {
+                const aMulti = a.endDate && a.endDate !== a.startDate ? 1 : 0;
+                const bMulti = b.endDate && b.endDate !== b.startDate ? 1 : 0;
+                if (aMulti !== bMulti) return bMulti - aMulti;
+                return (a.artist || '').localeCompare(b.artist || '');
             });
-            const hasE = dayEvents.length > 0;
-            const isT = (str === todayStr);
-            const cls = 'cell' + (hasE ? ' has-event' : '') + (isT ? ' today' : '');
-            const visible = dayEvents.slice(0, 2);
-            const names = visible.map(event => {
-                let bg = 'linear-gradient(135deg, rgba(168, 85, 247, 0.35), rgba(192, 132, 252, 0.45))';
+
+            const isToday = (dateKey === todayStr);
+            const cellClass = 'cal-cell' + (isToday ? ' today' : '');
+            const visibleEvents = dayEvents.slice(0, 2);
+
+            const pillsHtml = visibleEvents.map(event => {
+                let background = 'linear-gradient(135deg, rgba(168, 85, 247, 0.35), rgba(192, 132, 252, 0.45))';
                 let border = 'rgba(168, 85, 247, 0.6)';
-                let textCol = '#ffffff';
+                let textColor = '#ffffff';
 
                 if (event.category === 'Festival') {
-                    bg = 'linear-gradient(135deg, rgba(245, 158, 11, 0.35), rgba(251, 191, 36, 0.45))';
+                    background = 'linear-gradient(135deg, rgba(245, 158, 11, 0.35), rgba(251, 191, 36, 0.45))';
                     border = 'rgba(245, 158, 11, 0.7)';
-                    textCol = '#fef08a';
+                    textColor = '#fef08a';
                 } else if (event.category === 'Other' || event.category === 'Party') {
-                    bg = 'linear-gradient(135deg, rgba(20, 184, 166, 0.35), rgba(45, 212, 191, 0.45))';
+                    background = 'linear-gradient(135deg, rgba(20, 184, 166, 0.35), rgba(45, 212, 191, 0.45))';
                     border = 'rgba(20, 184, 166, 0.7)';
-                    textCol = '#99f6e4';
+                    textColor = '#99f6e4';
                 }
 
-                return `<div class="event-name" style="background:${bg}; border-color:${border}; color:${textCol};" title="${event.artist || 'Event'}">${imageUrl(event) ? `<img src="${imageUrl(event)}" alt="">` : ''}<span class="event-name-text">${event.artist || 'Event'}</span></div>`;
+                const img = imageUrl(event);
+                return `<div class="cal-event-pill" style="background:${background}; border:1px solid ${border}; color:${textColor};" title="${event.artist || 'Event'}">${img ? `<img src="${img}" alt="">` : ''}<span class="cal-event-pill-text">${event.artist || 'Event'}</span></div>`;
             }).join('');
-            const remaining = dayEvents.length - visible.length;
-            grid += `<div class="${cls}"><span class="day-number">${i}</span>${names}${remaining > 0 ? `<span class="event-more">+${remaining} more</span>` : ''}</div>`;
+
+            const remaining = dayEvents.length - visibleEvents.length;
+            const moreHtml = remaining > 0 ? `<div class="cal-more-text">+${remaining} more</div>` : '';
+
+            gridHtml += `<div class="${cellClass}"><span class="cal-day-num">${day}</span>${pillsHtml}${moreHtml}</div>`;
         }
-        document.getElementById('cGrid').innerHTML = grid;
+
+        grid.innerHTML = gridHtml;
     </script>
 </body>
 
