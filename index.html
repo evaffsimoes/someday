@@ -2058,21 +2058,35 @@
       }
 
       function gcalUrl(event) {
-        const start = toGCalDate(event.startDate, event.time);
-        let dates = start;
+        if (!event.startDate) return 'https://calendar.google.com/';
 
-        if (start && start.includes('T')) {
-          const end = toGCalDate(event.endDate, null);
-          if (end) {
-            dates = `${start}/${end}T235900`;
+        let startFormatted = '';
+        let endFormatted = '';
+
+        const effectiveEndDate = (event.endDate && event.endDate >= event.startDate) ? event.endDate : event.startDate;
+
+        if (event.time) {
+          const startDt = toGCalDate(event.startDate, event.time);
+          const endDt = toGCalDate(effectiveEndDate, null);
+          startFormatted = startDt;
+          if (event.endDate && event.endDate !== event.startDate) {
+            endFormatted = `${endDt.slice(0, 8)}T235900`;
           } else {
-            const startDate = new Date(event.startDate + 'T' + (event.time || '21:00'));
-            const endDate = new Date(startDate.getTime() + 3 * 60 * 60 * 1000);
-            dates = `${start}/${endDate.toISOString().replace(/[-:]/g, '').split('.')[0]}`;
+            const startDateObj = new Date(`${event.startDate}T${event.time.padStart(5, '0')}:00`);
+            const endDateObj = new Date(startDateObj.getTime() + 3 * 60 * 60 * 1000);
+            endFormatted = endDateObj.toISOString().replace(/[-:]/g, '').split('.')[0];
           }
-        } else if (start) {
-          dates = `${start}/${start}`;
+        } else {
+          const s = event.startDate.replace(/-/g, '');
+          const e = effectiveEndDate.replace(/-/g, '');
+          const nextDay = new Date(`${effectiveEndDate}T00:00:00`);
+          nextDay.setDate(nextDay.getDate() + 1);
+          const nextDayStr = nextDay.toISOString().slice(0, 10).replace(/-/g, '');
+          startFormatted = s;
+          endFormatted = nextDayStr;
         }
+
+        const dates = `${startFormatted}/${endFormatted}`;
 
         const params = new URLSearchParams({
           action: 'TEMPLATE',

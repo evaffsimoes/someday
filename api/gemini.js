@@ -17,7 +17,7 @@ function isRateLimited(req) {
 
 function extractInstagramUrl(sharedText) {
   if (!sharedText) return null;
-  const match = sharedText.match(/https?:\/\/(?:www\.)?instagram\.com\/(?:p|reel|reels|tv)\/[\w.-]+/i);
+  const match = sharedText.match(/https?:\/\/(?:www\.)?instagram\.com\/(?:p|reel|reels|tv|share\/p)\/[\w.-]+/i);
   return match ? match[0] : null;
 }
 
@@ -28,24 +28,24 @@ async function scrapeInstagramMetadata(sharedText) {
   const instaUrl = extractInstagramUrl(sharedText);
   if (!instaUrl) return { enrichedText, posterImageDataUrl };
 
-  const matchCode = instaUrl.match(/(?:p|reel|reels|tv)\/([\w.-]+)/i);
+  const matchCode = instaUrl.match(/(?:p|reel|reels|tv|share\/p)\/([\w.-]+)/i);
   const code = matchCode ? matchCode[1] : null;
 
   if (code) {
     const cleanUrl = `https://www.instagram.com/p/${code}/`;
 
-    // 1. Try public Instagram GraphQL / JSON-LD / Meta scraper via proxy & direct fetch
     for (const fetchUrl of [
+      `https://api.instagram.com/oembed/?url=${encodeURIComponent(cleanUrl)}`,
+      `https://www.instagram.com/p/${code}/embed/captioned/`,
       `https://ddinstagram.com/p/${code}`,
       `https://vxinstagram.com/p/${code}`,
-      `https://www.instagram.com/p/${code}/embed/captioned/`,
-      `https://api.instagram.com/oembed/?url=${encodeURIComponent(cleanUrl)}`
+      `https://gramsnap.com/api/post?url=${encodeURIComponent(cleanUrl)}`
     ]) {
       try {
         const isJsonApi = fetchUrl.includes('api.instagram.com');
         const res = await fetch(fetchUrl, {
           headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
             'Accept': isJsonApi ? 'application/json' : 'text/html'
           },
           signal: AbortSignal.timeout(6000)
@@ -71,7 +71,6 @@ async function scrapeInstagramMetadata(sharedText) {
           } else {
             const html = await res.text();
 
-            // Extract Og Title & Description
             const ogTitle = (html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i) || [])[1] || '';
             const ogDesc = (html.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i) || [])[1] || '';
             const captionMatch = html.match(/<div[^>]*class=["']Caption["'][^>]*>(.*?)<\/div>/s) || html.match(/<div[^>]*class=["']CaptionText["'][^>]*>(.*?)<\/div>/s);
@@ -81,7 +80,6 @@ async function scrapeInstagramMetadata(sharedText) {
               enrichedText = [ogTitle, ogDesc, captionText, sharedText].filter(Boolean).join(' | ');
             }
 
-            // Extract Og Image URL (First photo of carousel)
             let imgUrl = (html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) || [])[1]
               || (html.match(/<img[^>]*class=["']EmbeddedMediaImage["'][^>]*src=["']([^"']+)["']/i) || [])[1]
               || (html.match(/<img[^>]*src=["']([^"']+)["'][^>]*class=["']EmbeddedMediaImage["']/i) || [])[1] || '';
