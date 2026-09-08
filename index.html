@@ -3061,17 +3061,46 @@
         document.getElementById('settingsModalOverlay').classList.add('active');
       }
 
-      function triggerNotification(title, options) {
-        if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.ready.then(reg => {
-            reg.showNotification(title, options);
-          }).catch(() => {
-            new Notification(title, options);
-          });
-          return;
-        }
+      async function triggerNotification(title, options) {
+        try {
+          if (window.Capacitor?.isNative && window.Capacitor?.Plugins?.LocalNotifications) {
+            const perm = await window.Capacitor.Plugins.LocalNotifications.requestPermissions();
+            if (perm.display === 'granted') {
+              await window.Capacitor.Plugins.LocalNotifications.schedule({
+                notifications: [{
+                  title: title,
+                  body: options.body || '',
+                  id: Math.floor(Math.random() * 100000),
+                  schedule: { at: new Date(Date.now() + 500) }
+                }]
+              });
+              return;
+            }
+          }
 
-        new Notification(title, options);
+          if (!('Notification' in window)) {
+            customAlert(`${title}\n${options.body || ''}`, 4000);
+            return;
+          }
+
+          if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+            await Notification.requestPermission();
+          }
+
+          if (Notification.permission === 'granted') {
+            if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+              const reg = await navigator.serviceWorker.ready;
+              reg.showNotification(title, options);
+            } else {
+              new Notification(title, options);
+            }
+          } else {
+            customAlert(`${title}\n${options.body || ''}`, 4000);
+          }
+        } catch (e) {
+          console.warn('Notification trigger fallback:', e);
+          customAlert(`${title}\n${options.body || ''}`, 4000);
+        }
       }
 
       function updateNotificationBtn() {
@@ -3360,17 +3389,16 @@
           document.getElementById('settingsModalOverlay').classList.remove('active');
         };
 
-        document.getElementById('testNotifBtn').onclick = event => {
+        document.getElementById('testNotifBtn').onclick = async event => {
           event.preventDefault();
-          if (Notification.permission === 'granted') {
-            triggerNotification('This is a test!', {
-              body: 'Your Cue app is sending alerts correctly.',
-              icon: 'icon-192.png',
-              badge: 'icon-192.png'
-            });
-          } else {
-            customAlert('Notification permission has not been granted yet.');
+          if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+            try { await Notification.requestPermission(); } catch (e) { }
           }
+          triggerNotification('Test Notification', {
+            body: 'Your Cue app notifications are working correctly!',
+            icon: 'icon-192.png',
+            badge: 'icon-192.png'
+          });
         };
 
         document.getElementById('saveSettingsBtn').onclick = () => {
