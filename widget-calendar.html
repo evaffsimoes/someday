@@ -194,8 +194,17 @@
         const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
         document.getElementById('calMonthTitle').textContent = `${monthNames[month]} ${year}`;
 
+        const TEST_WIDGET_EVENTS = [
+            { id: 'tw-1', artist: 'Sonar Festival 2026', category: 'Festival', startDate: '2026-09-12', endDate: '2026-09-14', time: '18:00', city: 'Lisbon', venue: 'Parque das Nações' },
+            { id: 'tw-2', artist: 'Tame Impala', category: 'Concert', startDate: '2026-09-18', endDate: '2026-09-18', time: '21:30', city: 'Lisbon', venue: 'MEO Arena' },
+            { id: 'tw-3', artist: 'Peggy Gou', category: 'Party', startDate: '2026-09-25', endDate: '2026-09-25', time: '23:00', city: 'Lisbon', venue: 'Lux Frágil' }
+        ];
+
         let events = [];
-        try { events = JSON.parse(localStorage.getItem('cue-events-v12')) || []; } catch (e) { }
+        try {
+            events = JSON.parse(localStorage.getItem('cue-events-v12')) || [];
+            if (!events || events.length === 0) events = TEST_WIDGET_EVENTS;
+        } catch (e) { events = TEST_WIDGET_EVENTS; }
 
         function isPast(ev) {
             const d = new Date((ev.endDate || ev.startDate) + 'T23:59:59');

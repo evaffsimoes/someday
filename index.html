@@ -1961,9 +1961,6 @@
                   ${escapeHtml(nextEvent.artist || 'Next Event')}
                 </div>
               </div>
-              <div style="font-size: 12px; font-weight: 600; color: #94949e; flex-shrink: 0; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 99px; padding: 6px 12px;">
-                View
-              </div>
             </div>
           `;
         }
@@ -3216,48 +3213,6 @@
           const raw = await getStorageItem(STORE_KEY) || await getStorageItem('someday-events');
           state.events = raw ? JSON.parse(raw) : [];
 
-          if (state.events.length === 0) {
-            state.events = [
-              {
-                id: 'test-event-1',
-                artist: 'Sonar Festival 2026',
-                category: 'Festival',
-                startDate: '2026-09-12',
-                endDate: '2026-09-14',
-                time: '18:00',
-                venue: 'Parque das Nações',
-                city: 'Lisbon',
-                ticketStatus: 'going',
-                description: '3-day electronic music festival in Lisbon featuring headline live acts.'
-              },
-              {
-                id: 'test-event-2',
-                artist: 'Tame Impala',
-                category: 'Concert',
-                startDate: '2026-09-18',
-                endDate: '2026-09-18',
-                time: '21:30',
-                venue: 'MEO Arena',
-                city: 'Lisbon',
-                ticketStatus: 'need_ticket',
-                description: 'World tour live concert in Lisbon.'
-              },
-              {
-                id: 'test-event-3',
-                artist: 'Club Night: Peggy Gou',
-                category: 'Party',
-                startDate: '2026-09-25',
-                endDate: '2026-09-25',
-                time: '23:00',
-                venue: 'Lux Frágil',
-                city: 'Lisbon',
-                ticketStatus: 'going',
-                description: 'All-night party set at Lux Frágil.'
-              }
-            ];
-            await saveEvents();
-          }
-
           state.events = dedupeEvents(state.events.map(event => {
             if (event.name && !event.artist) event.artist = event.name;
             if (event.location && !event.venue) event.venue = event.location;
@@ -3456,16 +3411,25 @@
         };
 
         document.getElementById('exportFileBtn').onclick = () => {
-          const rawEvents = localStorage.getItem(STORE_KEY) || '[]';
-          const blob = new Blob([rawEvents], { type: 'application/json' });
-          const url = URL.createObjectURL(blob);
-          const anchor = document.createElement('a');
-          anchor.href = url;
-          anchor.download = 'cue-backup.json';
-          document.body.appendChild(anchor);
-          anchor.click();
-          document.body.removeChild(anchor);
-          URL.revokeObjectURL(url);
+          try {
+            const dataToExport = (state.events && state.events.length > 0)
+              ? JSON.stringify(state.events, null, 2)
+              : (localStorage.getItem(STORE_KEY) || '[]');
+
+            const blob = new Blob([dataToExport], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+            anchor.href = url;
+            anchor.download = 'cue-backup.json';
+            document.body.appendChild(anchor);
+            anchor.click();
+            setTimeout(() => {
+              document.body.removeChild(anchor);
+              URL.revokeObjectURL(url);
+            }, 500);
+          } catch (e) {
+            customAlert('Could not download backup: ' + e.message);
+          }
         };
 
         document.getElementById('importFileBtn').onclick = () => {
