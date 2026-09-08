@@ -2017,10 +2017,15 @@
         render();
         renderCalendar();
 
-        const toast = document.getElementById('undoToast');
-        if (!toast) return;
+        const slot = document.getElementById('undoToastHTML');
+        if (!slot) return;
 
-        toast.classList.add('show');
+        slot.innerHTML = `
+          <div class="calendar-toast" role="status">
+            <span>Event removed.</span>
+            <button id="undoBtn">Undo</button>
+          </div>`;
+
         clearTimeout(state.fallbackUndoTimer);
 
         document.getElementById('undoBtn').onclick = async () => {
@@ -2030,12 +2035,12 @@
             render();
             renderCalendar();
           }
-          toast.classList.remove('show');
+          slot.innerHTML = '';
         };
 
         state.fallbackUndoTimer = setTimeout(() => {
-          toast.classList.remove('show');
-        }, 4000);
+          if (slot.firstChild) slot.innerHTML = '';
+        }, 5000);
       }
 
       function toGCalDate(dateStr, timeStr) {
