@@ -2265,14 +2265,14 @@
             image.src = objectUrl;
           });
 
-          const maxDimension = 1600;
+          const maxDimension = 800;
           const scale = Math.min(1, maxDimension / Math.max(image.naturalWidth || image.width, image.naturalHeight || image.height));
           const canvas = document.createElement('canvas');
           canvas.width = Math.max(1, Math.round((image.naturalWidth || image.width) * scale));
           canvas.height = Math.max(1, Math.round((image.naturalHeight || image.height) * scale));
           canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
 
-          const compressed = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.82));
+          const compressed = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.70));
           if (!compressed) throw new Error('Could not process that image.');
 
           const base64 = await fileToBase64(compressed);
