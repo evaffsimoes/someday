@@ -80,8 +80,6 @@ public class CueCalendarWidgetProvider extends AppWidgetProvider {
         int prevDaysInMonth = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
         cal.add(Calendar.MONTH, 1);
 
-        String monthNames[] = {"September", "October", "November", "December", "January", "February", "March", "April", "May", "June", "July", "August"};
-        // Use standard month naming
         String fullMonthNames[] = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
         String titleStr = fullMonthNames[currentMonth] + " " + currentYear;
         
