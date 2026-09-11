@@ -3445,36 +3445,17 @@
 
         document.getElementById('testNotifBtn').onclick = async event => {
           event.preventDefault();
-
-          if (window.Capacitor?.isNative) {
-            customAlert('Test alert dispatched to system!', 3000);
-            triggerNotification('Test Notification', {
-              body: 'Your Cue app notifications are working correctly!',
-              icon: 'icon-192.png'
-            });
-            return;
-          }
-
-          if (!('Notification' in window)) {
-            customAlert('Test alert dispatched! (Running inside app webview)', 3000);
-            return;
-          }
-
-          if (Notification.permission === 'denied') {
-            customAlert('Notifications are blocked in your device settings. Please allow them in App Info.', 5000);
-            return;
-          }
-
-          if (Notification.permission !== 'granted') {
-            try { await Notification.requestPermission(); } catch (e) { }
-          }
-
+          customAlert('Sending test notification...', 2000);
           const success = await triggerNotification('Test Notification', {
             body: 'Your Cue app notifications are working correctly!',
             icon: 'icon-192.png',
             badge: 'icon-192.png'
           });
-          customAlert('Test alert dispatched to system!', 3000);
+          if (success) {
+            customAlert('Test alert dispatched to system!', 3000);
+          } else {
+            customAlert('Check system notification permissions for Cue.', 3500);
+          }
         };
 
         document.getElementById('saveSettingsBtn').onclick = () => {
