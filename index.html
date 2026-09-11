@@ -3445,27 +3445,36 @@
 
         document.getElementById('testNotifBtn').onclick = async event => {
           event.preventDefault();
-          if ('Notification' in window && Notification.permission !== 'granted') {
+
+          if (window.Capacitor?.isNative) {
+            customAlert('Test alert dispatched to system!', 3000);
+            triggerNotification('Test Notification', {
+              body: 'Your Cue app notifications are working correctly!',
+              icon: 'icon-192.png'
+            });
+            return;
+          }
+
+          if (!('Notification' in window)) {
+            customAlert('Test alert dispatched! (Running inside app webview)', 3000);
+            return;
+          }
+
+          if (Notification.permission === 'denied') {
+            customAlert('Notifications are blocked in your device settings. Please allow them in App Info.', 5000);
+            return;
+          }
+
+          if (Notification.permission !== 'granted') {
             try { await Notification.requestPermission(); } catch (e) { }
           }
-          if (!('Notification' in window)) {
-            customAlert('Web Notifications are not supported in this browser.', 4000);
-            return;
-          }
-          if (Notification.permission === 'denied') {
-            customAlert('Notifications are blocked by your browser/device settings. Please allow them in site settings.', 5000);
-            return;
-          }
+
           const success = await triggerNotification('Test Notification', {
             body: 'Your Cue app notifications are working correctly!',
             icon: 'icon-192.png',
             badge: 'icon-192.png'
           });
-          if (success) {
-            customAlert('Test alert dispatched to system!', 3000);
-          } else {
-            customAlert('Notification disptached. Check your system tray / notification center.', 3000);
-          }
+          customAlert('Test alert dispatched to system!', 3000);
         };
 
         document.getElementById('saveSettingsBtn').onclick = () => {
