@@ -1489,6 +1489,7 @@
         <label class="reminder-option"><input type="checkbox" id="pref-7" checked> 1 week before</label>
         <label class="reminder-option"><input type="checkbox" id="pref-3" checked> 3 days before</label>
         <label class="reminder-option"><input type="checkbox" id="pref-1" checked> 1 day before</label>
+        <label class="reminder-option"><input type="checkbox" id="pref-1h" checked> 1 hour before</label>
         <label class="reminder-option"><input type="checkbox" id="pref-0" checked> Day of event</label>
       </div>
 
@@ -3052,14 +3053,14 @@
         } catch (error) {
           // Fall through.
         }
-        return [7, 3, 1, 0];
+        return [7, 3, 1, '1h', 0];
       }
 
       function openSettingsModal() {
         const prefs = loadNotificationPrefs();
-        [7, 3, 1, 0].forEach(day => {
-          const checkbox = document.getElementById(`pref-${day}`);
-          if (checkbox) checkbox.checked = prefs.includes(day);
+        [7, 3, 1, '1h', 0].forEach(key => {
+          const checkbox = document.getElementById(`pref-${key}`);
+          if (checkbox) checkbox.checked = prefs.includes(key) || prefs.includes(Number(key));
         });
         document.getElementById('settingsModalOverlay').classList.add('active');
       }
@@ -3082,14 +3083,14 @@
           }
 
           if (!('Notification' in window)) {
-            customAlert(`Notification System Unsupported:\n${title}\n${options.body || ''}`, 4000);
+            console.warn('Native Web Notifications not supported in current environment.');
             return;
           }
 
           if (Notification.permission !== 'granted') {
             const res = await Notification.requestPermission();
             if (res !== 'granted') {
-              customAlert(`Notification permission is disabled in your browser/system settings.`);
+              console.warn('Notification permission denied by user.');
               return;
             }
           }
@@ -3110,13 +3111,11 @@
             try {
               new Notification(title, options);
             } catch (err) {
-              console.warn('new Notification error:', err);
-              customAlert(`${title}\n${options.body || ''}`, 4000);
+              console.warn('new Notification fallback error:', err);
             }
           }
         } catch (e) {
-          console.warn('Notification trigger fallback:', e);
-          customAlert(`${title}\n${options.body || ''}`, 4000);
+          console.warn('Notification trigger error:', e);
         }
       }
 
@@ -3163,32 +3162,57 @@
         state.events.forEach(event => {
           if (!event.startDate) return;
 
-          const eventDate = new Date(`${event.startDate}T00:00:00`);
-          if (Number.isNaN(eventDate.getTime())) return;
+          const eventTime = event.time ? event.time : '12:00';
+          const fullStart = new Date(`${event.startDate}T${event.time ? event.time : '00:00'}:00`);
+          if (Number.isNaN(fullStart.getTime())) return;
 
+          const eventDate = new Date(`${event.startDate}T00:00:00`);
           const diffMs = eventDate.getTime() - todayDate.getTime();
           const daysUntil = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
-          if (!alertDays.includes(daysUntil)) return;
+          // 1. Check 1 hour before reminder
+          if (alertDays.includes('1h')) {
+            const timeUntilMs = fullStart.getTime() - now.getTime();
+            const minsUntil = Math.floor(timeUntilMs / (1000 * 60));
+            // Trigger between 50 and 70 minutes before start
+            if (minsUntil >= 0 && minsUntil <= 60) {
+              const key1h = `${event.id}-${event.startDate}-1h`;
+              if (!sent[key1h]) {
+                const locationText = [event.venue, event.city].filter(Boolean).join(' · ');
+                triggerNotification('Event starts in 1 hour!', {
+                  body: `${event.artist || 'Event'}${locationText ? ` · ${locationText}` : ''}`,
+                  icon: 'icon-192.png',
+                  badge: 'icon-192.png',
+                  tag: key1h,
+                  renotify: true
+                });
+                sent[key1h] = true;
+              }
+            }
+          }
 
-          const key = `${event.id}-${event.startDate}-d${daysUntil}`;
-          if (sent[key]) return;
+          // 2. Check days before reminder (7 days, 3 days, 1 day, Day of event)
+          const checkKey = alertDays.includes(daysUntil) ? daysUntil : (alertDays.includes(String(daysUntil)) ? String(daysUntil) : null);
+          if (checkKey !== null) {
+            const key = `${event.id}-${event.startDate}-d${daysUntil}`;
+            if (!sent[key]) {
+              let title;
+              if (daysUntil === 0) title = 'Your event is today';
+              else if (daysUntil === 1) title = 'Your event is tomorrow';
+              else title = `${daysUntil} days until your next event`;
 
-          let title;
-          if (daysUntil === 0) title = 'Your event is today';
-          else if (daysUntil === 1) title = 'Your event is tomorrow';
-          else title = `${daysUntil} days until your next event`;
+              const locationText = [event.venue, event.city].filter(Boolean).join(' · ');
+              triggerNotification(title, {
+                body: `${event.artist || 'Event'}${locationText ? ` · ${locationText}` : ''}`,
+                icon: 'icon-192.png',
+                badge: 'icon-192.png',
+                tag: key,
+                renotify: true
+              });
 
-          const locationText = [event.venue, event.city].filter(Boolean).join(' · ');
-          triggerNotification(title, {
-            body: `${event.artist || 'Evento'}${locationText ? ` · ${locationText}` : ''}`,
-            icon: 'icon-192.png',
-            badge: 'icon-192.png',
-            tag: key,
-            renotify: true
-          });
-
-          sent[key] = true;
+              sent[key] = true;
+            }
+          }
         });
 
         localStorage.setItem(NOTIFICATION_KEY, JSON.stringify(sent));
@@ -3431,8 +3455,8 @@
         };
 
         document.getElementById('saveSettingsBtn').onclick = () => {
-          const prefs = [7, 3, 1, 0].filter(day => {
-            const el = document.getElementById(`pref-${day}`);
+          const prefs = [7, 3, 1, '1h', 0].filter(key => {
+            const el = document.getElementById(`pref-${key}`);
             return el && el.checked;
           });
           localStorage.setItem('cue-notification-prefs', JSON.stringify(prefs));
