@@ -3179,9 +3179,10 @@
             if (minsUntil >= 0 && minsUntil <= 65) {
               const key1h = `${event.id}-${event.startDate}-1h`;
               if (!sent[key1h]) {
+                const timeText = event.time ? ` · ${event.time}` : '';
                 const locationText = [event.venue, event.city].filter(Boolean).join(' · ');
                 triggerNotification('Event starts in 1 hour!', {
-                  body: `${event.artist || 'Event'}${locationText ? ` · ${locationText}` : ''}`,
+                  body: `${event.artist || 'Event'}${timeText}${locationText ? ` · ${locationText}` : ''}`,
                   icon: 'icon-192.png',
                   badge: 'icon-192.png',
                   tag: key1h,
@@ -3202,9 +3203,10 @@
               else if (daysUntil === 1) title = 'Your event is tomorrow!';
               else title = `${daysUntil} days until your next event!`;
 
+              const timeText = event.time ? ` · ${event.time}` : '';
               const locationText = [event.venue, event.city].filter(Boolean).join(' · ');
               triggerNotification(title, {
-                body: `${event.artist || 'Event'}${locationText ? ` · ${locationText}` : ''}`,
+                body: `${event.artist || 'Event'}${timeText}${locationText ? ` · ${locationText}` : ''}`,
                 icon: 'icon-192.png',
                 badge: 'icon-192.png',
                 tag: key,
