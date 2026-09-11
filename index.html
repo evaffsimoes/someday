@@ -3082,23 +3082,37 @@
           }
 
           if (!('Notification' in window)) {
-            customAlert(`${title}\n${options.body || ''}`, 4000);
+            customAlert(`Notification System Unsupported:\n${title}\n${options.body || ''}`, 4000);
             return;
           }
 
-          if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
-            await Notification.requestPermission();
+          if (Notification.permission !== 'granted') {
+            const res = await Notification.requestPermission();
+            if (res !== 'granted') {
+              customAlert(`Notification permission is disabled in your browser/system settings.`);
+              return;
+            }
           }
 
           if (Notification.permission === 'granted') {
-            if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-              const reg = await navigator.serviceWorker.ready;
-              reg.showNotification(title, options);
-            } else {
-              new Notification(title, options);
+            try {
+              if ('serviceWorker' in navigator) {
+                const reg = await navigator.serviceWorker.ready;
+                if (reg && reg.showNotification) {
+                  await reg.showNotification(title, options);
+                  return;
+                }
+              }
+            } catch (err) {
+              console.warn('ServiceWorker showNotification error, falling back:', err);
             }
-          } else {
-            customAlert(`${title}\n${options.body || ''}`, 4000);
+
+            try {
+              new Notification(title, options);
+            } catch (err) {
+              console.warn('new Notification error:', err);
+              customAlert(`${title}\n${options.body || ''}`, 4000);
+            }
           }
         } catch (e) {
           console.warn('Notification trigger fallback:', e);
