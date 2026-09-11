@@ -258,8 +258,13 @@
       border: 1px solid transparent;
       border-radius: 18px;
       margin-bottom: 12px;
-      min-height: 96px;
+      height: 96px;
+      box-sizing: border-box;
       cursor: pointer;
+    }
+
+    .queue-item.is-past {
+      opacity: 0.82;
     }
 
     .queue-item:hover {
@@ -1484,7 +1489,7 @@
         <label class="reminder-option"><input type="checkbox" id="pref-7" checked> 1 week before</label>
         <label class="reminder-option"><input type="checkbox" id="pref-3" checked> 3 days before</label>
         <label class="reminder-option"><input type="checkbox" id="pref-1" checked> 1 day before</label>
-        <label class="reminder-option"><input type="checkbox" id="pref-0"> Day of event</label>
+        <label class="reminder-option"><input type="checkbox" id="pref-0" checked> Day of event</label>
       </div>
 
 
@@ -1867,9 +1872,10 @@
           ? `<img src="${escapeAttr(imageSrc)}" class="queue-img" alt="Event image">`
           : '<div class="queue-img-placeholder">' + iconSvg('ticket') + '</div>';
 
+        const eventIsPast = isPast(event);
         return `
           <div class="queue-swipe-wrapper">
-            <div class="queue-item" data-view="${escapeAttr(event.id)}">
+            <div class="queue-item ${eventIsPast ? 'is-past' : ''}" data-view="${escapeAttr(event.id)}">
               ${imageHTML}
 
               <div class="queue-info">
@@ -3046,7 +3052,7 @@
         } catch (error) {
           // Fall through.
         }
-        return [7, 3, 1];
+        return [7, 3, 1, 0];
       }
 
       function openSettingsModal() {
@@ -3134,8 +3140,9 @@
 
         updateAppBadge();
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const now = new Date();
+        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const todayDate = new Date(`${todayStr}T00:00:00`);
         const sent = JSON.parse(localStorage.getItem(NOTIFICATION_KEY) || '{}');
         const alertDays = loadNotificationPrefs();
 
@@ -3143,7 +3150,10 @@
           if (!event.startDate) return;
 
           const eventDate = new Date(`${event.startDate}T00:00:00`);
-          const daysUntil = Math.round((eventDate - today) / 86400000);
+          if (Number.isNaN(eventDate.getTime())) return;
+
+          const diffMs = eventDate.getTime() - todayDate.getTime();
+          const daysUntil = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
           if (!alertDays.includes(daysUntil)) return;
 

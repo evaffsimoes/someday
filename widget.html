@@ -78,45 +78,27 @@
         .widget-event {
             background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 10px 12px;
-            display: grid;
-            grid-template-columns: 46px minmax(0, 1fr);
-            column-gap: 12px;
-            row-gap: 2px;
+            border-radius: 16px;
+            padding: 12px 14px;
+            display: flex;
             align-items: center;
+            justify-content: space-between;
+            gap: 12px;
             transition: background 0.2s ease;
         }
 
-        .widget-event-image {
-            width: 46px;
-            height: 46px;
-            grid-row: 1 / span 3;
-            border-radius: 10px;
-            object-fit: cover;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid var(--border);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-        }
-
-        .widget-event-placeholder {
-            width: 46px;
-            height: 46px;
-            grid-row: 1 / span 3;
-            border-radius: 10px;
-            background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(192, 132, 252, 0.05));
-            border: 1px solid rgba(168, 85, 247, 0.25);
+        .widget-event-info {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--purple-light);
-            font-size: 18px;
+            flex-direction: column;
+            gap: 3px;
+            min-width: 0;
+            flex: 1;
         }
 
         .widget-event-name {
             font-family: 'Outfit', sans-serif;
             font-weight: 700;
-            font-size: 14px;
+            font-size: 15px;
             color: #fff;
             letter-spacing: -0.01em;
             white-space: nowrap;
@@ -124,21 +106,41 @@
             text-overflow: ellipsis;
         }
 
-        .widget-event-date {
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--purple-light);
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
         .widget-event-location {
-            font-size: 11px;
+            font-size: 12px;
             color: var(--text-muted);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+        }
+
+        .widget-event-badge {
+            min-width: 54px;
+            padding: 9px 4px;
+            border-radius: 10px;
+            background: rgba(168, 85, 247, 0.12);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            color: var(--purple-light);
+            text-align: center;
+            line-height: 1.1;
+            flex-shrink: 0;
+        }
+
+        .widget-event-badge strong {
+            display: block;
+            font-size: 16px;
+            font-weight: 800;
+            line-height: 1.15;
+        }
+
+        .widget-event-badge small {
+            display: block;
+            margin-top: 2px;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-muted);
         }
 
         .widget-more {
@@ -239,15 +241,26 @@
                     const availableHeight = window.innerHeight || document.documentElement.clientHeight || 160;
                     const visibleCount = Math.max(1, Math.floor((availableHeight - 54) / 72));
                     const visibleEvents = upcoming.slice(0, visibleCount);
-                    const cards = visibleEvents.map(event => `
+                    const cards = visibleEvents.map(event => {
+                        const d = new Date(event.startDate + 'T00:00:00');
+                        const dayNum = !isNaN(d) ? d.getDate() : '—';
+                        const monStr = !isNaN(d) ? d.toLocaleDateString(undefined, { month: 'short' }) : '';
+                        const dateStr = fmtDate(event.startDate, event.endDate);
+                        const dateTimeStr = dateStr + (event.time ? ` · ${event.time}` : '');
+                        const locStr = [event.city, event.venue].filter(Boolean).join(' · ');
+                        return `
                         <div class="widget-event">
-                            ${imageUrl(event) 
-                                ? `<img class="widget-event-image" src="${imageUrl(event)}" alt="">` 
-                                : '<div class="widget-event-placeholder">✦</div>'}
-                            <div class="widget-event-name" title="${event.artist || 'Untitled event'}">${event.artist || 'Untitled event'}</div>
-                            <div class="widget-event-date">${fmtDate(event.startDate, event.endDate)}${event.time ? ` • ${event.time}` : ''}</div>
-                            ${event.venue || event.city ? `<div class="widget-event-location">${[event.city, event.venue].filter(Boolean).join(' · ')}</div>` : ''}
-                        </div>`).join('');
+                            <div class="widget-event-badge">
+                                <strong>${dayNum}</strong>
+                                <small>${monStr}</small>
+                            </div>
+                            <div class="widget-event-info">
+                                <div class="widget-event-name" title="${event.artist || 'Untitled event'}">${event.artist || 'Untitled event'}</div>
+                                <div class="widget-event-date">${dateTimeStr}</div>
+                                ${locStr ? `<div class="widget-event-location">${locStr}</div>` : ''}
+                            </div>
+                        </div>`;
+                    }).join('');
                     const remaining = upcoming.length - visibleEvents.length;
                     document.getElementById('widgetContent').innerHTML = cards + (remaining > 0
                         ? `<div class="widget-more">+${remaining} more events</div>`

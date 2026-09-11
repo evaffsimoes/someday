@@ -80,13 +80,12 @@ public class CueCalendarWidgetProvider extends AppWidgetProvider {
         int prevDaysInMonth = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
         cal.add(Calendar.MONTH, 1);
 
-        String monthNames[] = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
-        String titleStr = monthNames[currentMonth] + " " + currentYear;
+        String monthNames[] = {"September", "October", "November", "December", "January", "February", "March", "April", "May", "June", "July", "August"};
+        // Use standard month naming
+        String fullMonthNames[] = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
+        String titleStr = fullMonthNames[currentMonth] + " " + currentYear;
         
         String eventsJson = prefs.getString(EVENTS_KEY, "[]");
-        if (eventsJson.isEmpty() || eventsJson.equals("[]")) {
-            titleStr = "cue setup";
-        }
         views.setTextViewText(R.id.cal_month_title, titleStr);
 
         java.util.HashMap<Integer, java.util.List<JSONObject>> dayEvents = new java.util.HashMap<>();
@@ -153,19 +152,21 @@ public class CueCalendarWidgetProvider extends AppWidgetProvider {
             views.setTextViewText(ev1Id, "");
             views.setTextViewText(ev2Id, "");
             views.setTextViewText(ev3Id, "");
+            views.setViewVisibility(ev1Id, View.GONE);
+            views.setViewVisibility(ev2Id, View.GONE);
+            views.setViewVisibility(ev3Id, View.GONE);
             views.setViewVisibility(todayId, View.GONE);
             views.setInt(bgId, "setBackgroundResource", R.drawable.cal_cell_bg_empty);
             if (tapIntent != null) views.setOnClickPendingIntent(bgId, tapIntent);
 
             if (cid < firstDayOfWeek) {
-                // Previous month padding
-                int prevDay = prevDaysInMonth - (firstDayOfWeek - 1 - cid);
-                views.setTextViewText(numId, String.valueOf(prevDay));
-                views.setTextColor(numId, 0xFF52525B); // Zinc 600
+                // Previous month padding - hide completely
+                views.setTextViewText(numId, "");
+                views.setInt(bgId, "setBackgroundResource", 0);
             } else if (dayCounter > daysInMonth) {
-                // Next month padding
-                views.setTextViewText(numId, String.valueOf(nextMonthCounter++));
-                views.setTextColor(numId, 0xFF52525B); // Zinc 600
+                // Next month padding - hide completely
+                views.setTextViewText(numId, "");
+                views.setInt(bgId, "setBackgroundResource", 0);
             } else {
                 // Current month day
                 views.setTextViewText(numId, String.valueOf(dayCounter));
@@ -178,15 +179,6 @@ public class CueCalendarWidgetProvider extends AppWidgetProvider {
 
                 if (dayEvents.containsKey(dayCounter)) {
                     java.util.List<JSONObject> evs = dayEvents.get(dayCounter);
-                    
-                    // Determine category color based on first event
-                    String cat = evs.get(0).optString("category", "Concert");
-                    int bgRes = R.drawable.bg_cat_concert;
-                    if ("Festival".equals(cat)) bgRes = R.drawable.bg_cat_festival;
-                    else if ("Other".equals(cat)) bgRes = R.drawable.bg_cat_other;
-                    
-                    views.setInt(bgId, "setBackgroundResource", bgRes);
-                    views.setTextColor(numId, 0xFFFFFFFF);
 
                     if (launchIntent != null) {
                         String firstEvId = evs.get(0).optString("id", "");
@@ -204,24 +196,36 @@ public class CueCalendarWidgetProvider extends AppWidgetProvider {
                         views.setOnClickPendingIntent(bgId, cellPending);
                     }
                     
-                    if (evs.size() > 0) {
-                        String a1 = evs.get(0).optString("artist", "Event");
-                        views.setTextViewText(ev1Id, a1);
-                    }
-                    if (evs.size() > 1) {
-                        String a2 = evs.get(1).optString("artist", "Event");
-                        views.setTextViewText(ev2Id, a2);
-                    }
-                    if (evs.size() > 2) {
-                        if (evs.size() == 3) {
-                            String a3 = evs.get(2).optString("artist", "Event");
-                            views.setTextViewText(ev3Id, a3);
+                    for (int eIdx = 0; eIdx < evs.size() && eIdx < 3; eIdx++) {
+                        JSONObject ev = evs.get(eIdx);
+                        int targetEvId = (eIdx == 0) ? ev1Id : ((eIdx == 1) ? ev2Id : ev3Id);
+                        
+                        if (eIdx == 2 && evs.size() > 3) {
+                            views.setTextViewText(targetEvId, "+" + (evs.size() - 2) + " more");
+                            views.setTextColor(targetEvId, 0xFFC084FC);
+                            views.setInt(targetEvId, "setBackgroundResource", 0);
+                            views.setViewVisibility(targetEvId, View.VISIBLE);
                         } else {
-                            views.setTextViewText(ev3Id, "+" + (evs.size() - 2) + " more");
+                            String cat = ev.optString("category", "Concert");
+                            int bgRes = R.drawable.bg_cat_concert;
+                            int textClr = 0xFFFFFFFF;
+                            if ("Festival".equals(cat)) {
+                                bgRes = R.drawable.bg_cat_festival;
+                                textClr = 0xFFFEF08A;
+                            } else if ("Other".equals(cat) || "Party".equals(cat)) {
+                                bgRes = R.drawable.bg_cat_other;
+                                textClr = 0xFF99F6E4;
+                            }
+
+                            views.setTextViewText(targetEvId, ev.optString("artist", "Event"));
+                            views.setTextColor(targetEvId, textClr);
+                            views.setInt(targetEvId, "setBackgroundResource", bgRes);
+                            views.setViewVisibility(targetEvId, View.VISIBLE);
                         }
                     }
+                    views.setTextColor(numId, 0xFFF5F5F5);
                 } else {
-                    views.setTextColor(numId, isToday ? 0xFFC084FC : 0xFFA1A1AA); // Purple light if today, otherwise Zinc 400
+                    views.setTextColor(numId, isToday ? 0xFFC084FC : 0xFF94949E);
                 }
                 
                 dayCounter++;

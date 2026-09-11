@@ -65,6 +65,7 @@ public class CueWidgetProvider extends AppWidgetProvider {
         // Clear all cells first
         int MAX_ITEMS = 6;
         int[] artistIds = { R.id.w_item_0_artist, R.id.w_item_1_artist, R.id.w_item_2_artist, R.id.w_item_3_artist, R.id.w_item_4_artist, R.id.w_item_5_artist };
+        int[] dateIds   = { R.id.w_item_0_date,   R.id.w_item_1_date,   R.id.w_item_2_date,   R.id.w_item_3_date,   R.id.w_item_4_date,   R.id.w_item_5_date   };
         int[] locIds    = { R.id.w_item_0_loc,    R.id.w_item_1_loc,    R.id.w_item_2_loc,    R.id.w_item_3_loc,    R.id.w_item_4_loc,    R.id.w_item_5_loc    };
         int[] dayIds    = { R.id.w_item_0_day,    R.id.w_item_1_day,    R.id.w_item_2_day,    R.id.w_item_3_day,    R.id.w_item_4_day,    R.id.w_item_5_day    };
         int[] monthIds  = { R.id.w_item_0_month,  R.id.w_item_1_month,  R.id.w_item_2_month,  R.id.w_item_3_month,  R.id.w_item_4_month,  R.id.w_item_5_month  };
@@ -72,6 +73,7 @@ public class CueWidgetProvider extends AppWidgetProvider {
 
         for (int i = 0; i < MAX_ITEMS; i++) {
             views.setTextViewText(artistIds[i], "");
+            views.setTextViewText(dateIds[i], "");
             views.setTextViewText(locIds[i], "");
             views.setTextViewText(dayIds[i], "");
             views.setTextViewText(monthIds[i], "");
@@ -115,6 +117,7 @@ public class CueWidgetProvider extends AppWidgetProvider {
                 views.setTextViewText(R.id.w_item_0_loc, "Add one in cue");
             } else {
                 SimpleDateFormat inFmt = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+                SimpleDateFormat outFmt = new SimpleDateFormat("MMM d", Locale.getDefault());
                 SimpleDateFormat dayFmt = new SimpleDateFormat("d", Locale.getDefault());
                 SimpleDateFormat monFmt = new SimpleDateFormat("MMM", Locale.getDefault());
 
@@ -126,20 +129,36 @@ public class CueWidgetProvider extends AppWidgetProvider {
                         String venue  = ev.optString("venue", "");
                         String city   = ev.optString("city", "");
                         String startDate = ev.optString("startDate", "");
+                        String endDate   = ev.optString("endDate", "");
+                        String time      = ev.optString("time", "");
 
                         StringBuilder loc = new StringBuilder();
-                        if (!venue.isEmpty()) loc.append(venue);
-                        if (!city.isEmpty()) { if (loc.length() > 0) loc.append(", "); loc.append(city); }
+                        if (!city.isEmpty()) loc.append(city);
+                        if (!venue.isEmpty()) { if (loc.length() > 0) loc.append(" · "); loc.append(venue); }
 
-                        String dayStr2 = "", monStr = "";
+                        String dayStr2 = "", monStr = "", dateLineStr = "";
                         try {
                             Date d = inFmt.parse(startDate);
                             dayStr2 = dayFmt.format(d);
                             monStr  = monFmt.format(d);
+                            dateLineStr = outFmt.format(d);
+
+                            if (!endDate.isEmpty() && !endDate.equals(startDate)) {
+                                Date dEnd = inFmt.parse(endDate);
+                                if (dEnd != null) {
+                                    dayStr2 = dayFmt.format(d) + "–" + dayFmt.format(dEnd);
+                                    dateLineStr = outFmt.format(d) + " – " + outFmt.format(dEnd);
+                                }
+                            }
                         } catch (Exception ignored) {}
 
+                        if (!time.isEmpty()) {
+                            dateLineStr += (dateLineStr.isEmpty() ? "" : " · ") + time;
+                        }
+
                         views.setTextViewText(artistIds[i], artist);
-                        views.setTextViewText(locIds[i], loc.length() > 0 ? loc.toString() : startDate);
+                        views.setTextViewText(dateIds[i], dateLineStr);
+                        views.setTextViewText(locIds[i], loc.length() > 0 ? loc.toString() : "");
                         views.setTextViewText(dayIds[i], dayStr2);
                         views.setTextViewText(monthIds[i], monStr);
 
