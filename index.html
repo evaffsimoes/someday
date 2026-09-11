@@ -3407,6 +3407,13 @@
 
 
 
+        const settingsBtn = document.getElementById('settingsBtn');
+        if (settingsBtn) {
+          settingsBtn.onclick = () => {
+            openSettingsModal();
+          };
+        }
+
         document.getElementById('closeSettingsBtn').onclick = () => {
           document.getElementById('settingsModalOverlay').classList.remove('active');
         };
