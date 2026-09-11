@@ -3151,7 +3151,8 @@
       }
 
       function checkEventNotifications() {
-        if (!('Notification' in window) || Notification.permission !== 'granted') return;
+        const isNative = !!(window.Capacitor?.isNative || window.Capacitor?.Plugins?.LocalNotifications);
+        if (!isNative && (!('Notification' in window) || Notification.permission !== 'granted')) return;
 
         updateAppBadge();
 
@@ -3164,8 +3165,7 @@
         state.events.forEach(event => {
           if (!event.startDate) return;
 
-          const eventTime = event.time ? event.time : '12:00';
-          const fullStart = new Date(`${event.startDate}T${event.time ? event.time : '00:00'}:00`);
+          const fullStart = new Date(`${event.startDate}T${event.time ? (event.time.length === 5 ? event.time + ':00' : event.time) : '00:00:00'}`);
           if (Number.isNaN(fullStart.getTime())) return;
 
           const eventDate = new Date(`${event.startDate}T00:00:00`);
@@ -3176,8 +3176,7 @@
           if (alertDays.includes('1h')) {
             const timeUntilMs = fullStart.getTime() - now.getTime();
             const minsUntil = Math.floor(timeUntilMs / (1000 * 60));
-            // Trigger between 50 and 70 minutes before start
-            if (minsUntil >= 0 && minsUntil <= 60) {
+            if (minsUntil >= 0 && minsUntil <= 65) {
               const key1h = `${event.id}-${event.startDate}-1h`;
               if (!sent[key1h]) {
                 const locationText = [event.venue, event.city].filter(Boolean).join(' · ');
@@ -3193,15 +3192,15 @@
             }
           }
 
-          // 2. Check days before reminder (7 days, 3 days, 1 day, Day of event)
-          const checkKey = alertDays.includes(daysUntil) ? daysUntil : (alertDays.includes(String(daysUntil)) ? String(daysUntil) : null);
-          if (checkKey !== null) {
+          // 2. Check days before reminder (7 days, 1 day, Day of event = 0)
+          const matchesPref = alertDays.some(pref => Number(pref) === daysUntil || String(pref) === String(daysUntil));
+          if (matchesPref) {
             const key = `${event.id}-${event.startDate}-d${daysUntil}`;
             if (!sent[key]) {
               let title;
-              if (daysUntil === 0) title = 'Your event is today';
-              else if (daysUntil === 1) title = 'Your event is tomorrow';
-              else title = `${daysUntil} days until your next event`;
+              if (daysUntil === 0) title = 'Your event is today!';
+              else if (daysUntil === 1) title = 'Your event is tomorrow!';
+              else title = `${daysUntil} days until your next event!`;
 
               const locationText = [event.venue, event.city].filter(Boolean).join(' · ');
               triggerNotification(title, {
