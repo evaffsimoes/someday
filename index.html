@@ -1947,10 +1947,10 @@
             const hours = totalHours % 24;
 
             if (days > 0) {
-              countdownText = `Starts in ${days} day${days > 1 ? 's' : ''}${hours > 0 ? ` / ${hours} hour${hours > 1 ? 's' : ''}` : ''}`;
+              countdownText = `Starts in ${days} day${days > 1 ? 's' : ''}${hours > 0 ? ` ${hours} hour${hours > 1 ? 's' : ''}` : ''}`;
             } else if (hours > 0) {
               const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-              countdownText = `Starts in ${hours} hour${hours > 1 ? 's' : ''}${mins > 0 ? ` / ${mins} min${mins > 1 ? 's' : ''}` : ''}`;
+              countdownText = `Starts in ${hours} hour${hours > 1 ? 's' : ''}${mins > 0 ? ` ${mins} min${mins > 1 ? 's' : ''}` : ''}`;
             } else {
               const mins = Math.max(1, Math.floor(diffMs / (1000 * 60)));
               countdownText = `Starts in ${mins} minute${mins > 1 ? 's' : ''}`;
