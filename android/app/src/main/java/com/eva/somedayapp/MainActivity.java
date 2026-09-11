@@ -45,7 +45,7 @@ public class MainActivity extends BridgeActivity {
         if (prefsListener != null) prefs.unregisterOnSharedPreferenceChangeListener(prefsListener);
     }
 
-    private void handleShareIntent(Itent intent) {
+    private void handleShareIntent(Intent intent) {
         if (intent == null) return;
         String action = intent.getAction();
         String type = intent.getType();
