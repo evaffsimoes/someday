@@ -1487,7 +1487,6 @@
 
       <div class="reminder-options">
         <label class="reminder-option"><input type="checkbox" id="pref-7" checked> 1 week before</label>
-        <label class="reminder-option"><input type="checkbox" id="pref-3" checked> 3 days before</label>
         <label class="reminder-option"><input type="checkbox" id="pref-1" checked> 1 day before</label>
         <label class="reminder-option"><input type="checkbox" id="pref-1h" checked> 1 hour before</label>
         <label class="reminder-option"><input type="checkbox" id="pref-0" checked> Day of event</label>
@@ -3053,12 +3052,12 @@
         } catch (error) {
           // Fall through.
         }
-        return [7, 3, 1, '1h', 0];
+        return [7, 1, '1h', 0];
       }
 
       function openSettingsModal() {
         const prefs = loadNotificationPrefs();
-        [7, 3, 1, '1h', 0].forEach(key => {
+        [7, 1, '1h', 0].forEach(key => {
           const checkbox = document.getElementById(`pref-${key}`);
           if (checkbox) checkbox.checked = prefs.includes(key) || prefs.includes(Number(key));
         });
@@ -3078,20 +3077,18 @@
                   schedule: { at: new Date(Date.now() + 500) }
                 }]
               });
-              return;
+              return true;
             }
           }
 
           if (!('Notification' in window)) {
-            console.warn('Native Web Notifications not supported in current environment.');
-            return;
+            return false;
           }
 
           if (Notification.permission !== 'granted') {
             const res = await Notification.requestPermission();
             if (res !== 'granted') {
-              console.warn('Notification permission denied by user.');
-              return;
+              return false;
             }
           }
 
@@ -3101,7 +3098,7 @@
                 const reg = await navigator.serviceWorker.ready;
                 if (reg && reg.showNotification) {
                   await reg.showNotification(title, options);
-                  return;
+                  return true;
                 }
               }
             } catch (err) {
@@ -3110,13 +3107,17 @@
 
             try {
               new Notification(title, options);
+              return true;
             } catch (err) {
               console.warn('new Notification fallback error:', err);
+              return false;
             }
           }
         } catch (e) {
           console.warn('Notification trigger error:', e);
+          return false;
         }
+        return false;
       }
 
       function updateNotificationBtn() {
@@ -3444,18 +3445,31 @@
 
         document.getElementById('testNotifBtn').onclick = async event => {
           event.preventDefault();
-          if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+          if ('Notification' in window && Notification.permission !== 'granted') {
             try { await Notification.requestPermission(); } catch (e) { }
           }
-          triggerNotification('Test Notification', {
+          if (!('Notification' in window)) {
+            customAlert('Web Notifications are not supported in this browser.', 4000);
+            return;
+          }
+          if (Notification.permission === 'denied') {
+            customAlert('Notifications are blocked by your browser/device settings. Please allow them in site settings.', 5000);
+            return;
+          }
+          const success = await triggerNotification('Test Notification', {
             body: 'Your Cue app notifications are working correctly!',
             icon: 'icon-192.png',
             badge: 'icon-192.png'
           });
+          if (success) {
+            customAlert('Test alert dispatched to system!', 3000);
+          } else {
+            customAlert('Notification disptached. Check your system tray / notification center.', 3000);
+          }
         };
 
         document.getElementById('saveSettingsBtn').onclick = () => {
-          const prefs = [7, 3, 1, '1h', 0].filter(key => {
+          const prefs = [7, 1, '1h', 0].filter(key => {
             const el = document.getElementById(`pref-${key}`);
             return el && el.checked;
           });
