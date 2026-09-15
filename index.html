@@ -94,24 +94,25 @@
       margin-left: 1px;
     }
 
-    .profile-btn {
-      display: flex;
+    .notification-btn {
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      background: rgba(255, 255, 255, 0.03);
+      gap: 8px;
+      min-width: 38px;
+      min-height: 38px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: transparent;
       color: var(--text-main);
       cursor: pointer;
-      padding: 0;
+      padding: 0 12px;
       transition: all 0.2s ease;
     }
 
-    .profile-btn:hover {
-      border-color: rgba(168, 85, 247, 0.5);
-      background: rgba(168, 85, 247, 0.1);
+    .notification-btn:hover {
+      border-color: rgba(168, 85, 247, 0.4);
+      background: rgba(255, 255, 255, 0.02);
     }
 
     .tab-screen {
@@ -1233,10 +1234,11 @@
     <header class="cue-header">
       <div class="cue-logo">cue<span class="cue-gem">✦</span></div>
       <div class="cue-header-actions">
-        <button class="profile-btn" id="settingsBtn" aria-label="Settings">
-          <svg class="cue-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-            <circle cx="12" cy="8" r="4" />
-            <path d="M4 20c0-4 3.5-7 8-7s8 3 8 7" />
+        <button class="notification-btn" id="settingsBtn" aria-label="Settings">
+          <svg class="cue-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="3.2" />
+            <path
+              d="M12 2.8v2.1M12 19.1v2.1M2.8 12h2.1M19.1 12h2.1M5.5 5.5 7 7M17 17l1.5 1.5M18.5 5.5 17 7M7 17l-1.5 1.5" />
           </svg>
         </button>
       </div>
