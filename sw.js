@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cue-v15';
+const CACHE_NAME = 'cue-v16';
 const SHARE_CACHE = 'someday-shared-v1';
 
 self.addEventListener('install', (e) => {
