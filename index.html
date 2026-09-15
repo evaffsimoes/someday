@@ -22,24 +22,23 @@
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <style>
     :root {
-      --bg: #000000;
-      --surface: #111111;
-      --surface-strong: #151515;
-      --surface-soft: #1c1c1f;
-      --border: rgba(255, 255, 255, 0.08);
-      --text-main: #f5f5f5;
-      --text-muted: #8a8a8a;
-      --text-soft: #b8b8b8;
+      --bg: #09090b;
+      --surface: #0e0e11;
+      --surface-strong: #141418;
+      --surface-soft: #1a1a1e;
+      --border: rgba(255, 255, 255, 0.06);
+      --text-main: #ffffff;
+      --text-muted: #6b7280;
+      --text-soft: #9ca3af;
       --accent: #a855f7;
-      --accent-soft: rgba(168, 85, 247, 0.12);
+      --accent-soft: rgba(168, 85, 247, 0.15);
       --accent-strong: #c084fc;
       --danger: #ef4444;
     }
 
-
-
     * {
       box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
     }
 
     html {
@@ -53,7 +52,7 @@
       color: var(--text-main);
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       min-height: 100vh;
-      padding: 20px 16px 92px;
+      padding: 16px 16px 96px;
       line-height: 1.5;
       overflow-x: hidden;
       max-width: 100vw;
@@ -74,89 +73,45 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      margin-bottom: 16px;
+      margin-bottom: 20px;
+      padding: 4px 0;
     }
 
     .cue-logo {
-      font-size: 30px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 34px;
       font-weight: 800;
-      letter-spacing: -0.06em;
+      letter-spacing: -0.05em;
       color: var(--text-main);
       line-height: 1;
+      display: flex;
+      align-items: center;
     }
 
     .cue-logo .cue-gem {
-      color: var(--accent);
-      margin-left: 2px;
+      color: #c084fc;
+      font-size: 26px;
+      margin-left: 1px;
     }
 
-    .cue-header-actions {
+    .profile-btn {
       display: flex;
       align-items: center;
-      gap: 8px;
-    }
-
-    .cue-icon {
-      width: 1em;
-      height: 1em;
-      display: block;
-      stroke: currentColor;
-      fill: none;
-      stroke-width: 1.8;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-      overflow: visible;
-      shape-rendering: geometricPrecision;
-      flex-shrink: 0;
-    }
-
-    .cue-icon path,
-    .cue-icon line,
-    .cue-icon polyline,
-    .cue-icon circle,
-    .cue-icon rect,
-    .cue-icon polygon {
-      vector-effect: non-scaling-stroke;
-    }
-
-    .icon-btn,
-    .notification-btn,
-    .feed-tab,
-    .nav-btn,
-    .nav-btn-center,
-    .add-option-card,
-    .btn,
-    .btn-ghost,
-    .btn-primary {
+      justify-content: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-main);
+      cursor: pointer;
+      padding: 0;
       transition: all 0.2s ease;
     }
 
-    .notification-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      min-width: 38px;
-      min-height: 38px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background: transparent;
-      color: var(--text-main);
-      cursor: pointer;
-      padding: 0 12px;
-    }
-
-    .notification-btn:hover {
-      border-color: rgba(168, 85, 247, 0.4);
-      background: rgba(255, 255, 255, 0.02);
-    }
-
-    .notification-btn .label {
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: var(--text-soft);
+    .profile-btn:hover {
+      border-color: rgba(168, 85, 247, 0.5);
+      background: rgba(168, 85, 247, 0.1);
     }
 
     .tab-screen {
@@ -183,56 +138,28 @@
       }
     }
 
-    .feed-tabs {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      padding: 4px 0 14px;
-      margin: 0 0 10px;
-      scrollbar-width: none;
-    }
-
-    .feed-tabs::-webkit-scrollbar {
-      display: none;
-    }
-
-    .feed-tab {
-      border: 1px solid var(--border);
-      background: transparent;
-      color: var(--text-muted);
-      border-radius: 999px;
-      padding: 8px 12px;
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 0.02em;
-      white-space: nowrap;
-      cursor: pointer;
-    }
-
-    .feed-tab.active {
-      background: var(--accent-soft);
-      border-color: rgba(168, 85, 247, 0.4);
-      color: var(--text-main);
-    }
-
     .section-title {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin: 22px 0 12px;
-      color: var(--text-muted);
+      margin: 24px 0 14px;
+      color: #6b7280;
       text-transform: uppercase;
-      letter-spacing: 0.12em;
-      font-size: 10px;
+      letter-spacing: 0.14em;
+      font-size: 11px;
       font-weight: 700;
     }
 
     .section-see-all {
-      color: var(--accent-strong);
+      color: #c084fc;
       letter-spacing: 0;
       text-transform: none;
-      font-size: 12px;
+      font-size: 13px;
+      font-weight: 500;
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 2px;
     }
 
     .month-header {
@@ -552,39 +479,41 @@
       left: 0;
       right: 0;
       bottom: 0;
-      height: 72px;
-      background: rgba(9, 9, 11, 0.92);
-      backdrop-filter: blur(14px);
-      border-top: 1px solid var(--border);
+      height: 76px;
+      background: rgba(9, 9, 11, 0.95);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 12px;
-      padding: 0 20px;
+      justify-content: space-around;
+      padding: 0 24px;
       z-index: 50;
     }
 
     .nav-btn {
       flex: 1;
-      max-width: 120px;
+      max-width: 100px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 3px;
+      gap: 5px;
       background: transparent;
       border: none;
-      color: var(--text-muted);
+      color: #6b7280;
       font-size: 10px;
       line-height: 1;
+      font-weight: 600;
       letter-spacing: 0.08em;
       text-transform: uppercase;
       padding: 8px 0;
       cursor: pointer;
+      transition: color 0.2s ease;
     }
 
     .nav-btn.active {
-      color: var(--accent-strong);
+      color: #c084fc;
     }
 
     .nav-btn-center {
@@ -592,32 +521,31 @@
       height: 52px;
       border-radius: 50%;
       border: none;
-      background: var(--accent);
-      color: #fff;
+      background: #c084fc;
+      color: #09090b;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: none;
+      box-shadow: 0 4px 18px rgba(192, 132, 252, 0.4);
       cursor: pointer;
-      margin: 0 8px;
+      margin: 0 12px;
       flex-shrink: 0;
+      transition: transform 0.18s ease;
     }
 
-    .nav-btn-center:hover,
-    .nav-btn.active:hover {
-      opacity: 0.92;
+    .nav-btn-center:hover {
+      transform: scale(1.04);
     }
 
-    .nav-btn .cue-icon,
-    .nav-btn-center .cue-icon {
-      width: 18px;
-      height: 18px;
+    .nav-btn .cue-icon {
+      width: 22px;
+      height: 22px;
     }
 
     .nav-btn-center .cue-icon {
       width: 22px;
       height: 22px;
-      stroke-width: 2;
+      stroke-width: 2.5;
     }
 
     .add-screen-header {
@@ -1305,11 +1233,10 @@
     <header class="cue-header">
       <div class="cue-logo">cue<span class="cue-gem">✦</span></div>
       <div class="cue-header-actions">
-        <button class="notification-btn" id="settingsBtn" aria-label="Settings">
-          <svg class="cue-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="12" cy="12" r="3.2" />
-            <path
-              d="M12 2.8v2.1M12 19.1v2.1M2.8 12h2.1M19.1 12h2.1M5.5 5.5 7 7M17 17l1.5 1.5M18.5 5.5 17 7M7 17l-1.5 1.5" />
+        <button class="profile-btn" id="settingsBtn" aria-label="Settings">
+          <svg class="cue-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="12" cy="8" r="4" />
+            <path d="M4 20c0-4 3.5-7 8-7s8 3 8 7" />
           </svg>
         </button>
       </div>
@@ -1318,19 +1245,12 @@
     <div id="screen-queue" class="tab-screen active">
       <div id="spotlightSlot"></div>
 
-      <div class="feed-tabs" aria-label="Filters">
-        <button class="feed-tab active" type="button" data-filter="all">All</button>
-        <button class="feed-tab" type="button" data-filter="week">This week</button>
-        <button class="feed-tab" type="button" data-filter="month">This month</button>
-        <button class="feed-tab" type="button" data-filter="past">Past</button>
-      </div>
-
       <div class="section-title">
-        <span class="section-title-left">Your events</span>
-        <span class="section-see-all">See all</span>
+        <span class="section-title-left">YOUR EVENTS</span>
+        <span class="section-see-all">See all <span style="font-size:12px; margin-left:1px;">›</span></span>
       </div>
       <div id="upcomingList"></div>
-      <div class="section-title"><span class="section-title-left">Past</span></div>
+      <div class="section-title" style="margin-top: 28px;"><span class="section-title-left">PAST EVENTS</span></div>
       <div id="pastList"></div>
     </div>
 
@@ -1445,21 +1365,22 @@
   <!-- STICKY BOTTOM NAVIGATION BAR (Queue | + | Calendar) -->
   <nav class="bottom-nav">
     <button class="nav-btn active" data-tab="queue" aria-label="Cue">
-      <svg class="cue-icon" viewBox="0 0 24 24" aria-hidden="true">
-        <path
-          d="M7 8.5h10M7 12h10M7 15.5h6M6 4.5h12a1.5 1.5 0 0 1 1.5 1.5v12A1.5 1.5 0 0 1 18 19.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z" />
+      <svg class="cue-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v6H4a1 1 0 0 1-1-1v-9.5z" />
       </svg>
       <span>Cue</span>
     </button>
     <button class="nav-btn-center" id="navBtnPlus" data-tab="add" title="Save" aria-label="Add event">
-      <svg class="cue-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <svg class="cue-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <path d="M12 5v14M5 12h14" />
       </svg>
     </button>
     <button class="nav-btn" data-tab="calendar" aria-label="Calendar">
-      <svg class="cue-icon" viewBox="0 0 24 24" aria-hidden="true">
-        <path
-          d="M7 4.5V7M17 4.5V7M5.5 9.5h13M6 6.5h12a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 18 18.5H6A1.5 1.5 0 0 1 4.5 17V8A1.5 1.5 0 0 1 6 6.5Z" />
+      <svg class="cue-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+        <line x1="16" y1="2" x2="16" y2="6" />
+        <line x1="8" y1="2" x2="8" y2="6" />
+        <line x1="3" y1="10" x2="21" y2="10" />
       </svg>
       <span>Calendar</span>
     </button>
@@ -1857,17 +1778,6 @@
         const locStr = [event.city, event.venue].filter(Boolean).join(' · ');
         const imageSrc = safeImageUrl(event.image);
 
-        const date = event.startDate ? new Date(`${event.startDate}T12:00:00`) : null;
-        const day = date && !Number.isNaN(date.getTime()) ? date.getDate() : '—';
-        const month = date && !Number.isNaN(date.getTime())
-          ? date.toLocaleDateString(undefined, { month: 'short' })
-          : 'date';
-
-        const hasMultiDay = event.endDate && event.endDate !== event.startDate;
-        const endDateObj = hasMultiDay ? new Date(`${event.endDate}T12:00:00`) : null;
-        const endDay = endDateObj && !Number.isNaN(endDateObj.getTime()) ? endDateObj.getDate() : null;
-
-        const badgeDayText = hasMultiDay && endDay ? `${day}–${endDay}` : day;
         const imageHTML = imageSrc
           ? `<img src="${escapeAttr(imageSrc)}" class="queue-img" alt="Event image">`
           : '<div class="queue-img-placeholder">' + iconSvg('ticket') + '</div>';
@@ -1879,36 +1789,14 @@
               ${imageHTML}
 
               <div class="queue-info">
-                <div class="queue-topline">
-                  <div class="queue-artist">${escapeHtml(event.artist || 'Untitled event')}</div>
-                </div>
-
+                <div class="queue-artist">${escapeHtml(event.artist || 'Untitled event')}</div>
                 <div class="queue-date-row">
-                  ${iconSvg('calendar')}
-                  <span>${escapeHtml(dateStr)}</span>
-                  ${event.time ? `<span>· ${escapeHtml(event.time)}</span>` : ''}
-                  ${event.ticketStatus === 'need_ticket' ? `<span class="ticket-badge need_ticket" style="margin-left: 6px;">Need ticket</span>` : ''}
+                  <span>${escapeHtml(dateStr.toUpperCase())}</span>
                 </div>
-
-                ${locStr ? `
-                  <div class="queue-loc-row">
-                    ${iconSvg('location')}
-                    <a class="map-link"
-                      href="https://maps.google.com/?q=${encodeURIComponent(locStr)}"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onclick="event.stopPropagation()">
-                      ${escapeHtml(locStr)}
-                    </a>
-                  </div>` : ''}
-
-                ${event.company ? `<div class="queue-loc-row">${iconSvg('users')}<span>${escapeHtml(event.company)}</span></div>` : ''}
+                ${locStr ? `<div class="queue-loc-row"><span>${escapeHtml(locStr)}</span></div>` : ''}
               </div>
 
-              <div class="queue-date-badge" aria-label="${escapeAttr(dateStr)}">
-                <strong style="${hasMultiDay ? 'font-size:13px;' : ''}">${badgeDayText}</strong>
-                <small>${escapeHtml(month)}</small>
-              </div>
+              <div class="queue-arrow" style="color:#6b7280; font-size:18px; line-height:1; font-weight:300;">›</div>
             </div>
           </div>`;
       }
@@ -1932,40 +1820,32 @@
 
         if (!isPastFilter && upcoming.length > 0) {
           const nextEvent = upcoming[0];
-          const now = new Date();
-          const startDtStr = nextEvent.startDate + (nextEvent.time ? ('T' + (nextEvent.time.length === 5 ? nextEvent.time + ':00' : nextEvent.time)) : 'T00:00:00');
-          const startDt = new Date(startDtStr);
-          const diffMs = startDt - now;
+          const dateStr = fmtDateRange(nextEvent.startDate, nextEvent.endDate).toUpperCase();
+          const locationText = [nextEvent.city, nextEvent.venue].filter(Boolean).join(' · ').toUpperCase();
+          const heroImgSrc = safeImageUrl(nextEvent.image);
 
-          let countdownText = '';
-          if (diffMs <= 0) {
-            countdownText = 'Happening today / right now!';
-          } else {
-            const totalHours = Math.floor(diffMs / (1000 * 60 * 60));
-            const days = Math.floor(totalHours / 24);
-            const hours = totalHours % 24;
-
-            if (days > 0) {
-              countdownText = `Starts in ${days} day${days > 1 ? 's' : ''}${hours > 0 ? ` ${hours} hour${hours > 1 ? 's' : ''}` : ''}`;
-            } else if (hours > 0) {
-              const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-              countdownText = `Starts in ${hours} hour${hours > 1 ? 's' : ''}${mins > 0 ? ` ${mins} min${mins > 1 ? 's' : ''}` : ''}`;
-            } else {
-              const mins = Math.max(1, Math.floor(diffMs / (1000 * 60)));
-              countdownText = `Starts in ${mins} minute${mins > 1 ? 's' : ''}`;
-            }
-          }
+          const heroBgStyle = heroImgSrc
+            ? `background-image: linear-gradient(180deg, rgba(9, 9, 11, 0.2) 0%, rgba(9, 9, 11, 0.95) 100%), url('${escapeAttr(heroImgSrc)}');`
+            : `background: linear-gradient(135deg, #2e1065 0%, #09090b 100%);`;
 
           spotlightSlot.innerHTML = `
-            <div class="countdown-spotlight-banner" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.16) 0%, rgba(20, 20, 23, 0.8) 100%); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 16px; padding: 14px 16px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer;" onclick="openReview(state.events.find(e => e.id === '${nextEvent.id}'))">
-              <div style="display: flex; flex-direction: column; gap: 4px; overflow: hidden;">
-                <div style="font-size: 11px; font-weight: 700; color: #c084fc; text-transform: uppercase; letter-spacing: 0.08em; display: flex; align-items: center; gap: 6px;">
-                  <span style="width: 6px; height: 6px; border-radius: 50%; background: #c084fc; display: inline-block;"></span>
-                  ${countdownText}
-                </div>
-                <div style="font-size: 15px; font-weight: 700; color: #f5f5f5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                  ${escapeHtml(nextEvent.artist || 'Next Event')}
-                </div>
+            <div class="hero-spotlight-card" style="position: relative; width: 100%; height: 320px; border-radius: 20px; overflow: hidden; margin-bottom: 24px; background-size: cover; background-position: center; display: flex; flex-direction: column; justify-content: flex-end; padding: 24px 20px; box-sizing: border-box; cursor: pointer; ${heroBgStyle}" onclick="openReview(state.events.find(e => e.id === '${nextEvent.id}'))">
+              <div style="font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.16em; margin-bottom: 6px;">
+                NEXT UP
+              </div>
+              <div style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #ffffff; line-height: 1.15; letter-spacing: -0.02em; margin-bottom: 8px; text-transform: uppercase;">
+                ${escapeHtml(nextEvent.artist || 'Next Event')}
+              </div>
+              <div style="font-size: 13px; font-weight: 600; color: #d1d5db; letter-spacing: 0.04em; margin-bottom: 4px;">
+                ${escapeHtml(dateStr)}
+              </div>
+              ${locationText ? `<div style="font-size: 12px; font-weight: 500; color: #9ca3af; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 16px;">${escapeHtml(locationText)}</div>` : ''}
+              
+              <div>
+                <button type="button" style="display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid rgba(192, 132, 252, 0.8); border-radius: 999px; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(8px); color: #ffffff; padding: 9px 18px; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer;">
+                  <span>I'M GOING</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </button>
               </div>
             </div>
           `;
@@ -3055,7 +2935,15 @@
         return [7, 1, '1h', 0];
       }
 
-      function openSettingsModal() {
+      async function openSettingsModal() {
+        if ('Notification' in window && Notification.permission === 'default') {
+          try {
+            await Notification.requestPermission();
+            updateNotificationBtn();
+          } catch (e) {
+            console.warn('Could not request notification permission', e);
+          }
+        }
         const prefs = loadNotificationPrefs();
         [7, 1, '1h', 0].forEach(key => {
           const checkbox = document.getElementById(`pref-${key}`);
@@ -3526,7 +3414,7 @@
         };
 
         updateNotificationBtn();
-        setInterval(checkEventNotifications, 60 * 60 * 1000);
+        setInterval(checkEventNotifications, 60 * 1000);
       }
 
       function initializeApp() {
