@@ -224,7 +224,8 @@
       border: 1px solid transparent;
       border-radius: 18px;
       margin-bottom: 12px;
-      height: 96px;
+      min-height: 96px;
+      height: auto;
       box-sizing: border-box;
       cursor: pointer;
     }
@@ -1842,6 +1843,7 @@
                   <span>${escapeHtml(dateStr.toUpperCase())}</span>
                 </div>
                 ${locStr ? `<div class="queue-loc-row"><span>${escapeHtml(locStr)}</span></div>` : ''}
+                ${event.company ? `<div class="queue-loc-row" style="color:var(--accent-strong); font-weight:500;"><span>With ${escapeHtml(event.company)}</span></div>` : ''}
               </div>
 
               <div class="queue-arrow" style="color:#6b7280; font-size:18px; line-height:1; font-weight:300;">›</div>
@@ -2482,6 +2484,25 @@
           });
         };
 
+        window.addFriend = friend => {
+          if (!friend) return;
+          const names = friend.split(',').map(n => n.trim()).filter(Boolean);
+          let values = companyInput.value.split(',').map(value => value.trim()).filter(Boolean);
+
+          names.forEach(name => {
+            const lowerFriend = name.toLowerCase();
+            if (!values.find(value => value.toLowerCase() === lowerFriend)) {
+              values.push(name);
+            }
+            if (!state.savedFriends.find(item => item.toLowerCase() === lowerFriend)) {
+              state.savedFriends.push(name);
+            }
+          });
+
+          companyInput.value = values.join(', ');
+          renderFriendChips();
+        };
+
         window.toggleFriend = friend => {
           let values = companyInput.value.split(',').map(value => value.trim()).filter(Boolean);
           const lowerFriend = friend.toLowerCase();
@@ -2500,22 +2521,19 @@
         friendsSearch.addEventListener('keydown', event => {
           if (event.key !== 'Enter' && event.key !== ',') return;
           event.preventDefault();
-          const friend = friendsSearch.value.trim().replace(/,/g, '');
+          const friend = friendsSearch.value.trim();
           if (!friend) return;
 
-          const existingFriend = state.savedFriends.find(item => item.toLowerCase() === friend.toLowerCase());
-          window.toggleFriend(existingFriend || friend);
-          if (!existingFriend) state.savedFriends.push(friend);
+          window.addFriend(friend);
           friendsSearch.value = '';
           renderFriendChips();
         });
 
         friendsSearch.addEventListener('blur', () => {
-          const friend = friendsSearch.value.trim().replace(/,/g, '');
+          const friend = friendsSearch.value.trim();
           if (!friend) return;
-          const existingFriend = state.savedFriends.find(item => item.toLowerCase() === friend.toLowerCase());
-          window.toggleFriend(existingFriend || friend);
-          if (!existingFriend) state.savedFriends.push(friend);
+
+          window.addFriend(friend);
           friendsSearch.value = '';
           renderFriendChips();
         });
@@ -2556,16 +2574,9 @@
 
         document.getElementById('saveBtn').onclick = async () => {
           // Commit any uncommitted text currently in friendsSearch input
-          const searchVal = friendsSearch.value.trim().replace(/,/g, '');
+          const searchVal = friendsSearch.value.trim();
           if (searchVal) {
-            let values = companyInput.value.split(',').map(v => v.trim()).filter(Boolean);
-            if (!values.find(v => v.toLowerCase() === searchVal.toLowerCase())) {
-              values.push(searchVal);
-              companyInput.value = values.join(', ');
-            }
-            if (!state.savedFriends.find(item => item.toLowerCase() === searchVal.toLowerCase())) {
-              state.savedFriends.push(searchVal);
-            }
+            window.addFriend(searchVal);
             friendsSearch.value = '';
           }
 
@@ -3056,7 +3067,8 @@
           if (Notification.permission === 'granted') {
             try {
               if ('serviceWorker' in navigator) {
-                const reg = await navigator.serviceWorker.ready;
+                let reg = await navigator.serviceWorker.getRegistration();
+                if (!reg) reg = await navigator.serviceWorker.ready;
                 if (reg && reg.showNotification) {
                   await reg.showNotification(title, options);
                   return true;
@@ -3082,20 +3094,21 @@
       }
 
       function updateNotificationBtn() {
-        const button = document.getElementById('notificationBtn');
+        const button = document.getElementById('settingsBtn');
         if (!button) return;
 
         if (!('Notification' in window)) {
-          button.style.display = 'none';
           return;
         }
 
         if (Notification.permission === 'granted') {
-          button.innerHTML = `${iconSvg('settings')} Active`;
           button.style.borderColor = 'rgba(168,85,247,0.5)';
-          button.style.color = 'var(--purple-light)';
+          button.style.color = '#c084fc';
+          button.title = 'Notifications Active';
         } else {
-          button.innerHTML = `${iconSvg('settings')} Alerts`;
+          button.style.borderColor = 'var(--border)';
+          button.style.color = 'var(--text-main)';
+          button.title = 'Notification Settings';
         }
       }
 
