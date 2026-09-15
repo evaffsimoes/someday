@@ -562,9 +562,17 @@
       color: #c084fc;
     }
 
+    .cue-icon {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
     .nav-btn-center {
-      width: 42px;
-      height: 42px;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
       border: none;
       background: #c084fc;
@@ -572,7 +580,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 4px 14px rgba(192, 132, 252, 0.35);
+      box-shadow: 0 2px 10px rgba(192, 132, 252, 0.35);
       cursor: pointer;
       margin: 0 8px;
       flex-shrink: 0;
@@ -589,8 +597,8 @@
     }
 
     .nav-btn-center .cue-icon {
-      width: 18px;
-      height: 18px;
+      width: 14px;
+      height: 14px;
       stroke-width: 2.5;
     }
 
@@ -1280,10 +1288,9 @@
       <div class="cue-logo">cue<span class="cue-gem">✦</span></div>
       <div class="cue-header-actions">
         <button class="notification-btn" id="settingsBtn" aria-label="Settings">
-          <svg class="cue-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="12" cy="12" r="3.2" />
-            <path
-              d="M12 2.8v2.1M12 19.1v2.1M2.8 12h2.1M19.1 12h2.1M5.5 5.5 7 7M17 17l1.5 1.5M18.5 5.5 17 7M7 17l-1.5 1.5" />
+          <svg class="cue-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
           </svg>
         </button>
       </div>
