@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>cue — Never miss your cue.</title>
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#000000">
+  <meta name="theme-color" content="#f8f9fa">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -22,20 +22,20 @@
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <style>
     :root {
-      --bg: #09090b;
-      --surface: #121215;
-      --surface-strong: #18181c;
-      --surface-soft: #1f1f24;
-      --border: rgba(255, 255, 255, 0.07);
-      --border-hover: rgba(255, 255, 255, 0.14);
-      --text-main: #fafafa;
-      --text-muted: #71717a;
-      --text-soft: #a1a1aa;
-      --accent: #a855f7;
-      --accent-soft: rgba(168, 85, 247, 0.10);
-      --accent-strong: #c084fc;
-      --accent-glow: rgba(168, 85, 247, 0.25);
-      --danger: #f43f5e;
+      --bg: #f8f9fa;
+      --surface: #ffffff;
+      --surface-strong: #ffffff;
+      --surface-soft: #f1f3f5;
+      --border: rgba(0, 0, 0, 0.06);
+      --border-hover: rgba(0, 0, 0, 0.12);
+      --text-main: #111827;
+      --text-muted: #6b7280;
+      --text-soft: #4b5563;
+      --accent: #4f46e5;
+      --accent-soft: rgba(79, 70, 229, 0.08);
+      --accent-strong: #4338ca;
+      --accent-glow: rgba(79, 70, 229, 0.18);
+      --danger: #e11d48;
       --radius-sm: 10px;
       --radius-md: 16px;
       --radius-lg: 20px;
@@ -155,13 +155,13 @@
       cursor: pointer;
       padding: 0 14px;
       font-size: 13px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     }
 
     .notification-btn:hover {
-      border-color: rgba(168, 85, 247, 0.45);
-      background: var(--surface-strong);
-      box-shadow: 0 4px 12px rgba(168, 85, 247, 0.15);
+      border-color: rgba(79, 70, 229, 0.3);
+      background: var(--surface);
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.1);
     }
 
     .notification-btn .label {
@@ -220,18 +220,19 @@
       letter-spacing: 0.02em;
       white-space: nowrap;
       cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
     }
 
     .feed-tab:hover {
       border-color: var(--border-hover);
-      color: var(--text-soft);
+      color: var(--text-main);
     }
 
     .feed-tab.active {
-      background: rgba(168, 85, 247, 0.14);
-      border-color: rgba(168, 85, 247, 0.45);
-      color: var(--accent-strong);
-      box-shadow: 0 2px 10px rgba(168, 85, 247, 0.12);
+      background: #4f46e5;
+      border-color: #4f46e5;
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
     }
 
     .section-title {
@@ -247,7 +248,7 @@
     }
 
     .section-see-all {
-      color: var(--accent-strong);
+      color: var(--accent);
       letter-spacing: 0;
       text-transform: none;
       font-size: 12px;
@@ -265,7 +266,7 @@
       position: sticky;
       top: 0;
       padding: 12px 0 8px;
-      background: rgba(9, 9, 11, 0.88);
+      background: rgba(248, 249, 250, 0.92);
       backdrop-filter: blur(12px);
       font-size: 11px;
       font-weight: 700;
@@ -288,19 +289,19 @@
       height: 96px;
       box-sizing: border-box;
       cursor: pointer;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     }
 
     .queue-item.is-past {
-      opacity: 0.72;
-      border-color: rgba(255, 255, 255, 0.04);
+      opacity: 0.68;
+      border-color: rgba(0, 0, 0, 0.04);
     }
 
     .queue-item:hover {
-      border-color: rgba(168, 85, 247, 0.35);
-      background: var(--surface-strong);
+      border-color: rgba(79, 70, 229, 0.3);
+      background: var(--surface);
       transform: translateY(-1px);
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35), 0 0 12px rgba(168, 85, 247, 0.08);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
     }
 
     .queue-img,
@@ -358,7 +359,7 @@
       padding: 12px;
       border: 1px dashed var(--border-hover);
       border-radius: var(--radius-md);
-      background: rgba(255, 255, 255, 0.015);
+      background: rgba(0, 0, 0, 0.015);
       width: 100%;
       box-sizing: border-box;
     }
@@ -405,7 +406,7 @@
       justify-content: center;
       gap: 8px;
       padding: 9px 16px;
-      border: 1px solid rgba(168, 85, 247, 0.35);
+      border: 1px solid rgba(79, 70, 229, 0.35);
       border-radius: var(--radius-sm);
       background: var(--accent-soft);
       color: var(--accent-strong);
@@ -416,8 +417,8 @@
     }
 
     .event-image-upload:hover {
-      background: rgba(168, 85, 247, 0.22);
-      border-color: rgba(168, 85, 247, 0.55);
+      background: rgba(79, 70, 229, 0.15);
+      border-color: rgba(79, 70, 229, 0.55);
     }
 
     .queue-info {
@@ -485,7 +486,7 @@
       width: 24px;
       height: 24px;
       flex: 0 0 24px;
-      color: var(--accent-strong);
+      color: var(--accent);
     }
 
     .event-meta-icon .cue-icon {
@@ -503,8 +504,8 @@
       min-width: 52px;
       padding: 8px 6px;
       border-radius: var(--radius-sm);
-      background: rgba(168, 85, 247, 0.10);
-      border: 1px solid rgba(168, 85, 247, 0.22);
+      background: rgba(79, 70, 229, 0.07);
+      border: 1px solid rgba(79, 70, 229, 0.18);
       color: var(--accent-strong);
       text-align: center;
       line-height: 1.1;
@@ -534,8 +535,8 @@
       justify-content: center;
       padding: 4px 9px;
       border-radius: var(--radius-full);
-      background: rgba(168, 85, 247, 0.12);
-      border: 1px solid rgba(168, 85, 247, 0.28);
+      background: rgba(79, 70, 229, 0.08);
+      border: 1px solid rgba(79, 70, 229, 0.22);
       color: var(--accent-strong);
       font-size: 9px;
       font-weight: 800;
@@ -545,15 +546,15 @@
     }
 
     .days-left-badge-live.badge-today {
-      background: rgba(244, 63, 94, 0.14);
-      border-color: rgba(244, 63, 94, 0.35);
-      color: #fda4af;
+      background: rgba(225, 29, 72, 0.1);
+      border-color: rgba(225, 29, 72, 0.28);
+      color: #e11d48;
     }
 
     .days-left-badge-live.badge-soon,
     .days-left-badge-live.badge-tomorrow {
-      background: rgba(168, 85, 247, 0.12);
-      border-color: rgba(168, 85, 247, 0.28);
+      background: rgba(79, 70, 229, 0.08);
+      border-color: rgba(79, 70, 229, 0.22);
       color: var(--accent-strong);
     }
 
@@ -584,7 +585,7 @@
       bottom: 16px;
       width: min(calc(100% - 32px), 418px);
       height: 68px;
-      background: rgba(18, 18, 21, 0.88);
+      background: rgba(255, 255, 255, 0.92);
       backdrop-filter: blur(18px);
       -webkit-backdrop-filter: blur(18px);
       border: 1px solid var(--border-hover);
@@ -594,7 +595,7 @@
       justify-content: space-around;
       padding: 0 16px;
       z-index: 50;
-      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 16px rgba(168, 85, 247, 0.08);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
     }
 
     .nav-btn {
@@ -621,20 +622,20 @@
     }
 
     .nav-btn.active {
-      color: var(--accent-strong);
+      color: var(--accent);
     }
 
     .nav-btn-center {
       width: 50px;
       height: 50px;
       border-radius: 50%;
-      border: 1px solid rgba(168, 85, 247, 0.4);
-      background: linear-gradient(135deg, #a855f7, #9333ea);
+      border: 1px solid rgba(79, 70, 229, 0.3);
+      background: linear-gradient(135deg, #4f46e5, #4338ca);
       color: #fff;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 4px 16px rgba(168, 85, 247, 0.4);
+      box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
       cursor: pointer;
       margin: 0 6px;
       flex-shrink: 0;
@@ -642,7 +643,7 @@
 
     .nav-btn-center:hover {
       transform: scale(1.05);
-      box-shadow: 0 6px 22px rgba(168, 85, 247, 0.55);
+      box-shadow: 0 6px 20px rgba(79, 70, 229, 0.45);
     }
 
     .nav-btn .cue-icon,
@@ -691,11 +692,13 @@
       border: 1px solid var(--border);
       margin-bottom: 12px;
       cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
     }
 
     .add-option-card:hover {
-      background: var(--surface-strong);
-      border-color: rgba(168, 85, 247, 0.25);
+      background: var(--surface);
+      border-color: rgba(79, 70, 229, 0.3);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
     }
 
     .add-icon {
@@ -703,7 +706,7 @@
       height: 42px;
       border-radius: 12px;
       background: var(--accent-soft);
-      color: var(--accent-strong);
+      color: var(--accent);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -752,6 +755,7 @@
       padding: 18px;
       border-radius: 18px;
       margin-top: 12px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
     }
 
     .field {
@@ -774,7 +778,7 @@
       width: 100%;
       padding: 11px 12px;
       border-radius: 12px;
-      background: rgba(255, 255, 255, 0.02);
+      background: #f8f9fa;
       border: 1px solid var(--border);
       color: var(--text-main);
       font: inherit;
@@ -785,8 +789,9 @@
     .field select:focus,
     .field textarea:focus {
       outline: none;
-      border-color: rgba(168, 85, 247, 0.45);
-      box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.08);
+      border-color: rgba(79, 70, 229, 0.45);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08);
+      background: #ffffff;
     }
 
     .field textarea {
@@ -806,10 +811,10 @@
       font-weight: 700;
       letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: var(--accent-strong);
+      color: var(--accent);
       margin: 18px 0 10px;
       padding-bottom: 4px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
     }
 
     .friend-picker {
@@ -823,15 +828,16 @@
       gap: 6px;
       padding: 7px 10px;
       border-radius: 12px;
-      background: rgba(255, 255, 255, 0.02);
+      background: #f8f9fa;
       border: 1px solid var(--border);
       min-height: 44px;
       cursor: text;
     }
 
     .friend-tag-container:focus-within {
-      border-color: rgba(168, 85, 247, 0.45);
-      box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.08);
+      border-color: rgba(79, 70, 229, 0.45);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.08);
+      background: #ffffff;
     }
 
     .selected-pills {
@@ -846,7 +852,7 @@
       align-items: center;
       gap: 6px;
       background: var(--accent-soft);
-      border: 1px solid rgba(168, 85, 247, 0.4);
+      border: 1px solid rgba(79, 70, 229, 0.25);
       color: var(--text-main);
       padding: 4px 10px;
       border-radius: 99px;
@@ -907,7 +913,7 @@
       border: 1px solid var(--border);
       border-radius: 999px;
       padding: 7px 11px;
-      background: var(--surface-strong);
+      background: #f8f9fa;
       color: var(--text-muted);
       font: inherit;
       font-size: 12px;
@@ -918,7 +924,7 @@
 
     .friend-chip:hover,
     .friend-chip.selected {
-      border-color: rgba(168, 85, 247, 0.55);
+      border-color: rgba(79, 70, 229, 0.45);
       background: var(--accent-soft);
       color: var(--text-main);
     }
@@ -934,7 +940,7 @@
       border: 1px solid var(--border);
       border-radius: 999px;
       padding: 6px 12px;
-      background: var(--surface-strong);
+      background: #f8f9fa;
       color: var(--text-muted);
       font: inherit;
       font-size: 12px;
@@ -945,7 +951,7 @@
 
     .status-chip:hover,
     .status-chip.selected {
-      border-color: rgba(168, 85, 247, 0.6);
+      border-color: rgba(79, 70, 229, 0.5);
       background: var(--accent-soft);
       color: var(--accent-strong);
     }
@@ -961,21 +967,21 @@
     }
 
     .ticket-badge.need_ticket {
-      background: rgba(239, 68, 68, 0.14);
-      color: #ef4444;
-      border: 1px solid rgba(239, 68, 68, 0.35);
+      background: rgba(225, 29, 72, 0.1);
+      color: #e11d48;
+      border: 1px solid rgba(225, 29, 72, 0.25);
     }
 
     .ticket-badge.maybe {
-      background: rgba(255, 255, 255, 0.06);
+      background: rgba(0, 0, 0, 0.04);
       color: var(--text-soft);
       border: 1px solid var(--border);
     }
 
     .ticket-badge.going {
-      background: rgba(168, 85, 247, 0.15);
-      color: var(--accent-strong);
-      border: 1px solid rgba(168, 85, 247, 0.35);
+      background: rgba(79, 70, 229, 0.1);
+      color: var(--accent);
+      border: 1px solid rgba(79, 70, 229, 0.25);
     }
 
     .review-row {
@@ -1012,13 +1018,13 @@
     }
 
     .btn-primary {
-      background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+      background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
       color: #ffffff;
-      box-shadow: 0 4px 14px rgba(168, 85, 247, 0.35);
+      box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3);
     }
 
     .btn-primary:hover {
-      box-shadow: 0 6px 20px rgba(168, 85, 247, 0.5);
+      box-shadow: 0 6px 18px rgba(79, 70, 229, 0.4);
       transform: translateY(-1px);
     }
 
@@ -1029,21 +1035,21 @@
     }
 
     .btn-ghost:hover {
-      background: var(--surface-strong);
+      background: #f1f3f5;
       border-color: var(--border-hover);
     }
 
     .modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.82);
+      background: rgba(17, 24, 39, 0.4);
       display: none;
       align-items: center;
       justify-content: center;
       padding: 18px;
       z-index: 1000;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
     }
 
     .modal-overlay.active {
@@ -1065,7 +1071,7 @@
       scrollbar-width: none;
       background: var(--surface);
       border: 1px solid var(--border-hover);
-      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6), 0 0 24px rgba(168, 85, 247, 0.08);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
     }
 
     .modal-content::-webkit-scrollbar {
@@ -1113,7 +1119,7 @@
       border: 0;
       padding: 0;
       background: none;
-      color: var(--accent-strong);
+      color: var(--accent);
       font: inherit;
       font-size: 12px;
       font-weight: 700;
@@ -1136,13 +1142,13 @@
       padding: 0;
       border: 1px solid var(--border);
       border-radius: 50%;
-      background: rgba(255, 255, 255, 0.03);
+      background: #f8f9fa;
       color: var(--text-muted);
       cursor: pointer;
     }
 
     .modal-close:hover {
-      border-color: rgba(168, 85, 247, 0.55);
+      border-color: rgba(79, 70, 229, 0.45);
       background: var(--accent-soft);
       color: var(--text-main);
     }
@@ -1168,14 +1174,14 @@
       padding: 0 11px;
       border: 1px solid var(--border);
       border-radius: 10px;
-      background: rgba(255, 255, 255, 0.02);
+      background: #f8f9fa;
       color: var(--text-muted);
       font-size: 13px;
       cursor: pointer;
     }
 
     .reminder-option:has(input:checked) {
-      border-color: rgba(168, 85, 247, 0.55);
+      border-color: rgba(79, 70, 229, 0.45);
       background: var(--accent-soft);
       color: var(--text-main);
     }
@@ -1192,8 +1198,8 @@
       transform: translateX(-50%) translateY(20px);
       opacity: 0;
       pointer-events: none;
-      background: rgba(17, 17, 17, 0.96);
-      border: 1px solid var(--border);
+      background: #ffffff;
+      border: 1px solid var(--border-hover);
       color: var(--text-main);
       border-radius: 999px;
       padding: 10px 16px;
@@ -1202,6 +1208,7 @@
       gap: 12px;
       z-index: 2000;
       transition: all 0.2s ease;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
     }
 
     .undo-toast.show {
@@ -1213,7 +1220,7 @@
     .undo-toast button {
       background: none;
       border: none;
-      color: var(--accent-strong);
+      color: var(--accent);
       font: inherit;
       font-weight: 700;
       cursor: pointer;
@@ -1241,7 +1248,7 @@
       padding: 12px 14px;
       z-index: 2100;
       color: var(--text-main);
-      box-shadow: 0 16px 30px rgba(0, 0, 0, 0.4);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
     }
 
     .calendar-toast button {
@@ -1280,9 +1287,9 @@
 
     .cal-cell {
       min-height: 64px;
-      background: rgba(255, 255, 255, 0.02);
+      background: #ffffff;
       border: 1px solid var(--border);
-      border-radius: 9px;
+      border-radius: 99px;
       padding: 6px 5px;
       display: flex;
       flex-direction: column;
@@ -1290,12 +1297,14 @@
       gap: 4px;
       position: relative;
       overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
     }
 
     .cal-cell.empty-cell {
       background: transparent;
       border-color: transparent;
       pointer-events: none;
+      box-shadow: none;
     }
 
     .cal-day-num {
@@ -1308,13 +1317,13 @@
     }
 
     .cal-cell.today {
-      border-color: rgba(168, 85, 247, 0.5);
-      box-shadow: inset 0 0 0 1px rgba(168, 85, 247, 0.18);
+      border-color: rgba(79, 70, 229, 0.5);
+      box-shadow: inset 0 0 0 1px rgba(79, 70, 229, 0.18);
     }
 
     .cal-cell.selected {
-      border-color: rgba(168, 85, 247, 0.7);
-      background: rgba(168, 85, 247, 0.08);
+      border-color: rgba(79, 70, 229, 0.7);
+      background: rgba(79, 70, 229, 0.06);
     }
 
     .cal-event-pill {
@@ -2014,13 +2023,13 @@
           }
 
           spotlightSlot.innerHTML = `
-            <div class="countdown-spotlight-banner" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(18, 18, 21, 0.95) 100%); border: 1px solid rgba(168, 85, 247, 0.35); border-radius: var(--radius-md); padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35), 0 0 16px rgba(168, 85, 247, 0.1);" onclick="openReview(state.events.find(e => e.id === '${nextEvent.id}'))">
+            <div class="countdown-spotlight-banner" style="background: linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, #ffffff 100%); border: 1px solid rgba(79, 70, 229, 0.2); border-radius: var(--radius-md); padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03);" onclick="openReview(state.events.find(e => e.id === '${nextEvent.id}'))">
               <div style="display: flex; flex-direction: column; gap: 4px; overflow: hidden;">
-                <div style="font-size: 11px; font-weight: 800; color: #c084fc; text-transform: uppercase; letter-spacing: 0.08em; display: flex; align-items: center; gap: 7px;">
-                  <span style="width: 7px; height: 7px; border-radius: 50%; background: #c084fc; display: inline-block; box-shadow: 0 0 8px #c084fc;"></span>
+                <div style="font-size: 11px; font-weight: 800; color: #4338ca; text-transform: uppercase; letter-spacing: 0.08em; display: flex; align-items: center; gap: 7px;">
+                  <span style="width: 7px; height: 7px; border-radius: 50%; background: #4f46e5; display: inline-block; box-shadow: 0 0 6px rgba(79, 70, 229, 0.4);"></span>
                   ${countdownText}
                 </div>
-                <div style="font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.01em;">
+                <div style="font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.01em;">
                   ${escapeHtml(nextEvent.artist || 'Next Event')}
                 </div>
               </div>
