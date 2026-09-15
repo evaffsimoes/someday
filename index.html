@@ -2509,6 +2509,16 @@
           friendsSearch.value = '';
           renderFriendChips();
         });
+
+        friendsSearch.addEventListener('blur', () => {
+          const friend = friendsSearch.value.trim().replace(/,/g, '');
+          if (!friend) return;
+          const existingFriend = state.savedFriends.find(item => item.toLowerCase() === friend.toLowerCase());
+          window.toggleFriend(existingFriend || friend);
+          if (!existingFriend) state.savedFriends.push(friend);
+          friendsSearch.value = '';
+          renderFriendChips();
+        });
         renderFriendChips();
 
         const geoBtn = document.getElementById('geoBtn');
@@ -2545,6 +2555,20 @@
         };
 
         document.getElementById('saveBtn').onclick = async () => {
+          // Commit any uncommitted text currently in friendsSearch input
+          const searchVal = friendsSearch.value.trim().replace(/,/g, '');
+          if (searchVal) {
+            let values = companyInput.value.split(',').map(v => v.trim()).filter(Boolean);
+            if (!values.find(v => v.toLowerCase() === searchVal.toLowerCase())) {
+              values.push(searchVal);
+              companyInput.value = values.join(', ');
+            }
+            if (!state.savedFriends.find(item => item.toLowerCase() === searchVal.toLowerCase())) {
+              state.savedFriends.push(searchVal);
+            }
+            friendsSearch.value = '';
+          }
+
           const dateInput = document.getElementById('f_daterange').value;
           const [startDate, endDate] = dateInput.includes(' to ') ? dateInput.split(' to ') : [dateInput, dateInput];
           const companyText = document.getElementById('f_company').value.trim();
@@ -3104,8 +3128,12 @@
           const fullStart = new Date(`${event.startDate}T${event.time ? (event.time.length === 5 ? event.time + ':00' : event.time) : '00:00:00'}`);
           if (Number.isNaN(fullStart.getTime())) return;
 
-          const eventDate = new Date(`${event.startDate}T00:00:00`);
-          const diffMs = eventDate.getTime() - todayDate.getTime();
+          const [sYear, sMonth, sDay] = (event.startDate || '').split('-').map(Number);
+          if (!sYear || !sMonth || !sDay) return;
+
+          const eventDate = new Date(sYear, sMonth - 1, sDay);
+          const localToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          const diffMs = eventDate.getTime() - localToday.getTime();
           const daysUntil = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
           // 1. Check 1 hour before reminder
