@@ -193,23 +193,24 @@ window.CueAuth = (() => {
   }
 
   function updateAuthUI(user) {
-    const avatarBtn = document.getElementById('accountBtn');
     const avatarImg = document.getElementById('accountAvatarImg');
     const accountStatusBadge = document.getElementById('accountStatusBadge');
     const accountUserInfo = document.getElementById('accountUserInfo');
     const accountLoginBtn = document.getElementById('accountLoginBtn');
     const accountLogoutBtn = document.getElementById('accountLogoutBtn');
 
-    if (!avatarBtn) return;
-
     if (user) {
-      if (user.photoURL && avatarImg) {
-        avatarImg.src = user.photoURL;
-        avatarImg.style.display = 'block';
+      if (avatarImg) {
+        if (user.photoURL) {
+          avatarImg.src = user.photoURL;
+          avatarImg.style.display = 'block';
+        } else {
+          avatarImg.style.display = 'none';
+        }
       }
       if (accountStatusBadge) {
         accountStatusBadge.className = 'status-badge status-synced';
-        accountStatusBadge.textContent = 'Synced with Cloud';
+        accountStatusBadge.textContent = '✓ Synced with Cloud';
       }
       if (accountUserInfo) {
         accountUserInfo.innerHTML = `
