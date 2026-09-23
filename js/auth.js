@@ -82,11 +82,12 @@ window.CueAuth = (() => {
 
     try {
       await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+      auth.useDeviceLanguage();
 
-      // Attempt Google Identity Services (GIS) Token Flow first (bypasses 3rd party iframe cookie storage restrictions)
-      if (typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
+      // If an explicit Google OAuth clientId is configured in config.js, use GIS Token client
+      if (window.CUE_FIREBASE_CONFIG.clientId && typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
         const client = google.accounts.oauth2.initTokenClient({
-          client_id: window.CUE_FIREBASE_CONFIG.appId?.split(':')[1] ? `${window.CUE_FIREBASE_CONFIG.messagingSenderId}-${window.CUE_FIREBASE_CONFIG.appId.split(':')[1]}.apps.googleusercontent.com` : undefined,
+          client_id: window.CUE_FIREBASE_CONFIG.clientId,
           scope: 'email profile openid',
           callback: async (tokenResponse) => {
             if (tokenResponse && tokenResponse.access_token) {
@@ -99,14 +100,12 @@ window.CueAuth = (() => {
                   await syncCloudEvents();
                 }
               } catch (credErr) {
-                console.warn('GIS Token sign in failed, trying popup fallback:', credErr);
-                fallbackPopupSignIn();
+                handleAuthError(credErr);
               }
             }
           },
           error_callback: (err) => {
-            console.warn('GIS Token client error, trying popup fallback:', err);
-            fallbackPopupSignIn();
+            handleAuthError(err);
           }
         });
 
@@ -116,14 +115,7 @@ window.CueAuth = (() => {
         }
       }
 
-      await fallbackPopupSignIn();
-    } catch (error) {
-      handleAuthError(error);
-    }
-  }
-
-  async function fallbackPopupSignIn() {
-    try {
+      // Standard Firebase Google Auth Popup
       const provider = new firebase.auth.GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
       const result = await auth.signInWithPopup(provider);
