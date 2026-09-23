@@ -31,18 +31,10 @@
     <header class="cue-header">
       <div class="cue-logo">cue<span class="cue-gem">✦</span></div>
       <div class="cue-header-actions">
-        <button class="account-btn" id="accountBtn" aria-label="Account & Cloud Sync" onclick="document.getElementById('accountModalOverlay').classList.add('active')">
-          <img id="accountAvatarImg" class="account-avatar-img" src="" alt="Avatar">
-          <svg class="cue-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-            <circle cx="12" cy="7" r="4"></circle>
-          </svg>
-        </button>
-        
         <button class="notification-btn" id="settingsBtn" aria-label="Settings">
           <svg class="cue-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="3" />
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+            <circle cx="12" cy="12" r="3"/>
           </svg>
         </button>
       </div>
@@ -232,6 +224,30 @@
         <button class="btn btn-primary" id="saveSettingsBtn">Save</button>
       </div>
 
+      
+      <div style="margin-top: 28px; border-top: 1px solid var(--border); padding-top: 20px; text-align: center;">
+        <h3 style="margin-bottom:10px;">Cloud Account & Sync</h3>
+        <div id="accountStatusBadge" class="status-badge status-local">Local Storage Mode</div>
+        <div id="accountUserInfo" style="display:none; margin: 10px 0;"></div>
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">
+          Sync your saved events automatically across all your devices using your Google account.
+        </p>
+
+        <button id="accountLoginBtn" class="btn-google" onclick="CueAuth.signInWithGoogle()" type="button">
+          <svg width="18" height="18" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+          Sign in with Google
+        </button>
+
+        <button id="accountLogoutBtn" class="btn btn-secondary" style="display:none; width:100%; margin-top:10px;" onclick="CueAuth.signOutUser()" type="button">
+          Sign Out
+        </button>
+      </div>
+
       <div style="margin-top: 32px; border-top: 1px solid var(--border); padding-top: 24px;">
         <h3 style="margin-bottom:12px;">Data Backup (File)</h3>
         <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">Download a backup file of your events,
@@ -266,36 +282,7 @@
   </div>
 
   
-  <div id="accountModalOverlay" class="modal-overlay">
-    <div class="modal-content" style="max-width:380px; text-align:center;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-        <h3 style="margin:0;">Cloud Account</h3>
-        <button class="icon-btn" onclick="document.getElementById('accountModalOverlay').classList.remove('active')" style="font-size:18px; color:var(--text-muted);">✕</button>
-      </div>
-
-      <div id="accountStatusBadge" class="status-badge status-local">Local Storage Mode</div>
-
-      <div id="accountUserInfo" style="display:none; margin: 12px 0;"></div>
-
-      <p style="font-size:13px; color:var(--text-soft); margin-bottom:20px;">
-        Sync your saved events across all your devices and backup your calendar data automatically.
-      </p>
-
-      <button id="accountLoginBtn" class="btn-google" onclick="CueAuth.signInWithGoogle()">
-        <svg width="18" height="18" viewBox="0 0 24 24">
-          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-        </svg>
-        Sign in with Google
-      </button>
-
-      <button id="accountLogoutBtn" class="btn btn-secondary" style="display:none; width:100%; margin-top:10px;" onclick="CueAuth.signOutUser()">
-        Sign Out
-      </button>
-    </div>
-  </div>
+  
 
   <div id="eventModalOverlay" class="modal-overlay">
     <div class="modal-content" id="eventModalContent"></div>
