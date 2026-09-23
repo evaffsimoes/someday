@@ -43,16 +43,14 @@ window.CueAuth = (() => {
       });
 
       auth.getRedirectResult().then(async result => {
-        if (result.user) {
+        if (result && result.user) {
           currentUser = result.user;
           updateAuthUI(result.user);
           await syncCloudEvents();
         }
       }).catch(err => {
-        if (err.code && err.code !== 'auth/popup-closed-by-user') {
-          console.error('Redirect sign in error:', err);
-          handleAuthError(err);
-        }
+        // Silently ignore harmless redirect check errors when no redirect was initiated
+        console.warn('Redirect result check:', err?.message || err);
       });
     } catch (err) {
       console.warn('cue Cloud Sync initialization error:', err);
@@ -64,12 +62,22 @@ window.CueAuth = (() => {
     const code = error.code || '';
     const message = error.message || String(error);
 
-    if (code === 'auth/operation-not-allowed' || message.includes('invalid') || code === 'auth/configuration-not-found') {
+    // Ignore harmless popup closed, cancelled, or storage partitioning errors
+    if (
+      code === 'auth/popup-closed-by-user' ||
+      code === 'auth/cancelled-popup-request' ||
+      message.includes('missing initial state') ||
+      message.includes('sessionStorage')
+    ) {
+      return;
+    }
+
+    if (code === 'auth/operation-not-allowed' || code === 'auth/configuration-not-found') {
       alert(`Firebase Auth Error [${code}]:\n\nGoogle Sign-In is not enabled yet in your Firebase project.\n\nPlease go to Firebase Console -> Authentication -> Sign-in method and click "Enable" on Google.`);
     } else if (code === 'auth/unauthorized-domain') {
       alert(`Firebase Auth Error [${code}]:\n\nThis domain (${window.location.hostname}) is not authorized.\n\nPlease go to Firebase Console -> Authentication -> Settings -> Authorized Domains and add ${window.location.hostname}.`);
-    } else if (code !== 'auth/popup-closed-by-user') {
-      alert(`Google Sign-In Error [${code}]:\n${message}`);
+    } else {
+      alert(`Google Sign-In Error:\n${message}`);
     }
   }
 
