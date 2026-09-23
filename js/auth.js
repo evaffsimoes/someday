@@ -23,6 +23,10 @@ window.CueAuth = (() => {
 
     try {
       if (!firebase.apps.length) {
+        // Use same-origin authDomain when hosted on Vercel/HTTPS to bypass 3rd party cookie blocking
+        if (window.location.hostname && !window.location.hostname.includes('localhost') && window.location.protocol === 'https:') {
+          config.authDomain = window.location.hostname;
+        }
         firebase.initializeApp(config);
       }
       auth = firebase.auth();

@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/__/auth/:path*",
+      "destination": "https://cue-events-21ac9.firebaseapp.com/__/auth/:path*"
+    },
+    {
       "source": "/.netlify/functions/gemini",
       "destination": "/api/gemini"
     },
