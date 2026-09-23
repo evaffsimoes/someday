@@ -80,44 +80,28 @@ window.CueAuth = (() => {
       return;
     }
 
+    const isNativeAndroid = (window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform()) || /wv|Android.*Version\/[0-9]/i.test(navigator.userAgent);
+
     try {
       await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
       auth.useDeviceLanguage();
 
-      // If an explicit Google OAuth clientId is configured in config.js, use GIS Token client
-      if (window.CUE_FIREBASE_CONFIG.clientId && typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
-        const client = google.accounts.oauth2.initTokenClient({
-          client_id: window.CUE_FIREBASE_CONFIG.clientId,
-          scope: 'email profile openid',
-          callback: async (tokenResponse) => {
-            if (tokenResponse && tokenResponse.access_token) {
-              try {
-                const credential = firebase.auth.GoogleAuthProvider.credential(null, tokenResponse.access_token);
-                const userCred = await auth.signInWithCredential(credential);
-                if (userCred?.user) {
-                  currentUser = userCred.user;
-                  updateAuthUI(userCred.user);
-                  await syncCloudEvents();
-                }
-              } catch (credErr) {
-                handleAuthError(credErr);
-              }
-            }
-          },
-          error_callback: (err) => {
-            handleAuthError(err);
-          }
-        });
+      const provider = new firebase.auth.GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
 
-        if (client && client.requestAccessToken) {
-          client.requestAccessToken();
+      // On Android native app (Capacitor WebView), Google blocks embedded popups (disallowed_useragent).
+      // We open system browser or use redirect for native Android.
+      if (isNativeAndroid) {
+        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
+          await window.Capacitor.Plugins.Browser.open({ url: 'https://someday-nu.vercel.app' });
+          return;
+        } else {
+          window.open('https://someday-nu.vercel.app', '_system');
           return;
         }
       }
 
-      // Standard Firebase Google Auth Popup
-      const provider = new firebase.auth.GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: 'select_account' });
+      // Standard Web Browser Popup
       const result = await auth.signInWithPopup(provider);
       if (result?.user) {
         currentUser = result.user;
