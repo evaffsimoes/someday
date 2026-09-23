@@ -2,10 +2,12 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
+const rootDir = path.join(__dirname, '..');
+
 function run(cmd) {
   console.log(`\n🚀 Running: ${cmd}`);
   try {
-    execSync(cmd, { stdio: 'inherit', cwd: __dirname });
+    execSync(cmd, { stdio: 'inherit', cwd: rootDir });
   } catch (err) {
     console.error(`⚠️ Command failed: ${cmd}`);
   }
@@ -27,17 +29,28 @@ const filesToCopy = [
   'capacitor.config.json'
 ];
 
-const wwwDir = path.join(__dirname, 'www');
+const dirsToCopy = ['css', 'js', 'icons'];
+
+const wwwDir = path.join(rootDir, 'www');
 if (!fs.existsSync(wwwDir)) {
   fs.mkdirSync(wwwDir, { recursive: true });
 }
 
 for (const file of filesToCopy) {
-  const src = path.join(__dirname, file);
+  const src = path.join(rootDir, file);
   const dest = path.join(wwwDir, file);
   if (fs.existsSync(src)) {
     fs.copyFileSync(src, dest);
     console.log(`  ✓ Copied ${file} -> www/${file}`);
+  }
+}
+
+for (const dir of dirsToCopy) {
+  const srcDir = path.join(rootDir, dir);
+  const destDir = path.join(wwwDir, dir);
+  if (fs.existsSync(srcDir)) {
+    fs.cpSync(srcDir, destDir, { recursive: true });
+    console.log(`  ✓ Copied ${dir}/ -> www/${dir}/`);
   }
 }
 
