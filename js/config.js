@@ -1,20 +1,14 @@
 /**
  * cue — Firebase Configuration for Google Sign-In & Cloud Sync
- * 
- * Instructions to enable Cloud Sync & Google Login:
- * 1. Go to Firebase Console: https://console.firebase.google.com/
- * 2. Create a new project (or select an existing one).
- * 3. Go to Authentication -> Sign-in method -> Enable "Google".
- * 4. Go to Firestore Database -> Create database (in production mode).
- * 5. Go to Project Settings -> Add Web App to get your config credentials.
- * 6. Replace the placeholder values below with your credentials.
  */
 
 window.CUE_FIREBASE_CONFIG = {
-  apiKey: "YOUR_FIREBASE_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyBUgrcixsC5W0shIt3IvvuYoqibASQ_pF4",
+  authDomain: "cue-events-21ac9.firebaseapp.com",
+  databaseURL: "https://cue-events-21ac9-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "cue-events-21ac9",
+  storageBucket: "cue-events-21ac9.firebasestorage.app",
+  messagingSenderId: "87973671324",
+  appId: "1:87973671324:web:face01e87135d4e153d859",
+  measurementId: "G-H3Q4JG3FX6"
 };
