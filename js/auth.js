@@ -80,8 +80,6 @@ window.CueAuth = (() => {
       return;
     }
 
-    const isNativeAndroid = (window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform()) || /wv|Android.*Version\/[0-9]/i.test(navigator.userAgent);
-
     try {
       await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
       auth.useDeviceLanguage();
@@ -89,24 +87,19 @@ window.CueAuth = (() => {
       const provider = new firebase.auth.GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
 
-      // On Android native app (Capacitor WebView), Google blocks embedded popups (disallowed_useragent).
-      // We open system browser or use redirect for native Android.
-      if (isNativeAndroid) {
-        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
-          await window.Capacitor.Plugins.Browser.open({ url: 'https://someday-nu.vercel.app' });
-          return;
-        } else {
-          window.open('https://someday-nu.vercel.app', '_system');
+      // Try popup sign in first
+      try {
+        const result = await auth.signInWithPopup(provider);
+        if (result?.user) {
+          currentUser = result.user;
+          updateAuthUI(result.user);
+          await syncCloudEvents();
           return;
         }
-      }
-
-      // Standard Web Browser Popup
-      const result = await auth.signInWithPopup(provider);
-      if (result?.user) {
-        currentUser = result.user;
-        updateAuthUI(result.user);
-        await syncCloudEvents();
+      } catch (popupErr) {
+        console.warn('Popup sign-in failed or blocked, attempting redirect:', popupErr);
+        // Fallback to redirect sign-in (works natively in Android WebView & mobile browsers)
+        await auth.signInWithRedirect(provider);
       }
     } catch (error) {
       handleAuthError(error);
