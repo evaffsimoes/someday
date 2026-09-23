@@ -81,25 +81,15 @@ window.CueAuth = (() => {
     }
 
     try {
-      await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-      auth.useDeviceLanguage();
-
+      // Synchronous popup call inside user click gesture (prevents Android Chrome popup blocking)
       const provider = new firebase.auth.GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
 
-      // Try popup sign in first
-      try {
-        const result = await auth.signInWithPopup(provider);
-        if (result?.user) {
-          currentUser = result.user;
-          updateAuthUI(result.user);
-          await syncCloudEvents();
-          return;
-        }
-      } catch (popupErr) {
-        console.warn('Popup sign-in failed or blocked, attempting redirect:', popupErr);
-        // Fallback to redirect sign-in (works natively in Android WebView & mobile browsers)
-        await auth.signInWithRedirect(provider);
+      const result = await auth.signInWithPopup(provider);
+      if (result?.user) {
+        currentUser = result.user;
+        updateAuthUI(result.user);
+        await syncCloudEvents();
       }
     } catch (error) {
       handleAuthError(error);
