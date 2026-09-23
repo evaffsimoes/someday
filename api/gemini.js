@@ -59,13 +59,24 @@ async function scrapeInstagramMetadata(sharedText) {
               enrichedText = [authorStr, oembedData.title, sharedText].filter(Boolean).join(' | ');
             }
             if (oembedData.thumbnail_url && !posterImageDataUrl) {
-              const imgRes = await fetch(oembedData.thumbnail_url, { signal: AbortSignal.timeout(5000) });
-              if (imgRes.ok) {
-                const mime = imgRes.headers.get('content-type')?.split(';')[0].toLowerCase() || 'image/jpeg';
-                const buf = Buffer.from(await imgRes.arrayBuffer());
-                if (buf.byteLength <= MAX_POSTER_BYTES) {
-                  posterImageDataUrl = `data:${mime};base64,${buf.toString('base64')}`;
+              try {
+                const imgRes = await fetch(oembedData.thumbnail_url, {
+                  headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
+                  signal: AbortSignal.timeout(6000)
+                });
+                if (imgRes.ok) {
+                  const mime = imgRes.headers.get('content-type')?.split(';')[0].toLowerCase() || 'image/jpeg';
+                  const buf = Buffer.from(await imgRes.arrayBuffer());
+                  if (buf.byteLength <= MAX_POSTER_BYTES) {
+                    posterImageDataUrl = `data:${mime};base64,${buf.toString('base64')}`;
+                  } else {
+                    posterImageDataUrl = oembedData.thumbnail_url;
+                  }
+                } else {
+                  posterImageDataUrl = oembedData.thumbnail_url;
                 }
+              } catch (_) {
+                posterImageDataUrl = oembedData.thumbnail_url;
               }
             }
           } else {
@@ -89,17 +100,23 @@ async function scrapeInstagramMetadata(sharedText) {
             if (imgUrl && !posterImageDataUrl) {
               try {
                 const imgRes = await fetch(imgUrl, {
-                  headers: { 'User-Agent': 'Mozilla/5.0' },
-                  signal: AbortSignal.timeout(5000)
+                  headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
+                  signal: AbortSignal.timeout(6000)
                 });
                 if (imgRes.ok) {
                   const mime = imgRes.headers.get('content-type')?.split(';')[0].toLowerCase() || 'image/jpeg';
                   const buf = Buffer.from(await imgRes.arrayBuffer());
                   if (buf.byteLength <= MAX_POSTER_BYTES) {
                     posterImageDataUrl = `data:${mime};base64,${buf.toString('base64')}`;
+                  } else {
+                    posterImageDataUrl = imgUrl;
                   }
+                } else {
+                  posterImageDataUrl = imgUrl;
                 }
-              } catch (_) {}
+              } catch (_) {
+                posterImageDataUrl = imgUrl;
+              }
             }
           }
 
@@ -163,7 +180,7 @@ export default async function handler(req, res) {
       const parts = [];
 
       // If we downloaded a poster image from the Instagram post, pass it directly to Gemini Vision!
-      if (posterImageDataUrl) {
+      if (posterImageDataUrl && posterImageDataUrl.startsWith('data:image')) {
         const [meta, base64Data] = posterImageDataUrl.split(',');
         const mimeType = meta.match(/data:(.*?);/)?.[1] || 'image/jpeg';
         parts.push({
