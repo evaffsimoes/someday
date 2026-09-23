@@ -34,23 +34,15 @@ window.CueAuth = (() => {
         // Ignore persistence errors in unsupported environments
       });
 
+      auth.useDeviceLanguage();
+      auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(() => {});
+
       auth.onAuthStateChanged(async user => {
         currentUser = user;
         updateAuthUI(user);
         if (user) {
           await syncCloudEvents();
         }
-      });
-
-      auth.getRedirectResult().then(async result => {
-        if (result && result.user) {
-          currentUser = result.user;
-          updateAuthUI(result.user);
-          await syncCloudEvents();
-        }
-      }).catch(err => {
-        // Silently ignore harmless redirect check errors when no redirect was initiated
-        console.warn('Redirect result check:', err?.message || err);
       });
     } catch (err) {
       console.warn('cue Cloud Sync initialization error:', err);
@@ -69,6 +61,7 @@ window.CueAuth = (() => {
       message.includes('missing initial state') ||
       message.includes('sessionStorage')
     ) {
+      console.warn('Auth popup closed or state reset:', message);
       return;
     }
 
@@ -88,21 +81,17 @@ window.CueAuth = (() => {
     }
 
     try {
+      await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
       const provider = new firebase.auth.GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
-      await auth.signInWithPopup(provider);
-    } catch (error) {
-      if (error.code === 'auth/popup-blocked' || error.code === 'auth/operation-not-supported-in-this-environment') {
-        try {
-          const provider = new firebase.auth.GoogleAuthProvider();
-          await auth.signInWithRedirect(provider);
-        } catch (redirectErr) {
-          console.error('Google login redirect failed:', redirectErr);
-          handleAuthError(redirectErr);
-        }
-      } else {
-        handleAuthError(error);
+      const result = await auth.signInWithPopup(provider);
+      if (result?.user) {
+        currentUser = result.user;
+        updateAuthUI(result.user);
+        await syncCloudEvents();
       }
+    } catch (error) {
+      handleAuthError(error);
     }
   }
 
