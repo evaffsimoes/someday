@@ -100,7 +100,7 @@ window.CueAuth = (() => {
           if (!isNative && typeof GoogleAuth.initialize === 'function') {
             try {
               await GoogleAuth.initialize({
-                clientId: '87973671324-face01e87135d4e153d859.apps.googleusercontent.com',
+                clientId: '87973671324-928p1drimqk383fofkf4n7cpcnstpsfr.apps.googleusercontent.com',
                 scopes: ['profile', 'email'],
                 grantOfflineAccess: true
               });

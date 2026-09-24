@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "87973671324",
+    "firebase_url": "https://cue-events-21ac9-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "cue-events-21ac9",
+    "storage_bucket": "cue-events-21ac9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:87973671324:android:8ee151b36003166b53d859",
+        "android_client_info": {
+          "package_name": "com.eva.somedayapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "87973671324-928p1drimqk383fofkf4n7cpcnstpsfr.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDo1Ky9P0cH2KIWErXti0Lzzj3a8uNrVzo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "87973671324-928p1drimqk383fofkf4n7cpcnstpsfr.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
