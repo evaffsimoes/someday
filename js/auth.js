@@ -23,9 +23,6 @@ window.CueAuth = (() => {
 
     try {
       if (!firebase.apps.length) {
-        if (window.location.hostname && !window.location.hostname.includes('localhost') && window.location.protocol === 'https:') {
-          config.authDomain = window.location.hostname;
-        }
         firebase.initializeApp(config);
       }
       auth = firebase.auth();
