@@ -84,6 +84,18 @@ window.CueAuth = (() => {
     }
   }
 
+  async function fallbackPopupAuth() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    const result = await auth.signInWithPopup(provider);
+    if (result?.user) {
+      currentUser = result.user;
+      updateAuthUI(result.user);
+      await syncCloudEvents();
+      return result.user;
+    }
+  }
+
   async function signInWithGoogle() {
     if (!isConfigured || !auth) {
       alert('Cloud Sync requires setting up your Firebase credentials in js/config.js.');
@@ -91,15 +103,44 @@ window.CueAuth = (() => {
     }
 
     try {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: 'select_account' });
+      // 1. Try Google Identity Services (GIS) inline prompt if script loaded
+      if (window.google && window.google.accounts && window.google.accounts.id) {
+        let isGisHandled = false;
+        try {
+          window.google.accounts.id.initialize({
+            client_id: '87973671324-928p1drimqk383fofkf4n7cpcnstpsfr.apps.googleusercontent.com',
+            callback: async (response) => {
+              if (response && response.credential) {
+                isGisHandled = true;
+                try {
+                  const credential = firebase.auth.GoogleAuthProvider.credential(response.credential);
+                  const userCred = await auth.signInWithCredential(credential);
+                  if (userCred?.user) {
+                    currentUser = userCred.user;
+                    updateAuthUI(userCred.user);
+                    await syncCloudEvents();
+                    return;
+                  }
+                } catch (credErr) {
+                  console.warn('GIS credential sign-in error:', credErr);
+                }
+              }
+            }
+          });
 
-      const result = await auth.signInWithPopup(provider);
-      if (result?.user) {
-        currentUser = result.user;
-        updateAuthUI(result.user);
-        await syncCloudEvents();
+          window.google.accounts.id.prompt((notification) => {
+            if (!isGisHandled && (notification.isNotDisplayed() || notification.isSkippedMoment())) {
+              fallbackPopupAuth().catch(handleAuthError);
+            }
+          });
+          return;
+        } catch (gisErr) {
+          console.warn('GIS prompt error, falling back to popup:', gisErr);
+        }
       }
+
+      // 2. Fallback to standard Popup
+      await fallbackPopupAuth();
     } catch (error) {
       handleAuthError(error);
     }
