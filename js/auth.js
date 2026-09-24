@@ -95,9 +95,9 @@ window.CueAuth = (() => {
       const isNative = window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform();
       const GoogleAuth = window.Capacitor?.Plugins?.GoogleAuth;
 
-      if (isNative || GoogleAuth) {
+      if (GoogleAuth && typeof GoogleAuth.signIn === 'function') {
         try {
-          if (GoogleAuth.initialize) {
+          if (typeof GoogleAuth.initialize === 'function') {
             await GoogleAuth.initialize({
               clientId: '87973671324-face01e87135d4e153d859.apps.googleusercontent.com',
               scopes: ['profile', 'email'],
@@ -105,7 +105,7 @@ window.CueAuth = (() => {
             });
           }
           const googleUser = await GoogleAuth.signIn();
-          const idToken = googleUser?.authentication?.idToken || googleUser?.idToken;
+          const idToken = googleUser?.authentication?.idToken || googleUser?.idToken || googleUser?.authentication?.id_token;
           if (idToken) {
             const credential = firebase.auth.GoogleAuthProvider.credential(idToken);
             const userCred = await auth.signInWithCredential(credential);
@@ -119,7 +119,7 @@ window.CueAuth = (() => {
         } catch (nativeErr) {
           console.warn('Native Google Auth error:', nativeErr);
           if (isNative) {
-            alert('Native Google Sign-In: ' + (nativeErr?.message || nativeErr?.error || 'Please ensure Google Play Services is enabled on device.'));
+            alert('Native Google Sign-In: ' + (nativeErr?.message || nativeErr?.error || String(nativeErr)));
             return;
           }
         }
