@@ -125,25 +125,15 @@ window.CueAuth = (() => {
         }
       }
 
-      // 2. Web & Mobile Fallback
+      // 2. Standard Firebase Web Popup
       const provider = new firebase.auth.GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
 
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      if (isMobile) {
-        await auth.signInWithRedirect(provider);
-      } else {
-        try {
-          const result = await auth.signInWithPopup(provider);
-          if (result?.user) {
-            currentUser = result.user;
-            updateAuthUI(result.user);
-            await syncCloudEvents();
-          }
-        } catch (popupErr) {
-          console.warn('Popup login failed, attempting redirect fallback:', popupErr);
-          await auth.signInWithRedirect(provider);
-        }
+      const result = await auth.signInWithPopup(provider);
+      if (result?.user) {
+        currentUser = result.user;
+        updateAuthUI(result.user);
+        await syncCloudEvents();
       }
     } catch (error) {
       handleAuthError(error);
