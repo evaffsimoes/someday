@@ -84,18 +84,6 @@ window.CueAuth = (() => {
     }
   }
 
-  async function fallbackPopupAuth() {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: 'select_account' });
-    const result = await auth.signInWithPopup(provider);
-    if (result?.user) {
-      currentUser = result.user;
-      updateAuthUI(result.user);
-      await syncCloudEvents();
-      return result.user;
-    }
-  }
-
   async function signInWithGoogle() {
     if (!isConfigured || !auth) {
       alert('Cloud Sync requires setting up your Firebase credentials in js/config.js.');
@@ -103,44 +91,46 @@ window.CueAuth = (() => {
     }
 
     try {
-      // 1. Try Google Identity Services (GIS) inline prompt if script loaded
-      if (window.google && window.google.accounts && window.google.accounts.id) {
-        let isGisHandled = false;
-        try {
-          window.google.accounts.id.initialize({
-            client_id: '87973671324-928p1drimqk383fofkf4n7cpcnstpsfr.apps.googleusercontent.com',
-            callback: async (response) => {
-              if (response && response.credential) {
-                isGisHandled = true;
-                try {
-                  const credential = firebase.auth.GoogleAuthProvider.credential(response.credential);
-                  const userCred = await auth.signInWithCredential(credential);
-                  if (userCred?.user) {
-                    currentUser = userCred.user;
-                    updateAuthUI(userCred.user);
-                    await syncCloudEvents();
-                    return;
-                  }
-                } catch (credErr) {
-                  console.warn('GIS credential sign-in error:', credErr);
+      // 1. Google OAuth2 Token Client (Works in WebViews & mobile without opening Chrome or redirecting!)
+      if (window.google && window.google.accounts && window.google.accounts.oauth2) {
+        const client = window.google.accounts.oauth2.initTokenClient({
+          client_id: '87973671324-928p1drimqk383fofkf4n7cpcnstpsfr.apps.googleusercontent.com',
+          scope: 'profile email',
+          callback: async (tokenResponse) => {
+            if (tokenResponse && tokenResponse.access_token) {
+              try {
+                const credential = firebase.auth.GoogleAuthProvider.credential(null, tokenResponse.access_token);
+                const userCred = await auth.signInWithCredential(credential);
+                if (userCred?.user) {
+                  currentUser = userCred.user;
+                  updateAuthUI(userCred.user);
+                  await syncCloudEvents();
+                  return;
                 }
+              } catch (credErr) {
+                console.warn('Google OAuth token credential error:', credErr);
+                handleAuthError(credErr);
               }
             }
-          });
+          },
+          error_callback: (err) => {
+            console.warn('Google OAuth token error:', err);
+          }
+        });
 
-          window.google.accounts.id.prompt((notification) => {
-            if (!isGisHandled && (notification.isNotDisplayed() || notification.isSkippedMoment())) {
-              fallbackPopupAuth().catch(handleAuthError);
-            }
-          });
-          return;
-        } catch (gisErr) {
-          console.warn('GIS prompt error, falling back to popup:', gisErr);
-        }
+        client.requestAccessToken({ prompt: 'select_account' });
+        return;
       }
 
-      // 2. Fallback to standard Popup
-      await fallbackPopupAuth();
+      // 2. Fallback to standard Firebase popup
+      const provider = new firebase.auth.GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      const result = await auth.signInWithPopup(provider);
+      if (result?.user) {
+        currentUser = result.user;
+        updateAuthUI(result.user);
+        await syncCloudEvents();
+      }
     } catch (error) {
       handleAuthError(error);
     }
