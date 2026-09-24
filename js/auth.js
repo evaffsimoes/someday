@@ -105,7 +105,7 @@ window.CueAuth = (() => {
                 grantOfflineAccess: true
               });
             } catch (initErr) {
-              console.warn('GoogleAuth.initialize error (ignored on native/web fallback):', initErr);
+              console.warn('GoogleAuth.initialize error:', initErr);
             }
           }
           const googleUser = await GoogleAuth.signIn();
@@ -122,22 +122,28 @@ window.CueAuth = (() => {
           }
         } catch (nativeErr) {
           console.warn('Native Google Auth error:', nativeErr);
-          if (isNative) {
-            alert('Native Google Sign-In: ' + (nativeErr?.message || nativeErr?.error || String(nativeErr)));
-            return;
-          }
         }
       }
 
-      // 2. Web Browser Popup Fallback
+      // 2. Web & Mobile Fallback
       const provider = new firebase.auth.GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
 
-      const result = await auth.signInWithPopup(provider);
-      if (result?.user) {
-        currentUser = result.user;
-        updateAuthUI(result.user);
-        await syncCloudEvents();
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      if (isMobile) {
+        await auth.signInWithRedirect(provider);
+      } else {
+        try {
+          const result = await auth.signInWithPopup(provider);
+          if (result?.user) {
+            currentUser = result.user;
+            updateAuthUI(result.user);
+            await syncCloudEvents();
+          }
+        } catch (popupErr) {
+          console.warn('Popup login failed, attempting redirect fallback:', popupErr);
+          await auth.signInWithRedirect(provider);
+        }
       }
     } catch (error) {
       handleAuthError(error);

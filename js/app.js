@@ -1962,7 +1962,16 @@
             const filename = `cue-backup-${dateStr}.json`;
             const blob = new Blob([dataToExport], { type: 'application/json' });
 
-            // 1. Try Web Share API (Works natively on Android WebView & mobile browsers)
+            // Guaranteed fallback: Copy JSON backup to clipboard
+            try {
+              if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+                await navigator.clipboard.writeText(dataToExport);
+              }
+            } catch (clipErr) {
+              console.warn('Clipboard copy warning:', clipErr);
+            }
+
+            // 1. Try Web Share API (Works natively on Android & mobile browsers)
             if (navigator.canShare) {
               try {
                 const file = new File([blob], filename, { type: 'application/json' });
@@ -1971,10 +1980,11 @@
                     title: 'Cue Backup',
                     files: [file]
                   });
+                  customAlert('✓ Backup ready!\n\nJSON data copied to clipboard & opened Share menu.');
                   return;
                 }
               } catch (shareErr) {
-                if (shareErr.name === 'AbortError') return; // User cancelled share dialog
+                if (shareErr.name === 'AbortError') return;
                 console.warn('Web share failed, falling back to Blob download:', shareErr);
               }
             }
@@ -1984,6 +1994,7 @@
             const anchor = document.createElement('a');
             anchor.href = blobUrl;
             anchor.download = filename;
+            anchor.target = '_blank';
             document.body.appendChild(anchor);
             anchor.click();
 
@@ -1993,6 +2004,8 @@
                 document.body.removeChild(anchor);
               }
             }, 1000);
+
+            customAlert('✓ Backup ready!\n\nJSON backup copied to clipboard & download started.');
           } catch (e) {
             customAlert('Could not download backup: ' + e.message);
           }
