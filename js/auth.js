@@ -91,38 +91,32 @@ window.CueAuth = (() => {
     }
 
     try {
-      // 1. Google OAuth2 Token Client (Works in WebViews & mobile without opening Chrome or redirecting!)
-      if (window.google && window.google.accounts && window.google.accounts.oauth2) {
-        const client = window.google.accounts.oauth2.initTokenClient({
-          client_id: '87973671324-928p1drimqk383fofkf4n7cpcnstpsfr.apps.googleusercontent.com',
-          scope: 'profile email',
-          callback: async (tokenResponse) => {
-            if (tokenResponse && tokenResponse.access_token) {
-              try {
-                const credential = firebase.auth.GoogleAuthProvider.credential(null, tokenResponse.access_token);
-                const userCred = await auth.signInWithCredential(credential);
-                if (userCred?.user) {
-                  currentUser = userCred.user;
-                  updateAuthUI(userCred.user);
-                  await syncCloudEvents();
-                  return;
-                }
-              } catch (credErr) {
-                console.warn('Google OAuth token credential error:', credErr);
-                handleAuthError(credErr);
-              }
-            }
-          },
-          error_callback: (err) => {
-            console.warn('Google OAuth token error:', err);
-          }
-        });
+      // 1. Native Capacitor Google Auth Plugin for Android App
+      const isNative = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
+      const GoogleAuth = (window.Capacitor && window.Capacitor.Plugins) ? window.Capacitor.Plugins.GoogleAuth : null;
 
-        client.requestAccessToken({ prompt: 'select_account' });
-        return;
+      if (isNative && GoogleAuth && typeof GoogleAuth.signIn === 'function') {
+        try {
+          const googleUser = await GoogleAuth.signIn();
+          const idToken = googleUser?.authentication?.idToken || googleUser?.idToken || googleUser?.authentication?.id_token;
+          if (idToken) {
+            const credential = firebase.auth.GoogleAuthProvider.credential(idToken);
+            const userCred = await auth.signInWithCredential(credential);
+            if (userCred?.user) {
+              currentUser = userCred.user;
+              updateAuthUI(userCred.user);
+              await syncCloudEvents();
+              return;
+            }
+          }
+        } catch (nativeErr) {
+          console.warn('Native Google Auth error:', nativeErr);
+          alert('Native Google Sign-In: ' + (nativeErr?.message || nativeErr?.error || String(nativeErr)));
+          return;
+        }
       }
 
-      // 2. Fallback to standard Firebase popup
+      // 2. Web Browser Popup Fallback
       const provider = new firebase.auth.GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
       const result = await auth.signInWithPopup(provider);
