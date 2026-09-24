@@ -17,11 +17,6 @@ public class MainActivity extends BridgeActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Register native GoogleAuth plugin
-        try {
-            this.registerPlugin(com.codetrixstudio.capacitor.GoogleAuth.GoogleAuth.class);
-        } catch (Exception ignored) {}
-
         // Enable Android WebView Download Listener
         if (getBridge() != null && getBridge().getWebView() != null) {
             getBridge().getWebView().setDownloadListener((url, userAgent, contentDisposition, mimetype, contentLength) -> {

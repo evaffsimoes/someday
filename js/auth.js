@@ -91,23 +91,12 @@ window.CueAuth = (() => {
     }
 
     try {
-      // 1. Native Capacitor Google Auth Plugin for Android App
+      // 1. Try Native Capacitor Google Auth Plugin if safely loaded
       const isNative = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
       const GoogleAuth = (window.Capacitor && window.Capacitor.Plugins) ? window.Capacitor.Plugins.GoogleAuth : null;
 
-      if (GoogleAuth && typeof GoogleAuth.signIn === 'function') {
+      if (isNative && GoogleAuth && typeof GoogleAuth.signIn === 'function') {
         try {
-          if (!isNative && typeof GoogleAuth.initialize === 'function') {
-            try {
-              await GoogleAuth.initialize({
-                clientId: '87973671324-928p1drimqk383fofkf4n7cpcnstpsfr.apps.googleusercontent.com',
-                scopes: ['profile', 'email'],
-                grantOfflineAccess: true
-              });
-            } catch (initErr) {
-              console.warn('GoogleAuth.initialize error:', initErr);
-            }
-          }
           const googleUser = await GoogleAuth.signIn();
           const idToken = googleUser?.authentication?.idToken || googleUser?.idToken || googleUser?.authentication?.id_token;
           if (idToken) {
@@ -121,7 +110,7 @@ window.CueAuth = (() => {
             }
           }
         } catch (nativeErr) {
-          console.warn('Native Google Auth error:', nativeErr);
+          console.warn('Native Google Auth failed/cancelled, trying web popup fallback:', nativeErr);
         }
       }
 
