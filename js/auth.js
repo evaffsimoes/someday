@@ -91,30 +91,6 @@ window.CueAuth = (() => {
     }
 
     try {
-      // 1. Try Native Capacitor Google Auth Plugin if safely loaded
-      const isNative = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
-      const GoogleAuth = (window.Capacitor && window.Capacitor.Plugins) ? window.Capacitor.Plugins.GoogleAuth : null;
-
-      if (isNative && GoogleAuth && typeof GoogleAuth.signIn === 'function') {
-        try {
-          const googleUser = await GoogleAuth.signIn();
-          const idToken = googleUser?.authentication?.idToken || googleUser?.idToken || googleUser?.authentication?.id_token;
-          if (idToken) {
-            const credential = firebase.auth.GoogleAuthProvider.credential(idToken);
-            const userCred = await auth.signInWithCredential(credential);
-            if (userCred?.user) {
-              currentUser = userCred.user;
-              updateAuthUI(userCred.user);
-              await syncCloudEvents();
-              return;
-            }
-          }
-        } catch (nativeErr) {
-          console.warn('Native Google Auth failed/cancelled, trying web popup fallback:', nativeErr);
-        }
-      }
-
-      // 2. Standard Firebase Web Popup
       const provider = new firebase.auth.GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
 
