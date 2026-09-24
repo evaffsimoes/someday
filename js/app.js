@@ -1958,16 +1958,21 @@
               ? JSON.stringify(state.events, null, 2)
               : (localStorage.getItem(STORE_KEY) || '[]');
 
-            const blob = new Blob([dataToExport], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
+            const dateStr = new Date().toISOString().slice(0, 10);
+            const filename = `cue-backup-${dateStr}.json`;
+            const dataUrl = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataToExport);
+
             const anchor = document.createElement('a');
-            anchor.href = url;
-            anchor.download = 'cue-backup.json';
+            anchor.href = dataUrl;
+            anchor.download = filename;
+            anchor.target = '_blank';
             document.body.appendChild(anchor);
             anchor.click();
+
             setTimeout(() => {
-              document.body.removeChild(anchor);
-              URL.revokeObjectURL(url);
+              if (document.body.contains(anchor)) {
+                document.body.removeChild(anchor);
+              }
             }, 500);
           } catch (e) {
             customAlert('Could not download backup: ' + e.message);
