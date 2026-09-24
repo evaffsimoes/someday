@@ -91,10 +91,20 @@ window.CueAuth = (() => {
     }
 
     try {
-      // 1. Native Capacitor Google Auth Plugin (Android native bottom sheet, no redirects/blank screens)
-      if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.GoogleAuth) {
+      // 1. Native Capacitor Google Auth Plugin for Android App
+      const isNative = window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform();
+      const GoogleAuth = window.Capacitor?.Plugins?.GoogleAuth;
+
+      if (isNative || GoogleAuth) {
         try {
-          const googleUser = await window.Capacitor.Plugins.GoogleAuth.signIn();
+          if (GoogleAuth.initialize) {
+            await GoogleAuth.initialize({
+              clientId: '87973671324-face01e87135d4e153d859.apps.googleusercontent.com',
+              scopes: ['profile', 'email'],
+              grantOfflineAccess: true
+            });
+          }
+          const googleUser = await GoogleAuth.signIn();
           const idToken = googleUser?.authentication?.idToken || googleUser?.idToken;
           if (idToken) {
             const credential = firebase.auth.GoogleAuthProvider.credential(idToken);
@@ -108,10 +118,14 @@ window.CueAuth = (() => {
           }
         } catch (nativeErr) {
           console.warn('Native Google Auth error:', nativeErr);
+          if (isNative) {
+            alert('Native Google Sign-In: ' + (nativeErr?.message || nativeErr?.error || 'Please ensure Google Play Services is enabled on device.'));
+            return;
+          }
         }
       }
 
-      // 2. Web Browser Popup
+      // 2. Web Browser Popup Fallback
       const provider = new firebase.auth.GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
 
