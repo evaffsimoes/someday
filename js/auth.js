@@ -92,17 +92,21 @@ window.CueAuth = (() => {
 
     try {
       // 1. Native Capacitor Google Auth Plugin for Android App
-      const isNative = window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform();
-      const GoogleAuth = window.Capacitor?.Plugins?.GoogleAuth;
+      const isNative = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
+      const GoogleAuth = (window.Capacitor && window.Capacitor.Plugins) ? window.Capacitor.Plugins.GoogleAuth : null;
 
       if (GoogleAuth && typeof GoogleAuth.signIn === 'function') {
         try {
-          if (typeof GoogleAuth.initialize === 'function') {
-            await GoogleAuth.initialize({
-              clientId: '87973671324-face01e87135d4e153d859.apps.googleusercontent.com',
-              scopes: ['profile', 'email'],
-              grantOfflineAccess: true
-            });
+          if (!isNative && typeof GoogleAuth.initialize === 'function') {
+            try {
+              await GoogleAuth.initialize({
+                clientId: '87973671324-face01e87135d4e153d859.apps.googleusercontent.com',
+                scopes: ['profile', 'email'],
+                grantOfflineAccess: true
+              });
+            } catch (initErr) {
+              console.warn('GoogleAuth.initialize error (ignored on native/web fallback):', initErr);
+            }
           }
           const googleUser = await GoogleAuth.signIn();
           const idToken = googleUser?.authentication?.idToken || googleUser?.idToken || googleUser?.authentication?.id_token;

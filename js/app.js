@@ -1952,7 +1952,7 @@
           customAlert('Preferences saved!');
         };
 
-        document.getElementById('exportFileBtn').onclick = () => {
+        document.getElementById('exportFileBtn').onclick = async () => {
           try {
             const dataToExport = (state.events && state.events.length > 0)
               ? JSON.stringify(state.events, null, 2)
@@ -1960,20 +1960,39 @@
 
             const dateStr = new Date().toISOString().slice(0, 10);
             const filename = `cue-backup-${dateStr}.json`;
-            const dataUrl = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataToExport);
+            const blob = new Blob([dataToExport], { type: 'application/json' });
 
+            // 1. Try Web Share API (Works natively on Android WebView & mobile browsers)
+            if (navigator.canShare) {
+              try {
+                const file = new File([blob], filename, { type: 'application/json' });
+                if (navigator.canShare({ files: [file] })) {
+                  await navigator.share({
+                    title: 'Cue Backup',
+                    files: [file]
+                  });
+                  return;
+                }
+              } catch (shareErr) {
+                if (shareErr.name === 'AbortError') return; // User cancelled share dialog
+                console.warn('Web share failed, falling back to Blob download:', shareErr);
+              }
+            }
+
+            // 2. Blob URL Download Fallback
+            const blobUrl = URL.createObjectURL(blob);
             const anchor = document.createElement('a');
-            anchor.href = dataUrl;
+            anchor.href = blobUrl;
             anchor.download = filename;
-            anchor.target = '_blank';
             document.body.appendChild(anchor);
             anchor.click();
 
             setTimeout(() => {
+              URL.revokeObjectURL(blobUrl);
               if (document.body.contains(anchor)) {
                 document.body.removeChild(anchor);
               }
-            }, 500);
+            }, 1000);
           } catch (e) {
             customAlert('Could not download backup: ' + e.message);
           }
