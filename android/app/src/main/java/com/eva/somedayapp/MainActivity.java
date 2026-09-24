@@ -17,6 +17,22 @@ public class MainActivity extends BridgeActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // Register native GoogleAuth plugin
+        try {
+            this.registerPlugin(com.codetrixstudio.capacitor.GoogleAuth.GoogleAuth.class);
+        } catch (Exception ignored) {}
+
+        // Enable Android WebView Download Listener
+        if (getBridge() != null && getBridge().getWebView() != null) {
+            getBridge().getWebView().setDownloadListener((url, userAgent, contentDisposition, mimetype, contentLength) -> {
+                try {
+                    Intent i = new Intent(Intent.ACTION_VIEW);
+                    i.setData(Uri.parse(url));
+                    startActivity(i);
+                } catch (Exception ignored) {}
+            });
+        }
+
         // Handle share intent if app was opened via share sheet
         handleShareIntent(getIntent());
         handleWidgetOpenIntent(getIntent());
