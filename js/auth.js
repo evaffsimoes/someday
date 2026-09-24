@@ -91,20 +91,35 @@ window.CueAuth = (() => {
     }
 
     try {
+      // 1. Native Capacitor Google Auth Plugin (Android native bottom sheet, no redirects/blank screens)
+      if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.GoogleAuth) {
+        try {
+          const googleUser = await window.Capacitor.Plugins.GoogleAuth.signIn();
+          const idToken = googleUser?.authentication?.idToken || googleUser?.idToken;
+          if (idToken) {
+            const credential = firebase.auth.GoogleAuthProvider.credential(idToken);
+            const userCred = await auth.signInWithCredential(credential);
+            if (userCred?.user) {
+              currentUser = userCred.user;
+              updateAuthUI(userCred.user);
+              await syncCloudEvents();
+              return;
+            }
+          }
+        } catch (nativeErr) {
+          console.warn('Native Google Auth error:', nativeErr);
+        }
+      }
+
+      // 2. Web Browser Popup
       const provider = new firebase.auth.GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
 
-      try {
-        const result = await auth.signInWithPopup(provider);
-        if (result?.user) {
-          currentUser = result.user;
-          updateAuthUI(result.user);
-          await syncCloudEvents();
-          return;
-        }
-      } catch (popupErr) {
-        console.warn('Popup sign in unavailable, redirecting in-app:', popupErr);
-        await auth.signInWithRedirect(provider);
+      const result = await auth.signInWithPopup(provider);
+      if (result?.user) {
+        currentUser = result.user;
+        updateAuthUI(result.user);
+        await syncCloudEvents();
       }
     } catch (error) {
       handleAuthError(error);
