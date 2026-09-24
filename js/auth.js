@@ -44,6 +44,16 @@ window.CueAuth = (() => {
           await syncCloudEvents();
         }
       });
+
+      auth.getRedirectResult().then(async result => {
+        if (result && result.user) {
+          currentUser = result.user;
+          updateAuthUI(result.user);
+          await syncCloudEvents();
+        }
+      }).catch(err => {
+        console.warn('In-app redirect result check:', err);
+      });
     } catch (err) {
       console.warn('cue Cloud Sync initialization error:', err);
     }
@@ -84,21 +94,20 @@ window.CueAuth = (() => {
       const provider = new firebase.auth.GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
 
-      const result = await auth.signInWithPopup(provider);
-      if (result?.user) {
-        currentUser = result.user;
-        updateAuthUI(result.user);
-        await syncCloudEvents();
+      try {
+        const result = await auth.signInWithPopup(provider);
+        if (result?.user) {
+          currentUser = result.user;
+          updateAuthUI(result.user);
+          await syncCloudEvents();
+          return;
+        }
+      } catch (popupErr) {
+        console.warn('Popup sign in unavailable, redirecting in-app:', popupErr);
+        await auth.signInWithRedirect(provider);
       }
     } catch (error) {
-      const code = error.code || '';
-      const msg = error.message || '';
-      if (code === 'auth/operation-not-supported-in-this-environment' || code === 'auth/disallowed_useragent' || msg.includes('disallowed_useragent')) {
-        alert('Google Sign-In inside Android app requires opening Chrome. Opening Web app...');
-        window.open('https://someday-nu.vercel.app', '_system');
-      } else {
-        handleAuthError(error);
-      }
+      handleAuthError(error);
     }
   }
 
