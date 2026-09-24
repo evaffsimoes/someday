@@ -85,23 +85,7 @@ window.CueAuth = (() => {
   }
 
   async function signInWithGoogle() {
-    if (!isConfigured || !auth) {
-      alert('Cloud Sync requires setting up your Firebase credentials in js/config.js.');
-      return;
-    }
-
-    try {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: 'select_account' });
-      const result = await auth.signInWithPopup(provider);
-      if (result?.user) {
-        currentUser = result.user;
-        updateAuthUI(result.user);
-        await syncCloudEvents();
-      }
-    } catch (error) {
-      handleAuthError(error);
-    }
+    console.log('Google Auth has been removed.');
   }
 
   async function signOutUser() {

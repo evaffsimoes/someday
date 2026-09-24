@@ -4,5 +4,4 @@
     <string name="title_activity_main">cue</string>
     <string name="package_name">com.eva.somedayapp</string>
     <string name="custom_url_scheme">com.eva.somedayapp</string>
-    <string name="server_client_id">87973671324-928p1drimqk383fofkf4n7cpcnstpsfr.apps.googleusercontent.com</string>
 </resources>
