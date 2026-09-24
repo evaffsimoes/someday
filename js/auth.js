@@ -91,32 +91,6 @@ window.CueAuth = (() => {
     }
 
     try {
-      // 1. Native Capacitor Google Auth Plugin for Android App
-      const isNative = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
-      const GoogleAuth = (window.Capacitor && window.Capacitor.Plugins) ? window.Capacitor.Plugins.GoogleAuth : null;
-
-      if (isNative && GoogleAuth && typeof GoogleAuth.signIn === 'function') {
-        try {
-          const googleUser = await GoogleAuth.signIn();
-          const idToken = googleUser?.authentication?.idToken || googleUser?.idToken || googleUser?.authentication?.id_token;
-          if (idToken) {
-            const credential = firebase.auth.GoogleAuthProvider.credential(idToken);
-            const userCred = await auth.signInWithCredential(credential);
-            if (userCred?.user) {
-              currentUser = userCred.user;
-              updateAuthUI(userCred.user);
-              await syncCloudEvents();
-              return;
-            }
-          }
-        } catch (nativeErr) {
-          console.warn('Native Google Auth error:', nativeErr);
-          alert('Native Google Sign-In: ' + (nativeErr?.message || nativeErr?.error || String(nativeErr)));
-          return;
-        }
-      }
-
-      // 2. Web Browser Popup Fallback
       const provider = new firebase.auth.GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
       const result = await auth.signInWithPopup(provider);
