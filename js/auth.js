@@ -81,7 +81,6 @@ window.CueAuth = (() => {
     }
 
     try {
-      // Synchronous popup call inside user click gesture (prevents Android Chrome popup blocking)
       const provider = new firebase.auth.GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
 
@@ -92,7 +91,14 @@ window.CueAuth = (() => {
         await syncCloudEvents();
       }
     } catch (error) {
-      handleAuthError(error);
+      const code = error.code || '';
+      const msg = error.message || '';
+      if (code === 'auth/operation-not-supported-in-this-environment' || code === 'auth/disallowed_useragent' || msg.includes('disallowed_useragent')) {
+        alert('Google Sign-In inside Android app requires opening Chrome. Opening Web app...');
+        window.open('https://someday-nu.vercel.app', '_system');
+      } else {
+        handleAuthError(error);
+      }
     }
   }
 
