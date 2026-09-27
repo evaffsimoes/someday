@@ -99,12 +99,49 @@ window.CueAuth = (() => {
     }
   }
 
+  const GOOGLE_CLIENT_ID = '149306620761-0p7493812f2oirsg37u95o5cfqvf42tg.apps.googleusercontent.com';
+
   async function signInWithGoogle() {
     if (!auth) {
       alert('Firebase Auth is not initialized or credentials are missing.');
       return;
     }
 
+    // 1. Try Google Identity Services SDK (GIS) natively inside the app
+    if (window.google && window.google.accounts && window.google.accounts.id) {
+      try {
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: async (response) => {
+            if (response && response.credential) {
+              try {
+                const credential = firebase.auth.GoogleAuthProvider.credential(response.credential);
+                const userCred = await auth.signInWithCredential(credential);
+                currentUser = userCred.user;
+                updateAuthUI(userCred.user);
+                await syncCloudEvents();
+              } catch (err) {
+                handleAuthError(err);
+              }
+            }
+          }
+        });
+
+        window.google.accounts.id.prompt(notification => {
+          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+            fallbackGoogleSignIn();
+          }
+        });
+        return;
+      } catch (gisErr) {
+        console.warn('GIS Auth error, trying fallback:', gisErr);
+      }
+    }
+
+    await fallbackGoogleSignIn();
+  }
+
+  async function fallbackGoogleSignIn() {
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.addScope('profile');
     provider.addScope('email');
