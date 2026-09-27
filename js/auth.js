@@ -107,7 +107,37 @@ window.CueAuth = (() => {
       return;
     }
 
-    // 1. Try Google Identity Services SDK (GIS) natively inside the app
+    const GoogleAuthPlugin = window.Capacitor?.Plugins?.GoogleAuth || window.plugins?.GoogleAuth;
+
+    // 1. Native Capacitor GoogleAuth plugin (opens native Android account picker)
+    if (GoogleAuthPlugin && typeof GoogleAuthPlugin.signIn === 'function') {
+      try {
+        if (typeof GoogleAuthPlugin.initialize === 'function') {
+          try {
+            await GoogleAuthPlugin.initialize({
+              clientId: GOOGLE_CLIENT_ID,
+              scopes: ['profile', 'email'],
+              grantOfflineAccess: true
+            });
+          } catch (initErr) {}
+        }
+        const gUser = await GoogleAuthPlugin.signIn();
+        const idToken = gUser?.authentication?.idToken || gUser?.idToken;
+
+        if (idToken) {
+          const credential = firebase.auth.GoogleAuthProvider.credential(idToken);
+          const userCred = await auth.signInWithCredential(credential);
+          currentUser = userCred.user;
+          updateAuthUI(userCred.user);
+          await syncCloudEvents();
+          return;
+        }
+      } catch (nativeErr) {
+        console.warn('Native GoogleAuth plugin error, trying web fallback:', nativeErr);
+      }
+    }
+
+    // 2. Google Identity Services (GIS) Web SDK
     if (window.google && window.google.accounts && window.google.accounts.id) {
       try {
         window.google.accounts.id.initialize({

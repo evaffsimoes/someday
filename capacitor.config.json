@@ -5,5 +5,12 @@
   "server": {
     "url": "https://someday-nu.vercel.app",
     "cleartext": true
+  },
+  "plugins": {
+    "GoogleAuth": {
+      "scopes": ["profile", "email"],
+      "serverClientId": "149306620761-0p7493812f2oirsg37u95o5cfqvf42tg.apps.googleusercontent.com",
+      "forceCodeForRefreshToken": true
+    }
   }
 }
