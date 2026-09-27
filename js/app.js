@@ -2004,21 +2004,29 @@
 
             const dateStr = new Date().toISOString().slice(0, 10);
             const filename = `cue-backup-${dateStr}.json`;
-            const blob = new Blob([dataToExport], { type: 'application/json' });
+            const encodedData = encodeURIComponent(dataToExport);
+            const dataUrl = 'data:application/json;charset=utf-8,' + encodedData;
 
-            const blobUrl = URL.createObjectURL(blob);
+            // 1. Direct window navigation / location trigger for Android WebView
+            const isNative = !!(window.Capacitor?.isNative || window.Capacitor?.native);
+            if (isNative || !('download' in document.createElement('a'))) {
+              window.open(dataUrl, '_blank');
+              customAlert('✓ Backup JSON opened! Use Save / Share to store it.');
+              return;
+            }
+
+            // 2. Standard Browser anchor trigger
             const anchor = document.createElement('a');
-            anchor.href = blobUrl;
+            anchor.href = dataUrl;
             anchor.download = filename;
-            anchor.style.display = 'none';
+            anchor.target = '_blank';
             document.body.appendChild(anchor);
             anchor.click();
 
             setTimeout(() => {
-              URL.revokeObjectURL(blobUrl);
               if (document.body.contains(anchor)) document.body.removeChild(anchor);
-            }, 2000);
-            customAlert(`✓ Ficheiro '${filename}' descarregado para a pasta Downloads!`);
+            }, 1000);
+            customAlert(`✓ Ficheiro descarregado: ${filename}`);
           } catch (e) {
             customAlert('Could not export backup: ' + e.message);
           }
