@@ -1272,10 +1272,15 @@
         `;
 
         overlay.style.display = 'flex';
+        overlay.style.visibility = 'visible';
+        overlay.style.opacity = '1';
+        overlay.style.zIndex = '99999';
         overlay.classList.add('active');
 
         const closeModal = () => {
           overlay.style.display = 'none';
+          overlay.style.visibility = 'hidden';
+          overlay.style.opacity = '0';
           overlay.classList.remove('active');
         };
         document.getElementById('closeModalBtn').onclick = closeModal;
