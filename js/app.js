@@ -1265,9 +1265,13 @@
           </div>
         `;
 
+        overlay.style.display = 'flex';
         overlay.classList.add('active');
 
-        const closeModal = () => overlay.classList.remove('active');
+        const closeModal = () => {
+          overlay.style.display = 'none';
+          overlay.classList.remove('active');
+        };
         document.getElementById('closeModalBtn').onclick = closeModal;
         overlay.onclick = e => {
           if (e.target === overlay) closeModal();
