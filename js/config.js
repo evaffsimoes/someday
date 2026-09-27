@@ -3,12 +3,11 @@
  */
 
 window.CUE_FIREBASE_CONFIG = {
-  apiKey: "AIzaSyDo1Ky9P0cH2KIWErXti0Lzzj3a8uNrVzo",
-  authDomain: "cue-events-21ac9.firebaseapp.com",
-  databaseURL: "https://cue-events-21ac9-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "cue-events-21ac9",
-  storageBucket: "cue-events-21ac9.firebasestorage.app",
-  messagingSenderId: "87973671324",
-  appId: "1:87973671324:android:8ee151b36003166b53d859",
-  measurementId: "G-H3Q4JG3FX6"
+  apiKey: "AIzaSyDaP-4tCRmwXrdo4l3zAJIz257TG9s_15A",
+  authDomain: "cue-app-cab02.firebaseapp.com",
+  databaseURL: "https://cue-app-cab02-default-rtdb.firebaseio.com",
+  projectId: "cue-app-cab02",
+  storageBucket: "cue-app-cab02.firebasestorage.app",
+  messagingSenderId: "149306620761",
+  appId: "1:149306620761:web:b746ff365f17d4f946aa48"
 };
