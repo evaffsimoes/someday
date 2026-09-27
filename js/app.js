@@ -762,7 +762,7 @@
       }
 
       function restoreAddOptions() {
-        ['btnOptionScreenshot', 'btnOptionManual'].forEach(id => {
+        ['btnOptionLink', 'btnOptionScreenshot', 'btnOptionManual'].forEach(id => {
           const element = document.getElementById(id);
           if (element) element.style.display = '';
         });
@@ -774,7 +774,7 @@
       function openReview(prefill, focusField = '') {
         const isEditing = !!(prefill && prefill.id);
 
-        ['btnOptionScreenshot', 'btnOptionManual'].forEach(id => {
+        ['btnOptionLink', 'btnOptionScreenshot', 'btnOptionManual'].forEach(id => {
           const element = document.getElementById(id);
           if (element) element.style.display = isEditing ? 'none' : '';
         });
@@ -1898,6 +1898,13 @@
           state.calCurrentDate.setMonth(state.calCurrentDate.getMonth() + 1);
           renderCalendar();
         };
+
+        const btnOptionLink = document.getElementById('btnOptionLink');
+        if (btnOptionLink) {
+          btnOptionLink.onclick = () => {
+            openLinkInput();
+          };
+        }
 
         document.getElementById('btnOptionScreenshot').onclick = () => {
           closeLinkInput();
