@@ -1916,6 +1916,7 @@
 
         document.addEventListener('click', event => {
           if (event.target.id === 'addCloseBtn') switchTab('queue');
+          if (document.querySelector('.modal-overlay.active')) return;
           const viewTarget = event.target.closest('[data-view]');
           if (viewTarget) {
             const id = viewTarget.getAttribute('data-view');
