@@ -2006,7 +2006,7 @@
             const filename = `cue-backup-${dateStr}.json`;
             const blob = new Blob([dataToExport], { type: 'application/json' });
 
-            // 1. Try Web Share API (native share to files / drive / whatsapp)
+            // 1. Try Web Share API (native share dialog)
             if (navigator.canShare) {
               try {
                 const file = new File([blob], filename, { type: 'application/json' });
@@ -2022,18 +2022,33 @@
               }
             }
 
-            // 2. Direct anchor download fallback
-            const blobUrl = URL.createObjectURL(blob);
-            const anchor = document.createElement('a');
-            anchor.href = blobUrl;
-            anchor.download = filename;
-            anchor.click();
+            // 2. Try Direct Data URI / Blob Download
+            try {
+              const dataUrl = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataToExport);
+              const anchor = document.createElement('a');
+              anchor.href = dataUrl;
+              anchor.download = filename;
+              anchor.style.display = 'none';
+              document.body.appendChild(anchor);
+              anchor.click();
 
-            setTimeout(() => {
-              URL.revokeObjectURL(blobUrl);
-            }, 2000);
+              setTimeout(() => {
+                if (document.body.contains(anchor)) document.body.removeChild(anchor);
+              }, 1000);
+            } catch (dlErr) {
+              console.warn('Anchor click download failed:', dlErr);
+            }
+
+            // 3. Fallback: Prompt user to copy JSON text directly
+            const openWindow = window.open();
+            if (openWindow) {
+              openWindow.document.write(`<pre style="word-break:break-all; font-family:monospace;">${escapeHtml(dataToExport)}</pre>`);
+              openWindow.document.title = filename;
+            } else {
+              prompt('Copy your backup JSON code below:', dataToExport);
+            }
           } catch (e) {
-            customAlert('Could not export backup: ' + e.message);
+            alert('Could not export backup: ' + e.message);
           }
         };
 
