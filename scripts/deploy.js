@@ -56,7 +56,7 @@ for (const dir of dirsToCopy) {
 
 // 2. Sync Android
 console.log('\n2. Syncing to Android...');
-run('npx cap copy android');
+run('npx cap sync android');
 
 // 3. Git commit & push
 console.log('\n3. Pushing to Git...');
