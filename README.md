@@ -1,9 +1,9 @@
-# Saved for Someday — self-hosting guide
+# cue — self-hosting guide
 
 This folder is a complete installable PWA. Once it's hosted on a real
-HTTPS domain and installed to your Android home screen, "Saved for
-Someday" will show up in Instagram's native Share menu, right next to
+HTTPS domain and installed to your Android home screen, "cue" will show up in Instagram's native Share menu, right next to
 WhatsApp and Messages.
+
 
 ## What's in here
 - `index.html` — the app itself
@@ -36,7 +36,7 @@ Get a free API key from [Google AI Studio](https://aistudio.google.com/app/apike
 
 ## Using it from Instagram
 1. Find an event post, tap **Share** (the paper-plane icon).
-2. In the share sheet, scroll the app list — **"Saved for Someday"**
+2. In the share sheet, scroll the app list — **"cue"**
    should now appear there.
 3. Tap it. The app opens, reads the image, and shows you the extracted
    event details to confirm and save.
