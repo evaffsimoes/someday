@@ -1541,13 +1541,44 @@
       }
 
       function loadNotificationPrefs() {
+        const defaultPrefs = {
+          leadTimes: ['7', '1', '1h', '15m', '0'],
+          preferredTime: '09:00',
+          quietHoursEnabled: false,
+          quietStart: '22:00',
+          quietEnd: '08:00'
+        };
         try {
-          const prefs = JSON.parse(localStorage.getItem('cue-notification-prefs'));
-          if (prefs) return prefs;
+          const raw = localStorage.getItem('cue-notification-prefs');
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+              return { ...defaultPrefs, leadTimes: parsed.map(String) };
+            }
+            if (typeof parsed === 'object' && parsed !== null) {
+              return { ...defaultPrefs, ...parsed };
+            }
+          }
         } catch (error) {
-          // Fall through.
+          // Fall through
         }
-        return [7, 1, '1h', 0];
+        return defaultPrefs;
+      }
+
+      function isQuietHours(prefs) {
+        if (!prefs || !prefs.quietHoursEnabled) return false;
+        const now = new Date();
+        const currentMins = now.getHours() * 60 + now.getMinutes();
+        const [sH, sM] = (prefs.quietStart || '22:00').split(':').map(Number);
+        const [eH, eM] = (prefs.quietEnd || '08:00').split(':').map(Number);
+        const startMins = (sH || 0) * 60 + (sM || 0);
+        const endMins = (eH || 0) * 60 + (eM || 0);
+
+        if (startMins < endMins) {
+          return currentMins >= startMins && currentMins < endMins;
+        } else {
+          return currentMins >= startMins || currentMins < endMins;
+        }
       }
 
       async function openSettingsModal() {
@@ -1560,10 +1591,30 @@
           }
         }
         const prefs = loadNotificationPrefs();
-        [7, 1, '1h', 0].forEach(key => {
+
+        ['15m', '1h', '0', '1', '3', '7'].forEach(key => {
           const checkbox = document.getElementById(`pref-${key}`);
-          if (checkbox) checkbox.checked = prefs.includes(key) || prefs.includes(Number(key));
+          if (checkbox) checkbox.checked = (prefs.leadTimes || []).includes(key);
         });
+
+        const timeInput = document.getElementById('pref-time');
+        if (timeInput) timeInput.value = prefs.preferredTime || '09:00';
+
+        const quietToggle = document.getElementById('pref-quiet-toggle');
+        const quietInputs = document.getElementById('quietHoursInputs');
+        const quietStart = document.getElementById('pref-quiet-start');
+        const quietEnd = document.getElementById('pref-quiet-end');
+
+        if (quietToggle) {
+          quietToggle.checked = !!prefs.quietHoursEnabled;
+          if (quietInputs) quietInputs.style.display = quietToggle.checked ? 'grid' : 'none';
+          quietToggle.onchange = () => {
+            if (quietInputs) quietInputs.style.display = quietToggle.checked ? 'grid' : 'none';
+          };
+        }
+        if (quietStart) quietStart.value = prefs.quietStart || '22:00';
+        if (quietEnd) quietEnd.value = prefs.quietEnd || '08:00';
+
         document.getElementById('settingsModalOverlay').classList.add('active');
       }
 
@@ -1662,10 +1713,12 @@
         updateAppBadge();
 
         const now = new Date();
-        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-        const todayDate = new Date(`${todayStr}T00:00:00`);
         const sent = JSON.parse(localStorage.getItem(NOTIFICATION_KEY) || '{}');
-        const alertDays = loadNotificationPrefs();
+        const prefs = loadNotificationPrefs();
+        const leadTimes = prefs.leadTimes || [];
+
+        // Skip non-urgent notifications during Quiet Hours
+        if (isQuietHours(prefs)) return;
 
         state.events.forEach(event => {
           if (!event.startDate) return;
@@ -1681,8 +1734,29 @@
           const diffMs = eventDate.getTime() - localToday.getTime();
           const daysUntil = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
-          // 1. Check 1 hour before reminder
-          if (alertDays.includes('1h')) {
+          // 1. Check 15 minutes before reminder
+          if (leadTimes.includes('15m')) {
+            const timeUntilMs = fullStart.getTime() - now.getTime();
+            const minsUntil = Math.floor(timeUntilMs / (1000 * 60));
+            if (minsUntil >= 0 && minsUntil <= 20) {
+              const key15m = `${event.id}-${event.startDate}-15m`;
+              if (!sent[key15m]) {
+                const timeText = event.time ? ` · ${event.time}` : '';
+                const locationText = [event.venue, event.city].filter(Boolean).join(' · ');
+                triggerNotification('Event starts in 15 minutes!', {
+                  body: `${event.artist || 'Event'}${timeText}${locationText ? ` · ${locationText}` : ''}`,
+                  icon: 'icon-192.png',
+                  badge: 'icon-192.png',
+                  tag: key15m,
+                  renotify: true
+                });
+                sent[key15m] = true;
+              }
+            }
+          }
+
+          // 2. Check 1 hour before reminder
+          if (leadTimes.includes('1h')) {
             const timeUntilMs = fullStart.getTime() - now.getTime();
             const minsUntil = Math.floor(timeUntilMs / (1000 * 60));
             if (minsUntil >= 0 && minsUntil <= 65) {
@@ -1702,8 +1776,8 @@
             }
           }
 
-          // 2. Check days before reminder (7 days, 1 day, Day of event = 0)
-          const matchesPref = alertDays.some(pref => Number(pref) === daysUntil || String(pref) === String(daysUntil));
+          // 3. Check days before reminder (7 days, 3 days, 1 day, Day of event = 0)
+          const matchesPref = leadTimes.some(pref => Number(pref) === daysUntil || String(pref) === String(daysUntil));
           if (matchesPref) {
             const key = `${event.id}-${event.startDate}-d${daysUntil}`;
             if (!sent[key]) {
@@ -1986,14 +2060,28 @@
         };
 
         document.getElementById('saveSettingsBtn').onclick = () => {
-          const prefs = [7, 1, '1h', 0].filter(key => {
+          const leadTimes = ['15m', '1h', '0', '1', '3', '7'].filter(key => {
             const el = document.getElementById(`pref-${key}`);
             return el && el.checked;
           });
+
+          const preferredTime = document.getElementById('pref-time')?.value || '09:00';
+          const quietHoursEnabled = !!document.getElementById('pref-quiet-toggle')?.checked;
+          const quietStart = document.getElementById('pref-quiet-start')?.value || '22:00';
+          const quietEnd = document.getElementById('pref-quiet-end')?.value || '08:00';
+
+          const prefs = {
+            leadTimes,
+            preferredTime,
+            quietHoursEnabled,
+            quietStart,
+            quietEnd
+          };
+
           localStorage.setItem('cue-notification-prefs', JSON.stringify(prefs));
           document.getElementById('settingsModalOverlay').classList.remove('active');
           checkEventNotifications();
-          customAlert('Preferences saved!');
+          customAlert('✓ Notification preferences saved!');
         };
 
         document.getElementById('exportFileBtn').onclick = async () => {

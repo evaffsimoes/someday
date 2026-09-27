@@ -226,16 +226,46 @@
       <p style="font-size:13px; color:var(--text-muted); margin:0;">Choose any reminder days for your events.</p>
 
       <div class="reminder-options">
-        <label class="reminder-option"><input type="checkbox" id="pref-7" checked> 1 week before</label>
-        <label class="reminder-option"><input type="checkbox" id="pref-1" checked> 1 day before</label>
+        <label class="reminder-option"><input type="checkbox" id="pref-15m" checked> 15m before</label>
         <label class="reminder-option"><input type="checkbox" id="pref-1h" checked> 1 hour before</label>
         <label class="reminder-option"><input type="checkbox" id="pref-0" checked> Day of event</label>
+        <label class="reminder-option"><input type="checkbox" id="pref-1" checked> 1 day before</label>
+        <label class="reminder-option"><input type="checkbox" id="pref-3"> 3 days before</label>
+        <label class="reminder-option"><input type="checkbox" id="pref-7" checked> 1 week before</label>
+
+
+
       </div>
 
 
 
+      <div style="margin-top:16px;">
+        <label style="font-size:12px; font-weight:600; color:var(--text-muted); display:block; margin-bottom:6px;">Daily Notification Time</label>
+        <input type="time" id="pref-time" value="09:00" style="background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:10px; color:#fff; padding:8px 12px; font-size:13px; width:100%; box-sizing:border-box;">
+      </div>
+
+      <div style="margin-top:16px; border-top:1px solid var(--border); padding-top:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <div>
+            <span style="font-size:13px; font-weight:600; color:#fff; display:block;">Quiet Hours (Do Not Disturb)</span>
+            <span style="font-size:11px; color:var(--text-muted);">Mute non-urgent alerts during rest hours</span>
+          </div>
+          <input type="checkbox" id="pref-quiet-toggle" style="accent-color:#c084fc; width:18px; height:18px; cursor:pointer;">
+        </div>
+        <div id="quietHoursInputs" style="display:none; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
+          <div>
+            <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:4px;">Start Time</label>
+            <input type="time" id="pref-quiet-start" value="22:00" style="background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:10px; color:#fff; padding:8px; font-size:12px; width:100%; box-sizing:border-box;">
+          </div>
+          <div>
+            <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:4px;">End Time</label>
+            <input type="time" id="pref-quiet-end" value="08:00" style="background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:10px; color:#fff; padding:8px; font-size:12px; width:100%; box-sizing:border-box;">
+          </div>
+        </div>
+      </div>
+
       <div class="btn-row" style="margin-top: 24px;">
-        <button class="btn btn-primary" id="saveSettingsBtn">Save</button>
+        <button class="btn btn-primary" id="saveSettingsBtn">Save Settings</button>
       </div>
        <div style="margin-top: 32px; border-top: 1px solid var(--border); padding-top: 24px;">
         <h3 style="margin-bottom:12px;">Data Backup (File)</h3>
