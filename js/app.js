@@ -2004,18 +2004,82 @@
 
             const dateStr = new Date().toISOString().slice(0, 10);
             const filename = `cue-backup-${dateStr}.json`;
+            const blob = new Blob([dataToExport], { type: 'application/json' });
 
-            // 1. Direct browser file download using Data URI / Blob anchor
-            const encodedData = encodeURIComponent(dataToExport);
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute('href', 'data:application/json;charset=utf-8,' + encodedData);
-            downloadAnchor.setAttribute('download', filename);
-            downloadAnchor.style.display = 'none';
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            document.body.removeChild(downloadAnchor);
+            // Helper to open copyable backup modal
+            const openBackupModal = () => {
+              const existing = document.getElementById('backupDataModal');
+              if (existing) existing.remove();
 
-            customAlert('✓ Ficheiro descarregado! Verifique a pasta Downloads do seu dispositivo.');
+              const modal = document.createElement('div');
+              modal.id = 'backupDataModal';
+              modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; z-index:999999; padding:20px;';
+
+              modal.innerHTML = `
+                <div style="background:#18181b; border:1px solid rgba(255,255,255,0.15); border-radius:20px; padding:24px; max-width:460px; width:100%; color:#fff; box-shadow:0 20px 40px rgba(0,0,0,0.6);">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <h3 style="margin:0; font-size:18px; font-weight:700;">📦 Backup do Someday</h3>
+                    <button id="closeBackupDataModalBtn" type="button" style="background:none; border:none; color:#9ca3af; font-size:20px; cursor:pointer;">✕</button>
+                  </div>
+                  <p style="font-size:12px; color:#9ca3af; margin-bottom:12px; line-height:1.4;">No Android, pode copiar o código de backup ou partilhar com o seu telemóvel:</p>
+                  <textarea id="backupTextarea" readonly style="width:100%; height:150px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.15); border-radius:10px; color:#c084fc; font-family:monospace; font-size:11px; padding:12px; resize:none; margin-bottom:16px; box-sizing:border-box;"></textarea>
+                  <div style="display:flex; gap:10px;">
+                    <button id="copyBackupCodeBtn" class="btn btn-primary" type="button" style="flex:1; padding:12px; font-weight:700; font-size:13px;">📋 Copiar Código</button>
+                  </div>
+                </div>
+              `;
+
+              document.body.appendChild(modal);
+              const textarea = modal.querySelector('#backupTextarea');
+              textarea.value = dataToExport;
+
+              modal.querySelector('#closeBackupDataModalBtn').onclick = () => modal.remove();
+              modal.querySelector('#copyBackupCodeBtn').onclick = () => {
+                textarea.select();
+                let copied = false;
+                try {
+                  copied = document.execCommand('copy');
+                } catch (e) {}
+
+                if (copied || (navigator.clipboard && typeof navigator.clipboard.writeText === 'function')) {
+                  if (!copied) navigator.clipboard.writeText(dataToExport);
+                  customAlert('✓ Código de backup copiado para a área de transferência!');
+                } else {
+                  customAlert('Selecione todo o texto da caixa para copiar manualmente.');
+                }
+              };
+            };
+
+            // 1. Try native Web Share API (opens native Android save/share dialog)
+            if (navigator.share) {
+              try {
+                const file = new File([blob], filename, { type: 'application/json' });
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                  await navigator.share({
+                    title: 'Someday Backup',
+                    files: [file]
+                  });
+                  return;
+                }
+              } catch (shareErr) {
+                if (shareErr.name === 'AbortError') return;
+              }
+            }
+
+            // 2. Browser anchor download fallback
+            try {
+              const encodedData = encodeURIComponent(dataToExport);
+              const downloadAnchor = document.createElement('a');
+              downloadAnchor.setAttribute('href', 'data:application/json;charset=utf-8,' + encodedData);
+              downloadAnchor.setAttribute('download', filename);
+              downloadAnchor.style.display = 'none';
+              document.body.appendChild(downloadAnchor);
+              downloadAnchor.click();
+              document.body.removeChild(downloadAnchor);
+            } catch (e) {}
+
+            // 3. Always open Backup Modal on mobile native WebView so user is never stuck
+            openBackupModal();
           } catch (e) {
             alert('Could not export backup: ' + e.message);
           }
