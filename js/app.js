@@ -1996,7 +1996,7 @@
           customAlert('Preferences saved!');
         };
 
-        document.getElementById('exportFileBtn').onclick = async () => {
+        document.getElementById('exportFileBtn').onclick = () => {
           try {
             const dataToExport = (state.events && state.events.length > 0)
               ? JSON.stringify(state.events, null, 2)
@@ -2004,40 +2004,27 @@
 
             const dateStr = new Date().toISOString().slice(0, 10);
             const filename = `cue-backup-${dateStr}.json`;
-            const blob = new Blob([dataToExport], { type: 'application/octet-stream' });
 
-            // 1. Try Web Share API with forced binary stream type
-            if (navigator.canShare) {
-              try {
-                const file = new File([blob], filename, { type: 'application/octet-stream' });
-                if (navigator.canShare({ files: [file] })) {
-                  await navigator.share({
-                    title: 'Cue Backup',
-                    files: [file]
-                  });
-                  customAlert('✓ Backup share dialog opened!');
-                  return;
-                }
-              } catch (shareErr) {
-                if (shareErr.name === 'AbortError') return;
-              }
-            }
+            // Data URI scheme with plain text / octet stream
+            const dataUrl = 'data:text/json;charset=utf-8,' + encodeURIComponent(dataToExport);
 
-            // 2. Direct forced download via Blob URL
-            const blobUrl = URL.createObjectURL(blob);
+            // 1. Try invisible link click
             const anchor = document.createElement('a');
-            anchor.href = blobUrl;
+            anchor.href = dataUrl;
             anchor.download = filename;
-            anchor.style.display = 'none';
+            anchor.target = '_blank';
+            anchor.rel = 'noopener';
             document.body.appendChild(anchor);
             anchor.click();
 
-            customAlert(`✓ Download started: ${filename}`);
-
+            // 2. Direct location assignment fallback if Webview ignores anchor click
             setTimeout(() => {
-              URL.revokeObjectURL(blobUrl);
               if (document.body.contains(anchor)) document.body.removeChild(anchor);
-            }, 2000);
+              // Open data URL directly in window if download didn't intercept
+              window.open(dataUrl, '_blank');
+            }, 300);
+
+            customAlert(`✓ Download started (${filename})`);
           } catch (e) {
             alert('Could not export backup: ' + e.message);
           }
