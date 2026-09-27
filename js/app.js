@@ -1995,7 +1995,7 @@
           customAlert('Preferences saved!');
         };
 
-        document.getElementById('exportFileBtn').onclick = async () => {
+        document.getElementById('exportFileBtn').onclick = () => {
           try {
             const dataToExport = (state.events && state.events.length > 0)
               ? JSON.stringify(state.events, null, 2)
@@ -2005,25 +2005,6 @@
             const filename = `cue-backup-${dateStr}.json`;
             const blob = new Blob([dataToExport], { type: 'application/json' });
 
-            // 1. Try Web Share API (native share/save to files dialog on mobile)
-            if (navigator.canShare) {
-              try {
-                const file = new File([blob], filename, { type: 'application/json' });
-                if (navigator.canShare({ files: [file] })) {
-                  await navigator.share({
-                    title: 'Cue Backup',
-                    files: [file]
-                  });
-                  customAlert('✓ Backup saved via Share menu!');
-                  return;
-                }
-              } catch (shareErr) {
-                if (shareErr.name === 'AbortError') return;
-                console.warn('Web share failed, resorting to direct download link:', shareErr);
-              }
-            }
-
-            // 2. Direct Blob Download link
             const blobUrl = URL.createObjectURL(blob);
             const anchor = document.createElement('a');
             anchor.href = blobUrl;
@@ -2036,7 +2017,7 @@
               URL.revokeObjectURL(blobUrl);
               if (document.body.contains(anchor)) document.body.removeChild(anchor);
             }, 2000);
-            customAlert(`✓ Ficheiro '${filename}' guardado na pasta Downloads!`);
+            customAlert(`✓ Ficheiro '${filename}' descarregado para a pasta Downloads!`);
           } catch (e) {
             customAlert('Could not export backup: ' + e.message);
           }
