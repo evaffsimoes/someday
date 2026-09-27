@@ -1996,7 +1996,7 @@
           customAlert('Preferences saved!');
         };
 
-        document.getElementById('exportFileBtn').onclick = () => {
+        document.getElementById('exportFileBtn').onclick = async () => {
           try {
             const dataToExport = (state.events && state.events.length > 0)
               ? JSON.stringify(state.events, null, 2)
@@ -2005,26 +2005,17 @@
             const dateStr = new Date().toISOString().slice(0, 10);
             const filename = `cue-backup-${dateStr}.json`;
 
-            // Data URI scheme with plain text / octet stream
-            const dataUrl = 'data:text/json;charset=utf-8,' + encodeURIComponent(dataToExport);
+            // 1. Direct browser file download using Data URI / Blob anchor
+            const encodedData = encodeURIComponent(dataToExport);
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute('href', 'data:application/json;charset=utf-8,' + encodedData);
+            downloadAnchor.setAttribute('download', filename);
+            downloadAnchor.style.display = 'none';
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            document.body.removeChild(downloadAnchor);
 
-            // 1. Try invisible link click
-            const anchor = document.createElement('a');
-            anchor.href = dataUrl;
-            anchor.download = filename;
-            anchor.target = '_blank';
-            anchor.rel = 'noopener';
-            document.body.appendChild(anchor);
-            anchor.click();
-
-            // 2. Direct location assignment fallback if Webview ignores anchor click
-            setTimeout(() => {
-              if (document.body.contains(anchor)) document.body.removeChild(anchor);
-              // Open data URL directly in window if download didn't intercept
-              window.open(dataUrl, '_blank');
-            }, 300);
-
-            customAlert(`✓ Download started (${filename})`);
+            customAlert('✓ Ficheiro descarregado! Verifique a pasta Downloads do seu dispositivo.');
           } catch (e) {
             alert('Could not export backup: ' + e.message);
           }
