@@ -1167,11 +1167,17 @@
 
       function openDetailModal(event) {
         if (!event) return;
-        const dateStr = fmtDateRange(event.startDate, event.endDate);
-        const timeStr = event.time ? ` · ${event.time}` : '';
-        const locationText = [event.city, event.venue].filter(Boolean).join(' · ');
-        const overlay = document.getElementById('eventModalOverlay');
-        const content = document.getElementById('eventModalContent');
+        try {
+          const dateStr = fmtDateRange(event.startDate, event.endDate);
+          const timeStr = event.time ? ` · ${event.time}` : '';
+          const locationText = [event.city, event.venue].filter(Boolean).join(' · ');
+          const overlay = document.getElementById('eventModalOverlay');
+          const content = document.getElementById('eventModalContent');
+
+          if (!overlay || !content) {
+            alert('Modal element missing');
+            return;
+          }
 
         let dayBadgeText = '';
         if (event.startDate) {
@@ -1294,12 +1300,9 @@
             window.open(gcalUrl(event), '_blank', 'noopener,noreferrer');
           };
         }
-
-        window.openDetailModal = openDetailModal;
-        window.openDetailModalById = (id) => {
-          const match = state.events.find(e => String(e.id) === String(id));
-          if (match) openDetailModal(match);
-        };
+        } catch (err) {
+          alert('Error opening event: ' + err.message);
+        }
       }
 
       function renderCalendar() {
