@@ -2121,18 +2121,36 @@
               textarea.value = dataToExport;
 
               modal.querySelector('#closeBackupDataModalBtn').onclick = () => modal.remove();
-              modal.querySelector('#copyBackupCodeBtn').onclick = () => {
+              modal.querySelector('#copyBackupCodeBtn').onclick = async () => {
+                textarea.focus();
                 textarea.select();
+                textarea.setSelectionRange(0, 999999); // Mobile selection
+
                 let copied = false;
                 try {
                   copied = document.execCommand('copy');
                 } catch (e) {}
 
-                if (copied || (navigator.clipboard && typeof navigator.clipboard.writeText === 'function')) {
-                  if (!copied) navigator.clipboard.writeText(dataToExport);
+                if (!copied && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+                  try {
+                    await navigator.clipboard.writeText(dataToExport);
+                    copied = true;
+                  } catch (clipErr) {
+                    console.warn('navigator.clipboard error:', clipErr);
+                  }
+                }
+
+                if (!copied && window.Capacitor?.Plugins?.Clipboard) {
+                  try {
+                    await window.Capacitor.Plugins.Clipboard.write({ string: dataToExport });
+                    copied = true;
+                  } catch (capClipErr) {}
+                }
+
+                if (copied) {
                   customAlert('✓ Código de backup copiado para a área de transferência!');
                 } else {
-                  customAlert('Selecione todo o texto da caixa para copiar manualmente.');
+                  customAlert('Não foi possível copiar automaticamente. Selecione todo o texto da caixa e escolha Copiar.');
                 }
               };
             };
