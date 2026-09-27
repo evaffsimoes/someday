@@ -2004,7 +2004,6 @@
 
             const dateStr = new Date().toISOString().slice(0, 10);
             const filename = `cue-backup-${dateStr}.json`;
-            // Using application/octet-stream forces Android and Browsers to Save/Download instead of 'Open With'
             const blob = new Blob([dataToExport], { type: 'application/octet-stream' });
 
             // 1. Try Web Share API with forced binary stream type
@@ -2016,6 +2015,7 @@
                     title: 'Cue Backup',
                     files: [file]
                   });
+                  customAlert('✓ Backup share dialog opened!');
                   return;
                 }
               } catch (shareErr) {
@@ -2031,6 +2031,8 @@
             anchor.style.display = 'none';
             document.body.appendChild(anchor);
             anchor.click();
+
+            customAlert(`✓ Download started: ${filename}`);
 
             setTimeout(() => {
               URL.revokeObjectURL(blobUrl);
