@@ -1995,50 +1995,6 @@
           customAlert('Preferences saved!');
         };
 
-        function showBackupTextModal(jsonText, filename) {
-          const existing = document.getElementById('backupTextModal');
-          if (existing) existing.remove();
-
-          const modal = document.createElement('div');
-          modal.id = 'backupTextModal';
-          modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.75); backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; z-index:99999; padding:20px;';
-
-          modal.innerHTML = `
-            <div style="background:var(--bg-card, #1c1829); border:1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius:16px; padding:24px; max-width:500px; width:100%; color:#fff; font-family:sans-serif; box-shadow:0 20px 40px rgba(0,0,0,0.5);">
-              <h3 style="margin-top:0; margin-bottom:12px; font-size:18px; font-weight:700; color:#fff;">📦 Event Backup Data</h3>
-              <p style="font-size:13px; color:rgba(255,255,255,0.7); margin-bottom:14px; line-height:1.4;">Copy your events JSON data below or paste it into a file:</p>
-              <textarea id="backupTextarea" readonly style="width:100%; height:150px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:#a78bfa; font-family:monospace; font-size:11px; padding:12px; resize:none; margin-bottom:16px; box-sizing:border-box;"></textarea>
-              <div style="display:flex; gap:10px; justify-content:flex-end;">
-                <button id="closeBackupModalBtn" class="btn btn-ghost" type="button" style="padding:8px 16px;">Close</button>
-                <button id="copyBackupTextBtn" class="btn btn-primary" type="button" style="padding:8px 16px;">📋 Copy JSON</button>
-              </div>
-            </div>
-          `;
-
-          document.body.appendChild(modal);
-          const textarea = modal.querySelector('#backupTextarea');
-          textarea.value = jsonText;
-
-          modal.querySelector('#closeBackupModalBtn').onclick = () => modal.remove();
-          modal.querySelector('#copyBackupTextBtn').onclick = () => {
-            textarea.select();
-            let success = false;
-            try {
-              success = document.execCommand('copy');
-            } catch (e) {}
-
-            if (success) {
-              customAlert('✓ Backup copied to clipboard!');
-            } else if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
-              navigator.clipboard.writeText(jsonText)
-                .then(() => customAlert('✓ Backup copied to clipboard!'))
-                .catch(() => customAlert('Please select all text in the box and copy manually.'));
-            } else {
-              customAlert('Please select all text in the box and copy manually.');
-            }
-          };
-        }
-
         document.getElementById('exportFileBtn').onclick = async () => {
           try {
             const dataToExport = (state.events && state.events.length > 0)
@@ -2049,7 +2005,7 @@
             const filename = `cue-backup-${dateStr}.json`;
             const blob = new Blob([dataToExport], { type: 'application/json' });
 
-            // 1. Try Web Share API (Works natively on Android & mobile browsers)
+            // 1. Try Web Share API (native share/save to files dialog on mobile)
             if (navigator.canShare) {
               try {
                 const file = new File([blob], filename, { type: 'application/json' });
@@ -2062,30 +2018,24 @@
                 }
               } catch (shareErr) {
                 if (shareErr.name === 'AbortError') return;
-                console.warn('Web share failed, trying fallback modal:', shareErr);
+                console.warn('Web share failed, resorting to direct download link:', shareErr);
               }
             }
 
-            // 2. Try Blob URL Download
-            try {
-              const blobUrl = URL.createObjectURL(blob);
-              const anchor = document.createElement('a');
-              anchor.href = blobUrl;
-              anchor.download = filename;
-              anchor.target = '_blank';
-              document.body.appendChild(anchor);
-              anchor.click();
+            // 2. Direct Blob Download link
+            const blobUrl = URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+            anchor.href = blobUrl;
+            anchor.download = filename;
+            anchor.style.display = 'none';
+            document.body.appendChild(anchor);
+            anchor.click();
 
-              setTimeout(() => {
-                URL.revokeObjectURL(blobUrl);
-                if (document.body.contains(anchor)) document.body.removeChild(anchor);
-              }, 1000);
-            } catch (dlErr) {
-              console.warn('Anchor download failed:', dlErr);
-            }
-
-            // 3. Guaranteed Backup Modal UI
-            showBackupTextModal(dataToExport, filename);
+            setTimeout(() => {
+              URL.revokeObjectURL(blobUrl);
+              if (document.body.contains(anchor)) document.body.removeChild(anchor);
+            }, 2000);
+            customAlert('✓ Backup file downloaded!');
           } catch (e) {
             customAlert('Could not export backup: ' + e.message);
           }
