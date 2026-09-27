@@ -1166,6 +1166,7 @@
       }
 
       function openDetailModal(event) {
+        if (!event) return;
         const dateStr = fmtDateRange(event.startDate, event.endDate);
         const timeStr = event.time ? ` · ${event.time}` : '';
         const locationText = [event.city, event.venue].filter(Boolean).join(' · ');
@@ -1902,6 +1903,13 @@
 
         document.addEventListener('click', event => {
           if (event.target.id === 'addCloseBtn') switchTab('queue');
+          const viewTarget = event.target.closest('[data-view]');
+          if (viewTarget) {
+            const id = viewTarget.getAttribute('data-view');
+            if (id && window.openDetailModalById) {
+              window.openDetailModalById(id);
+            }
+          }
         });
 
         document.getElementById('calPrevBtn').onclick = () => {
@@ -2111,7 +2119,11 @@
         localStorage.removeItem('cue-theme-v1');
         bindStaticEventHandlers();
         loadEvents();
-        checkForSharedData();
+        window.openDetailModal = openDetailModal;
+        window.openDetailModalById = (id) => {
+          const match = state.events.find(e => String(e.id) === String(id));
+          if (match) openDetailModal(match);
+        };
 
         if (window.CueAuth && typeof window.CueAuth.init === 'function') {
           window.CueAuth.init();
