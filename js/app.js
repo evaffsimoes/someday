@@ -383,7 +383,7 @@
             : `background: linear-gradient(135deg, #2e1065 0%, #09090b 100%);`;
 
           spotlightSlot.innerHTML = `
-            <div class="hero-spotlight-card" style="position: relative; width: 100%; height: 320px; border-radius: 20px; overflow: hidden; margin-bottom: 24px; background-size: cover; background-position: center; display: flex; flex-direction: column; justify-content: flex-end; padding: 24px 20px; box-sizing: border-box; cursor: pointer; ${heroBgStyle}" onclick="openReview(state.events.find(e => e.id === '${nextEvent.id}'))">
+            <div class="hero-spotlight-card" style="position: relative; width: 100%; height: 320px; border-radius: 20px; overflow: hidden; margin-bottom: 24px; background-size: cover; background-position: center; display: flex; flex-direction: column; justify-content: flex-end; padding: 24px 20px; box-sizing: border-box; cursor: pointer; ${heroBgStyle}" onclick="const evt = state.events.find(e => e.id === '${nextEvent.id}'); if (evt) openDetailModal(evt);">
               <div style="font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.16em; margin-bottom: 6px;">
                 NEXT UP
               </div>
