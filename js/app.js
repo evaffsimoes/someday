@@ -2130,8 +2130,6 @@
       function initializeApp() {
         document.documentElement.removeAttribute('data-theme');
         localStorage.removeItem('cue-theme-v1');
-        bindStaticEventHandlers();
-        loadEvents();
         window.openDetailModal = openDetailModal;
         window.openDetailModalById = (id) => {
           let match = state.events.find(e => String(e.id) === String(id));
@@ -2144,9 +2142,11 @@
           if (match) {
             openDetailModal(match);
           } else {
-            customAlert('Event details could not be found.');
+            alert('Event details could not be found.');
           }
         };
+        bindStaticEventHandlers();
+        loadEvents();
 
         if (window.CueAuth && typeof window.CueAuth.init === 'function') {
           window.CueAuth.init();
