@@ -59,23 +59,25 @@ public class MainActivity extends BridgeActivity {
     private void handleShareIntent(Intent intent) {
         if (intent == null) return;
         String action = intent.getAction();
-        String type = intent.getType();
-        if (!Intent.ACTION_SEND.equals(action) || type == null) return;
+        if (!Intent.ACTION_SEND.equals(action) && !Intent.ACTION_SEND_MULTIPLE.equals(action)) return;
 
         String sharedText = null;
 
-        if (type.equals("text/plain")) {
-            // Instagram shares the post URL as TEXT
-            sharedText = intent.getStringExtra(Intent.EXTRA_TEXT);
-        } else if (type.startsWith("image/")) {
-            // Image share — for now just try to get a URL from EXTRA_TEXT if present
-            sharedText = intent.getStringExtra(Intent.EXTRA_TEXT);
+        if (intent.hasExtra(Intent.EXTRA_TEXT)) {
+            CharSequence cs = intent.getCharSequenceExtra(Intent.EXTRA_TEXT);
+            if (cs != null) sharedText = cs.toString();
+        }
+        if ((sharedText == null || sharedText.isEmpty()) && intent.hasExtra(Intent.EXTRA_SUBJECT)) {
+            sharedText = intent.getStringExtra(Intent.EXTRA_SUBJECT);
+        }
+        if ((sharedText == null || sharedText.isEmpty()) && intent.getDataString() != null) {
+            sharedText = intent.getDataString();
         }
 
-        if (sharedText != null && !sharedText.isEmpty()) {
+        if (sharedText != null && !sharedText.trim().isEmpty()) {
             SharedPreferences prefs = getSharedPreferences("CapacitorStorage", MODE_PRIVATE);
             prefs.edit().putString("pending-share-intent", sharedText).apply();
-            
+
             if (getBridge() != null && getBridge().getWebView() != null) {
                 getBridge().getWebView().post(() -> {
                     getBridge().getWebView().evaluateJavascript(

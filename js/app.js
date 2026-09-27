@@ -1915,6 +1915,9 @@
           }
         };
 
+        // Call immediately on app startup in case app was launched via share intent
+        window.checkForSharedDataNative();
+
         window.checkForWidgetOpenIntentNative = async function () {
           if (!window.Capacitor?.Plugins?.Preferences) return;
           const { value: targetId } = await window.Capacitor.Plugins.Preferences.get({ key: 'pending-widget-open-event-id' });
