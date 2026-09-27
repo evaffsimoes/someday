@@ -2004,29 +2004,39 @@
 
             const dateStr = new Date().toISOString().slice(0, 10);
             const filename = `cue-backup-${dateStr}.json`;
-            const encodedData = encodeURIComponent(dataToExport);
-            const dataUrl = 'data:application/json;charset=utf-8,' + encodedData;
+            const blob = new Blob([dataToExport], { type: 'application/json' });
+            const blobUrl = URL.createObjectURL(blob);
 
-            // 1. Direct window navigation / location trigger for Android WebView
-            const isNative = !!(window.Capacitor?.isNative || window.Capacitor?.native);
-            if (isNative || !('download' in document.createElement('a'))) {
-              window.open(dataUrl, '_blank');
-              customAlert('✓ Backup JSON opened! Use Save / Share to store it.');
-              return;
-            }
+            const existing = document.getElementById('backupDownloadModal');
+            if (existing) existing.remove();
 
-            // 2. Standard Browser anchor trigger
-            const anchor = document.createElement('a');
-            anchor.href = dataUrl;
-            anchor.download = filename;
-            anchor.target = '_blank';
-            document.body.appendChild(anchor);
-            anchor.click();
+            const modal = document.createElement('div');
+            modal.id = 'backupDownloadModal';
+            modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; z-index:99999; padding:20px;';
 
-            setTimeout(() => {
-              if (document.body.contains(anchor)) document.body.removeChild(anchor);
-            }, 1000);
-            customAlert(`✓ Ficheiro descarregado: ${filename}`);
+            modal.innerHTML = `
+              <div style="background:var(--surface, #18181b); border:1px solid rgba(255,255,255,0.15); border-radius:20px; padding:24px; max-width:440px; width:100%; color:#fff; text-align:center; box-shadow:0 20px 40px rgba(0,0,0,0.6);">
+                <div style="font-size:36px; margin-bottom:12px;">📁</div>
+                <h3 style="margin:0 0 8px 0; font-size:20px; font-weight:700; color:#fff;">Save Backup File</h3>
+                <p style="font-size:13px; color:#9ca3af; margin-bottom:20px; line-height:1.4;">Tap the button below to save <strong>${filename}</strong> to your device.</p>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                  <a href="${blobUrl}" download="${filename}" id="directDownloadLink" class="btn btn-primary" style="display:block; text-align:center; text-decoration:none; padding:14px; font-weight:700; font-size:14px; background:var(--purple-light, #a855f7); color:#fff; border-radius:12px;">⬇️ Click to Download File</a>
+                  <button id="closeDownloadModalBtn" class="btn btn-ghost" type="button" style="padding:12px; color:#9ca3af;">Close</button>
+                </div>
+              </div>
+            `;
+
+            document.body.appendChild(modal);
+            modal.querySelector('#closeDownloadModalBtn').onclick = () => {
+              URL.revokeObjectURL(blobUrl);
+              modal.remove();
+            };
+            modal.querySelector('#directDownloadLink').onclick = () => {
+              setTimeout(() => {
+                modal.remove();
+                customAlert('✓ File saved!');
+              }, 500);
+            };
           } catch (e) {
             customAlert('Could not export backup: ' + e.message);
           }
