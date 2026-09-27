@@ -338,7 +338,7 @@
         const eventIsPast = isPast(event);
         return `
           <div class="queue-swipe-wrapper">
-            <div class="queue-item ${eventIsPast ? 'is-past' : ''}" data-view="${escapeAttr(event.id)}">
+            <div class="queue-item ${eventIsPast ? 'is-past' : ''}" data-view="${escapeAttr(event.id)}" onclick="window.openDetailModalById('${escapeAttr(event.id)}')">
               ${imageHTML}
 
               <div class="queue-info">
@@ -1283,8 +1283,17 @@
           openReview(event);
         };
 
-        document.getElementById('gcalFromModalBtn').onclick = () => {
-          window.open(gcalUrl(event), '_blank', 'noopener,noreferrer');
+        const gcalBtn = document.getElementById('gcalFromModalBtn');
+        if (gcalBtn) {
+          gcalBtn.onclick = () => {
+            window.open(gcalUrl(event), '_blank', 'noopener,noreferrer');
+          };
+        }
+
+        window.openDetailModal = openDetailModal;
+        window.openDetailModalById = (id) => {
+          const match = state.events.find(e => String(e.id) === String(id));
+          if (match) openDetailModal(match);
         };
       }
 
