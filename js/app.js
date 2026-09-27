@@ -1769,6 +1769,7 @@
           state.events = raw ? JSON.parse(raw) : [];
 
           state.events = dedupeEvents(state.events.map(event => {
+            if (!event.id) event.id = uid();
             if (event.name && !event.artist) event.artist = event.name;
             if (event.location && !event.venue) event.venue = event.location;
             if (!event.category) event.category = 'Concert';
@@ -2128,8 +2129,18 @@
         loadEvents();
         window.openDetailModal = openDetailModal;
         window.openDetailModalById = (id) => {
-          const match = state.events.find(e => String(e.id) === String(id));
-          if (match) openDetailModal(match);
+          let match = state.events.find(e => String(e.id) === String(id));
+          if (!match && id) {
+            match = state.events.find(e => (e.artist && String(e.artist).trim() === String(id).trim()));
+          }
+          if (!match && state.events.length === 1) {
+            match = state.events[0];
+          }
+          if (match) {
+            openDetailModal(match);
+          } else {
+            customAlert('Event details could not be found.');
+          }
         };
 
         if (window.CueAuth && typeof window.CueAuth.init === 'function') {
