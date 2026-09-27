@@ -482,10 +482,13 @@
         }
 
         document.querySelectorAll('[data-view]').forEach(element => {
-          element.addEventListener('click', () => {
-            const match = state.events.find(event => event.id === element.getAttribute('data-view'));
+          element.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const id = element.getAttribute('data-view');
+            const match = state.events.find(event => String(event.id) === String(id));
             if (match) openDetailModal(match);
-          });
+          };
         });
 
         document.querySelectorAll('[data-del]').forEach(button => {
@@ -1443,8 +1446,11 @@
         }
 
         document.querySelectorAll('#calSelectedList [data-view]').forEach(el => {
-          el.onclick = () => {
-            const match = state.events.find(event => event.id === el.getAttribute('data-view'));
+          el.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const id = el.getAttribute('data-view');
+            const match = state.events.find(event => String(event.id) === String(id));
             if (match) openDetailModal(match);
           };
         });
