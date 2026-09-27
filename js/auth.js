@@ -272,6 +272,16 @@ window.CueAuth = (() => {
     }
   }
 
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
   function updateAuthUI(user) {
     const avatarImg = document.getElementById('accountAvatarImg');
     const accountStatusBadge = document.getElementById('accountStatusBadge');
