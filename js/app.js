@@ -2004,12 +2004,13 @@
 
             const dateStr = new Date().toISOString().slice(0, 10);
             const filename = `cue-backup-${dateStr}.json`;
-            const blob = new Blob([dataToExport], { type: 'application/json' });
+            // Using application/octet-stream forces Android and Browsers to Save/Download instead of 'Open With'
+            const blob = new Blob([dataToExport], { type: 'application/octet-stream' });
 
-            // 1. Try Web Share API (native share dialog)
+            // 1. Try Web Share API with forced binary stream type
             if (navigator.canShare) {
               try {
-                const file = new File([blob], filename, { type: 'application/json' });
+                const file = new File([blob], filename, { type: 'application/octet-stream' });
                 if (navigator.canShare({ files: [file] })) {
                   await navigator.share({
                     title: 'Cue Backup',
@@ -2022,31 +2023,19 @@
               }
             }
 
-            // 2. Try Direct Data URI / Blob Download
-            try {
-              const dataUrl = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataToExport);
-              const anchor = document.createElement('a');
-              anchor.href = dataUrl;
-              anchor.download = filename;
-              anchor.style.display = 'none';
-              document.body.appendChild(anchor);
-              anchor.click();
+            // 2. Direct forced download via Blob URL
+            const blobUrl = URL.createObjectURL(blob);
+            const anchor = document.createElement('a');
+            anchor.href = blobUrl;
+            anchor.download = filename;
+            anchor.style.display = 'none';
+            document.body.appendChild(anchor);
+            anchor.click();
 
-              setTimeout(() => {
-                if (document.body.contains(anchor)) document.body.removeChild(anchor);
-              }, 1000);
-            } catch (dlErr) {
-              console.warn('Anchor click download failed:', dlErr);
-            }
-
-            // 3. Fallback: Prompt user to copy JSON text directly
-            const openWindow = window.open();
-            if (openWindow) {
-              openWindow.document.write(`<pre style="word-break:break-all; font-family:monospace;">${escapeHtml(dataToExport)}</pre>`);
-              openWindow.document.title = filename;
-            } else {
-              prompt('Copy your backup JSON code below:', dataToExport);
-            }
+            setTimeout(() => {
+              URL.revokeObjectURL(blobUrl);
+              if (document.body.contains(anchor)) document.body.removeChild(anchor);
+            }, 2000);
           } catch (e) {
             alert('Could not export backup: ' + e.message);
           }
