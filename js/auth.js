@@ -110,27 +110,21 @@ window.CueAuth = (() => {
     provider.addScope('email');
 
     try {
-      const isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
-
-      if (isNative) {
-        await auth.signInWithRedirect(provider);
-      } else {
-        try {
-          const result = await auth.signInWithPopup(provider);
-          if (result && result.user) {
-            currentUser = result.user;
-            updateAuthUI(result.user);
-            await syncCloudEvents();
-          }
-        } catch (popupErr) {
-          if (popupErr.code === 'auth/popup-closed-by-user' || popupErr.code === 'auth/cancelled-popup-request') {
-            return;
-          }
-          await auth.signInWithRedirect(provider);
-        }
+      const result = await auth.signInWithPopup(provider);
+      if (result && result.user) {
+        currentUser = result.user;
+        updateAuthUI(result.user);
+        await syncCloudEvents();
       }
-    } catch (err) {
-      handleAuthError(err);
+    } catch (popupErr) {
+      if (popupErr.code === 'auth/popup-closed-by-user' || popupErr.code === 'auth/cancelled-popup-request') {
+        return;
+      }
+      try {
+        await auth.signInWithRedirect(provider);
+      } catch (redirectErr) {
+        handleAuthError(redirectErr);
+      }
     }
   }
 
