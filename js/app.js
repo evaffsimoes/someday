@@ -1845,9 +1845,10 @@
 
           renderAiParsedSuccess(parsed);
         } catch (error) {
-          console.error(error);
+          console.error('Link/Share Parsing Error:', error);
           elements.aiParsingSlot.innerHTML = '';
-          elements.statusEl.textContent = 'Please confirm event details below.';
+          elements.statusEl.textContent = `Error: ${error.message || 'Could not read link details'}`;
+          alert(`Erro na leitura do link por IA:\n\n${error.message || 'Serviço temporariamente indisponível.'}\n\nPode preencher os detalhes manualmente abaixo.`);
           openReview({});
         }
       }
