@@ -2014,6 +2014,7 @@
                     title: 'Cue Backup',
                     files: [file]
                   });
+                  customAlert('✓ Backup saved via Share menu!');
                   return;
                 }
               } catch (shareErr) {
@@ -2035,7 +2036,7 @@
               URL.revokeObjectURL(blobUrl);
               if (document.body.contains(anchor)) document.body.removeChild(anchor);
             }, 2000);
-            customAlert('✓ Backup file downloaded!');
+            customAlert(`✓ Ficheiro '${filename}' guardado na pasta Downloads!`);
           } catch (e) {
             customAlert('Could not export backup: ' + e.message);
           }
