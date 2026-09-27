@@ -85,7 +85,38 @@ window.CueAuth = (() => {
   }
 
   async function signInWithGoogle() {
-    console.log('Google Auth has been removed.');
+    if (!auth) {
+      alert('Firebase Auth is not initialized or credentials are missing.');
+      return;
+    }
+
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.addScope('profile');
+    provider.addScope('email');
+
+    try {
+      const isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+
+      if (isNative) {
+        await auth.signInWithRedirect(provider);
+      } else {
+        try {
+          const result = await auth.signInWithPopup(provider);
+          if (result && result.user) {
+            currentUser = result.user;
+            updateAuthUI(result.user);
+            await syncCloudEvents();
+          }
+        } catch (popupErr) {
+          if (popupErr.code === 'auth/popup-closed-by-user' || popupErr.code === 'auth/cancelled-popup-request') {
+            return;
+          }
+          await auth.signInWithRedirect(provider);
+        }
+      }
+    } catch (err) {
+      handleAuthError(err);
+    }
   }
 
   async function signOutUser() {
