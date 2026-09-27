@@ -23,7 +23,18 @@ window.CueAuth = (() => {
 
     try {
       if (!firebase.apps.length) {
-        firebase.initializeApp(config);
+        // Sanitize config for web JS SDK (strip android appId if present)
+        const appConfig = {
+          apiKey: config.apiKey,
+          authDomain: config.authDomain,
+          databaseURL: config.databaseURL,
+          projectId: config.projectId,
+          storageBucket: config.storageBucket
+        };
+        if (config.appId && config.appId.includes(':web:')) {
+          appConfig.appId = config.appId;
+        }
+        firebase.initializeApp(appConfig);
       }
       auth = firebase.auth();
       db = firebase.firestore();
@@ -52,7 +63,9 @@ window.CueAuth = (() => {
           await syncCloudEvents();
         }
       }).catch(err => {
-        console.warn('In-app redirect result check:', err);
+        if (err.code !== 'auth/popup-closed-by-user') {
+          handleAuthError(err);
+        }
       });
     } catch (err) {
       console.warn('cue Cloud Sync initialization error:', err);
@@ -75,7 +88,9 @@ window.CueAuth = (() => {
       return;
     }
 
-    if (code === 'auth/operation-not-allowed' || code === 'auth/configuration-not-found') {
+    if (code === 'auth/api-key-not-valid') {
+      alert(`Firebase Auth Error [auth/api-key-not-valid]:\n\nYour API key is not valid for Firebase Authentication.\n\nTo fix this in Firebase Console:\n1. Open https://console.firebase.google.com/u/0/project/cue-events-21ac9/settings/general/\n2. Check your Web App API Key.\n3. Ensure "Google Sign-In" is enabled under Authentication -> Sign-in method.`);
+    } else if (code === 'auth/operation-not-allowed' || code === 'auth/configuration-not-found') {
       alert(`Firebase Auth Error [${code}]:\n\nGoogle Sign-In is not enabled yet in your Firebase project.\n\nPlease go to Firebase Console -> Authentication -> Sign-in method and click "Enable" on Google.`);
     } else if (code === 'auth/unauthorized-domain') {
       alert(`Firebase Auth Error [${code}]:\n\nThis domain (${window.location.hostname}) is not authorized.\n\nPlease go to Firebase Console -> Authentication -> Settings -> Authorized Domains and add ${window.location.hostname}.`);
