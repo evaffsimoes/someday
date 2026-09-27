@@ -632,7 +632,8 @@
       }
 
       function closeLinkInput() {
-        if (elements.linkInputSlot) elements.linkInputSlot.innerHTML = '';
+        const slot = elements.linkInputSlot || document.getElementById('linkInputSlot');
+        if (slot) slot.innerHTML = '';
       }
 
       function renderAiParsingState() {
@@ -657,23 +658,31 @@
       function openLinkInput() {
         if (document.getElementById('sharedLinkInput')) return document.getElementById('sharedLinkInput').focus();
 
-        elements.reviewSlot.innerHTML = '';
-        elements.aiParsingSlot.innerHTML = '';
-        elements.linkInputSlot.innerHTML = `
-          <form class="inline-link-form" id="sharedLinkForm">
+        if (elements.reviewSlot) elements.reviewSlot.innerHTML = '';
+        if (elements.aiParsingSlot) elements.aiParsingSlot.innerHTML = '';
+
+        const slot = elements.linkInputSlot || document.getElementById('linkInputSlot');
+        if (!slot) return;
+
+        slot.innerHTML = `
+          <form class="inline-link-form" id="sharedLinkForm" style="margin-top:12px; margin-bottom:16px;">
             <input id="sharedLinkInput" type="text" autocomplete="url" placeholder="Cola o link ou a legenda do Instagram" aria-label="Link ou legenda do Instagram">
             <button class="btn btn-primary" type="submit">Ler</button>
           </form>`;
 
         const input = document.getElementById('sharedLinkInput');
-        input.focus();
-        document.getElementById('sharedLinkForm').onsubmit = event => {
-          event.preventDefault();
-          const sharedText = input.value.trim();
-          if (!sharedText) return input.focus();
-          closeLinkInput();
-          handleSharedText(sharedText);
-        };
+        if (input) input.focus();
+
+        const form = document.getElementById('sharedLinkForm');
+        if (form) {
+          form.onsubmit = event => {
+            event.preventDefault();
+            const sharedText = input ? input.value.trim() : '';
+            if (!sharedText) return input && input.focus();
+            closeLinkInput();
+            handleSharedText(sharedText);
+          };
+        }
       }
 
       function fileToBase64(file) {
