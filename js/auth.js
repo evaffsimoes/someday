@@ -212,9 +212,27 @@ window.CueAuth = (() => {
   async function signOutUser() {
     if (!auth) return;
     try {
+      const GoogleAuthPlugin = window.Capacitor?.Plugins?.GoogleAuth || window.plugins?.GoogleAuth;
+      if (GoogleAuthPlugin && typeof GoogleAuthPlugin.signOut === 'function') {
+        try { await GoogleAuthPlugin.signOut(); } catch (e) {}
+      }
       await auth.signOut();
       currentUser = null;
       updateAuthUI(null);
+
+      // Clear local events state and local storage on logout for user privacy
+      if (window.cueAppState) {
+        window.cueAppState.events = [];
+      }
+      if (typeof window.cueSaveEvents === 'function') {
+        await window.cueSaveEvents(true);
+      } else {
+        localStorage.removeItem('cue-events-v12');
+        localStorage.removeItem('someday-events');
+      }
+      if (typeof window.cueRenderApp === 'function') {
+        window.cueRenderApp();
+      }
     } catch (err) {
       console.error('Sign out error:', err);
     }
