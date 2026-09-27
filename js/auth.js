@@ -107,6 +107,7 @@ window.CueAuth = (() => {
       return;
     }
 
+    const isNative = window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform();
     const GoogleAuthPlugin = window.Capacitor?.Plugins?.GoogleAuth || window.plugins?.GoogleAuth;
 
     // 1. Native Capacitor GoogleAuth plugin (opens native Android account picker)
@@ -119,7 +120,9 @@ window.CueAuth = (() => {
               scopes: ['profile', 'email'],
               grantOfflineAccess: true
             });
-          } catch (initErr) {}
+          } catch (initErr) {
+            console.warn('GoogleAuth initialize warning:', initErr);
+          }
         }
         const gUser = await GoogleAuthPlugin.signIn();
         const idToken = gUser?.authentication?.idToken || gUser?.idToken;
@@ -133,11 +136,22 @@ window.CueAuth = (() => {
           return;
         }
       } catch (nativeErr) {
-        console.warn('Native GoogleAuth plugin error, trying web fallback:', nativeErr);
+        console.error('Native GoogleAuth plugin error:', nativeErr);
+        const errStr = JSON.stringify(nativeErr) || String(nativeErr);
+        if (isNative) {
+          // Do NOT redirect the WebView on native app, present useful diagnosis instead
+          alert(`Google Sign-In (Android Native) Error:\n${nativeErr?.message || nativeErr?.error || errStr}\n\nSe o erro for 10 ou DEVELOPER_ERROR, verifique se a SHA-1 da chave de assinatura foi adicionada na Firebase Console.`);
+          return;
+        }
       }
     }
 
-    // 2. Google Identity Services (GIS) Web SDK
+    if (isNative) {
+      alert('O plugin de autenticação nativa do Android não está pronto nesta compilação.');
+      return;
+    }
+
+    // 2. Google Identity Services (GIS) Web SDK (only for browser)
     if (window.google && window.google.accounts && window.google.accounts.id) {
       try {
         window.google.accounts.id.initialize({
