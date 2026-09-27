@@ -1543,7 +1543,6 @@
       function loadNotificationPrefs() {
         const defaultPrefs = {
           leadTimes: ['1h', '0', '1', '3'],
-          preferredTime: '09:00',
           customEnabled: false,
           customValue: 30,
           customUnit: 'm'
@@ -1596,9 +1595,6 @@
 
         if (customNum) customNum.value = prefs.customValue || 30;
         if (customUnit) customUnit.value = prefs.customUnit || 'm';
-
-        const timeInput = document.getElementById('pref-time');
-        if (timeInput) timeInput.value = prefs.preferredTime || '09:00';
 
         document.getElementById('settingsModalOverlay').classList.add('active');
       }
@@ -2073,11 +2069,9 @@
           const customEnabled = !!document.getElementById('pref-custom')?.checked;
           const customValue = parseInt(document.getElementById('pref-custom-num')?.value, 10) || 30;
           const customUnit = document.getElementById('pref-custom-unit')?.value || 'm';
-          const preferredTime = document.getElementById('pref-time')?.value || '09:00';
 
           const prefs = {
             leadTimes,
-            preferredTime,
             customEnabled,
             customValue,
             customUnit
