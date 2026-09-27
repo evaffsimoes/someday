@@ -273,16 +273,15 @@
       <div style="margin-top: 32px; border-top: 1px solid var(--border); padding-top: 24px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
           <h3 style="margin:0;">Cloud Sync & Account</h3>
-          <span id="accountStatusBadge" class="status-badge status-local" style="font-size:11px; padding:3px 8px; border-radius:12px; background:rgba(255,255,255,0.08); color:var(--text-muted);">Not signed in</span>
+          <span id="accountStatusBadge" class="status-badge status-local" style="display:none; font-size:11px; padding:3px 8px; border-radius:12px; background:rgba(255,255,255,0.08); color:var(--text-muted);">Not signed in</span>
         </div>
-        <p style="font-size:12px; color:var(--text-muted); margin-bottom:14px;">Sign in with Google to sync your events across Web and Android.</p>
+        <p id="accountSubText" style="font-size:12px; color:var(--text-muted); margin-bottom:14px;">Sign in with Google to sync your events across devices.</p>
         
         <div id="accountUserInfo" style="display:none; margin-bottom:14px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:12px;">
           <div style="display:flex; align-items:center; gap:10px;">
             <img id="accountAvatarImg" src="" alt="Avatar" style="width:36px; height:36px; border-radius:50%; display:none;">
             <div>
-              <div class="user-name" style="font-size:13px; font-weight:600; color:#fff;"></div>
-              <div class="user-email" style="font-size:11px; color:var(--text-muted);"></div>
+              <div id="accountUserName" class="user-name" style="font-size:13px; font-weight:600; color:#fff;"></div>
             </div>
           </div>
         </div>

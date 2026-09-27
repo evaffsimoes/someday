@@ -285,9 +285,15 @@ window.CueAuth = (() => {
   function updateAuthUI(user) {
     const avatarImg = document.getElementById('accountAvatarImg');
     const accountStatusBadge = document.getElementById('accountStatusBadge');
+    const accountSubText = document.getElementById('accountSubText');
     const accountUserInfo = document.getElementById('accountUserInfo');
+    const accountUserName = document.getElementById('accountUserName');
     const accountLoginBtn = document.getElementById('accountLoginBtn');
     const accountLogoutBtn = document.getElementById('accountLogoutBtn');
+
+    if (accountStatusBadge) {
+      accountStatusBadge.style.display = 'none'; // Remove "synced with cloud" badge as requested
+    }
 
     if (user) {
       if (avatarImg) {
@@ -298,15 +304,13 @@ window.CueAuth = (() => {
           avatarImg.style.display = 'none';
         }
       }
-      if (accountStatusBadge) {
-        accountStatusBadge.className = 'status-badge status-synced';
-        accountStatusBadge.textContent = '✓ Synced with Cloud';
+      if (accountSubText) {
+        accountSubText.textContent = 'Your events are automatically synced across devices.';
+      }
+      if (accountUserName) {
+        accountUserName.textContent = user.displayName || 'Signed in';
       }
       if (accountUserInfo) {
-        accountUserInfo.innerHTML = `
-          <div class="user-name">${escapeHtml(user.displayName || 'User')}</div>
-          <div class="user-email">${escapeHtml(user.email || '')}</div>
-        `;
         accountUserInfo.style.display = 'block';
       }
       if (accountLoginBtn) accountLoginBtn.style.display = 'none';
@@ -315,9 +319,8 @@ window.CueAuth = (() => {
       if (avatarImg) {
         avatarImg.style.display = 'none';
       }
-      if (accountStatusBadge) {
-        accountStatusBadge.className = 'status-badge status-local';
-        accountStatusBadge.textContent = isConfigured ? 'Not signed in (Local Storage)' : 'Local Storage Mode';
+      if (accountSubText) {
+        accountSubText.textContent = 'Sign in with Google to sync your events across devices.';
       }
       if (accountUserInfo) {
         accountUserInfo.style.display = 'none';
