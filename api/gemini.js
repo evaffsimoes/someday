@@ -47,7 +47,7 @@ async function scrapeInstagramMetadata(sharedText) {
               'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
               'Accept': isJsonApi ? 'application/json' : 'text/html'
             },
-            signal: AbortSignal.timeout(2000)
+            signal: AbortSignal.timeout(1200)
           });
           if (!res.ok) return null;
 
@@ -171,7 +171,7 @@ If the year isn't shown, assume the next upcoming occurrence after today (${toda
             'x-goog-api-key': apiKey
           },
           body: JSON.stringify(body),
-          signal: AbortSignal.timeout(6000)
+          signal: AbortSignal.timeout(15000)
         });
 
         const resData = await response.json();
