@@ -210,13 +210,21 @@ window.CueAuth = (() => {
   }
 
   async function signOutUser() {
-    if (!auth) return;
     try {
-      const GoogleAuthPlugin = window.Capacitor?.Plugins?.GoogleAuth || window.plugins?.GoogleAuth;
-      if (GoogleAuthPlugin && typeof GoogleAuthPlugin.signOut === 'function') {
-        try { await GoogleAuthPlugin.signOut(); } catch (e) {}
+      if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.GoogleAuth) {
+        try {
+          await window.Capacitor.Plugins.GoogleAuth.signOut();
+        } catch (nativeSignOutErr) {
+          console.warn('Native GoogleAuth signOut skipped/handled:', nativeSignOutErr);
+        }
       }
-      await auth.signOut();
+      if (auth) {
+        try {
+          await auth.signOut();
+        } catch (firebaseSignOutErr) {
+          console.warn('Firebase signOut skipped/handled:', firebaseSignOutErr);
+        }
+      }
       currentUser = null;
       updateAuthUI(null);
 
@@ -235,6 +243,8 @@ window.CueAuth = (() => {
       }
     } catch (err) {
       console.error('Sign out error:', err);
+      currentUser = null;
+      updateAuthUI(null);
     }
   }
 
