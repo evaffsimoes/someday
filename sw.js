@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cue-v26';
+const CACHE_NAME = 'cue-v27';
 const SHARE_CACHE = 'someday-shared-v1';
 
 self.addEventListener('install', (e) => {
@@ -31,8 +31,13 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // Network-first strategy for HTML pages so user always gets the latest cue app version
-  if (e.request.mode === 'navigate' || e.request.destination === 'document') {
+  // Network-first strategy for HTML, JS and CSS files so users get updates instantly without hard refresh
+  if (
+    e.request.mode === 'navigate' ||
+    e.request.destination === 'document' ||
+    url.pathname.endsWith('.js') ||
+    url.pathname.endsWith('.css')
+  ) {
     e.respondWith(
       fetch(e.request).then((res) => {
         const copy = res.clone();
