@@ -632,6 +632,8 @@
       }
 
       function closeLinkInput() {
+        const modal = document.getElementById('linkInputModalOverlay');
+        if (modal) modal.classList.remove('active');
         const slot = elements.linkInputSlot || document.getElementById('linkInputSlot');
         if (slot) slot.innerHTML = '';
       }
@@ -659,7 +661,13 @@
       }
 
       function openLinkInput() {
-        if (document.getElementById('sharedLinkInput')) return document.getElementById('sharedLinkInput').focus();
+        const modal = document.getElementById('linkInputModalOverlay');
+        if (modal) modal.classList.add('active');
+
+        if (document.getElementById('sharedLinkInput')) {
+          setTimeout(() => document.getElementById('sharedLinkInput').focus(), 150);
+          return;
+        }
 
         if (elements.reviewSlot) elements.reviewSlot.innerHTML = '';
         if (elements.aiParsingSlot) elements.aiParsingSlot.innerHTML = '';
@@ -668,7 +676,7 @@
         if (!slot) return;
 
         slot.innerHTML = `
-          <form class="inline-link-form" id="sharedLinkForm" style="margin-top:14px; margin-bottom:16px;">
+          <form class="inline-link-form" id="sharedLinkForm" style="margin-top:6px; margin-bottom:6px;">
             <div style="position:relative; display:flex; align-items:center; background:var(--surface); border:1px solid rgba(168,85,247,0.3); border-radius:16px; padding:4px 6px 4px 14px; box-shadow:0 8px 24px rgba(0,0,0,0.3); transition:all 0.2s ease;">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-strong)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-right:10px;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
               <input id="sharedLinkInput" type="text" autocomplete="url" placeholder="Paste Instagram link or caption..." aria-label="Instagram link or caption" style="flex:1; background:transparent; border:none; outline:none; color:var(--text-main); font-size:13px; font-weight:500; padding:10px 0;">
@@ -679,8 +687,11 @@
             </div>
           </form>`;
 
+        const closeBtn = document.getElementById('closeLinkModalBtn');
+        if (closeBtn) closeBtn.onclick = closeLinkInput;
+
         const input = document.getElementById('sharedLinkInput');
-        if (input) input.focus();
+        if (input) setTimeout(() => input.focus(), 150);
 
         const form = document.getElementById('sharedLinkForm');
         if (form) {

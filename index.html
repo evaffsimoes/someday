@@ -350,6 +350,21 @@
 
 
 
+  <div id="linkInputModalOverlay" class="modal-overlay">
+    <div class="modal-content" style="max-width: 400px; padding: 20px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3 style="margin:0; font-size:17px; font-weight:700;">Import from Instagram</h3>
+        <button class="modal-close" id="closeLinkModalBtn" type="button" aria-label="Close modal">
+          <svg class="cue-icon" viewBox="0 0 24 24" aria-hidden="true" style="width:16px; height:16px;">
+            <path d="m7 7 10 10M17 7 7 17" />
+          </svg>
+        </button>
+      </div>
+      <p style="font-size:13px; color:var(--text-muted); margin:0 0 16px 0;">Paste an Instagram event link or post caption to automatically extract details with AI.</p>
+      <div id="linkInputSlot"></div>
+    </div>
+  </div>
+
   <div id="eventModalOverlay" class="modal-overlay">
     <div class="modal-content" id="eventModalContent"></div>
   </div>
