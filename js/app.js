@@ -219,8 +219,8 @@
       window.cueSaveEvents = saveEvents;
       window.cueRenderApp = () => {
         if (typeof renderSpotlight === 'function') renderSpotlight();
-        if (typeof renderQueue === 'function') renderQueue();
-        if (typeof renderCalendar === 'function' && state.calSelectedDateStr) renderCalendar();
+        if (typeof render === 'function') render();
+        if (typeof renderCalendar === 'function') renderCalendar();
         if (typeof updateDynamicDatalists === 'function') updateDynamicDatalists();
       };
 
