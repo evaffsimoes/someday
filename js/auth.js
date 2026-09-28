@@ -210,41 +210,37 @@ window.CueAuth = (() => {
   }
 
   async function signOutUser() {
-    try {
-      if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.GoogleAuth) {
-        try {
-          await window.Capacitor.Plugins.GoogleAuth.signOut();
-        } catch (nativeSignOutErr) {
-          console.warn('Native GoogleAuth signOut skipped/handled:', nativeSignOutErr);
-        }
-      }
-      if (auth) {
-        try {
-          await auth.signOut();
-        } catch (firebaseSignOutErr) {
-          console.warn('Firebase signOut skipped/handled:', firebaseSignOutErr);
-        }
-      }
-      currentUser = null;
-      updateAuthUI(null);
+    currentUser = null;
+    updateAuthUI(null);
 
-      // Clear local events state and local storage on logout for user privacy
-      if (window.cueAppState) {
-        window.cueAppState.events = [];
+    // Clear local events state and local storage on logout for user privacy
+    if (window.cueAppState) {
+      window.cueAppState.events = [];
+    }
+    if (typeof window.cueSaveEvents === 'function') {
+      try { await window.cueSaveEvents(true); } catch (_) {}
+    } else {
+      localStorage.removeItem('cue-events-v12');
+      localStorage.removeItem('someday-events');
+    }
+    if (typeof window.cueRenderApp === 'function') {
+      try { window.cueRenderApp(); } catch (_) {}
+    }
+
+    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.GoogleAuth) {
+      try {
+        await window.Capacitor.Plugins.GoogleAuth.signOut();
+      } catch (nativeSignOutErr) {
+        console.warn('Native GoogleAuth signOut handled:', nativeSignOutErr);
       }
-      if (typeof window.cueSaveEvents === 'function') {
-        await window.cueSaveEvents(true);
-      } else {
-        localStorage.removeItem('cue-events-v12');
-        localStorage.removeItem('someday-events');
+    }
+
+    if (auth) {
+      try {
+        await auth.signOut();
+      } catch (firebaseSignOutErr) {
+        console.warn('Firebase signOut handled:', firebaseSignOutErr);
       }
-      if (typeof window.cueRenderApp === 'function') {
-        window.cueRenderApp();
-      }
-    } catch (err) {
-      console.error('Sign out error:', err);
-      currentUser = null;
-      updateAuthUI(null);
     }
   }
 
