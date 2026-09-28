@@ -108,7 +108,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = (process.env.GEMINI_API_KEY || '').trim().replace(/^["']|["']$/g, '');
   if (!apiKey) {
     return res.status(500).json({ error: 'GEMINI_API_KEY is missing' });
   }
@@ -157,17 +157,20 @@ If the year is not mentioned, assume the next upcoming occurrence after today ($
 If the year isn't shown, assume the next upcoming occurrence after today (${today}).`;
     }
 
-    const modelsToTry = ['gemini-1.5-flash', 'gemini-2.0-flash-exp', 'gemini-1.5-pro'];
+    const modelsToTry = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'];
     let data = null;
     let lastErr = null;
 
     for (const modelName of modelsToTry) {
       try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(apiKey)}`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': apiKey
+          },
           body: JSON.stringify(body),
-          signal: AbortSignal.timeout(5000)
+          signal: AbortSignal.timeout(6000)
         });
 
         const resData = await response.json();
