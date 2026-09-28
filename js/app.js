@@ -510,10 +510,14 @@
         if (!slot) return;
 
         slot.innerHTML = `
-          <div class="calendar-toast" role="status">
-            <span>Event removed.</span>
-            <button id="undoBtn">Undo</button>
-          </div>`;
+          <div class="calendar-toast" role="status" style="display:flex; flex-direction:column; gap:6px; position:relative; overflow:hidden;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%;">
+              <span>Evento removido.</span>
+              <button id="undoBtn" style="background:none; border:none; color:var(--accent-strong); font-weight:700; cursor:pointer; font-size:13px; padding:0; display:flex; align-items:center; gap:4px;">Anular ↺</button>
+            </div>
+            <div style="position:absolute; bottom:0; left:0; height:3px; background:var(--accent-strong); width:100%; animation:undoProgress 5s linear forwards;"></div>
+          </div>
+          <style>@keyframes undoProgress { from { width: 100%; } to { width: 0%; } }</style>`;
 
         clearTimeout(state.fallbackUndoTimer);
 
@@ -653,6 +657,9 @@
       function renderAiParsedSuccess(parsed) {
         elements.aiParsingSlot.innerHTML = '';
         openReview(parsed);
+        setTimeout(() => {
+          if (elements.reviewSlot) elements.reviewSlot.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
       }
 
       function openLinkInput() {
@@ -799,16 +806,18 @@
             <div class="form-section-title">1. Event Basics</div>
 
             <div class="field">
-              <div class="event-image-editor">
-                <div id="eventImagePreviewWrapper" class="event-image-preview-wrapper">
+              <div class="event-image-editor" style="background:var(--surface-soft); padding:12px; border-radius:14px; border:1px solid var(--border); display:flex; align-items:center; gap:14px;">
+                <div id="eventImagePreviewWrapper" class="event-image-preview-wrapper" style="width:72px; height:72px; border-radius:12px; overflow:hidden; background:var(--surface); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
                   ${safeImageUrl(prefill.image)
-            ? `<img src="${escapeAttr(safeImageUrl(prefill.image))}" alt="Event image">`
-            : '<span>No image</span>'}
+            ? `<img src="${escapeAttr(safeImageUrl(prefill.image))}" style="width:100%; height:100%; object-fit:cover;" alt="Event image">`
+            : `<div style="text-align:center; padding:4px; font-size:10px; color:var(--text-muted);">Sem imagem</div>`}
                 </div>
-                <div class="event-image-actions">
-                  <input class="event-image-input" id="eventImageInput" type="file" accept="image/jpeg,image/png,image/webp">
-                  <label class="event-image-upload" for="eventImageInput">
-                    <span>${safeImageUrl(prefill.image) ? 'Change image' : 'Upload image'}</span>
+                <div class="event-image-actions" style="display:flex; flex-direction:column; gap:6px; flex:1;">
+                  <span style="font-size:12px; font-weight:600; color:var(--text-main);">${safeImageUrl(prefill.image) ? 'Imagem do evento' : 'Não encontrou cartaz?'}</span>
+                  <input class="event-image-input" id="eventImageInput" type="file" accept="image/jpeg,image/png,image/webp" style="display:none;">
+                  <label class="btn btn-ghost" for="eventImageInput" style="font-size:12px; padding:6px 12px; margin:0; display:inline-flex; align-items:center; gap:6px; width:fit-content; cursor:pointer;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    <span>${safeImageUrl(prefill.image) ? 'Alterar foto' : 'Escolher da Galeria'}</span>
                   </label>
                 </div>
               </div>
