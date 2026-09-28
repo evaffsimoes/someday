@@ -33,97 +33,50 @@ async function scrapeInstagramMetadata(sharedText) {
 
   if (code) {
     const cleanUrl = `https://www.instagram.com/p/${code}/`;
-
-    for (const fetchUrl of [
+    const targetUrls = [
       `https://api.instagram.com/oembed/?url=${encodeURIComponent(cleanUrl)}`,
-      `https://www.instagram.com/p/${code}/embed/captioned/`,
-      `https://ddinstagram.com/p/${code}`,
-      `https://vxinstagram.com/p/${code}`,
-      `https://gramsnap.com/api/post?url=${encodeURIComponent(cleanUrl)}`
-    ]) {
-      try {
-        const isJsonApi = fetchUrl.includes('api.instagram.com');
-        const res = await fetch(fetchUrl, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
-            'Accept': isJsonApi ? 'application/json' : 'text/html'
-          },
-          signal: AbortSignal.timeout(6000)
-        });
+      `https://ddinstagram.com/p/${code}`
+    ];
 
-        if (res.ok) {
+    try {
+      const results = await Promise.allSettled(
+        targetUrls.map(async fetchUrl => {
+          const isJsonApi = fetchUrl.includes('api.instagram.com');
+          const res = await fetch(fetchUrl, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
+              'Accept': isJsonApi ? 'application/json' : 'text/html'
+            },
+            signal: AbortSignal.timeout(2000)
+          });
+          if (!res.ok) return null;
+
           if (isJsonApi) {
             const oembedData = await res.json();
-            if (oembedData.title) {
-              const authorStr = oembedData.author_name ? `Post by @${oembedData.author_name}` : '';
-              enrichedText = [authorStr, oembedData.title, sharedText].filter(Boolean).join(' | ');
-            }
-            if (oembedData.thumbnail_url && !posterImageDataUrl) {
-              try {
-                const imgRes = await fetch(oembedData.thumbnail_url, {
-                  headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
-                  signal: AbortSignal.timeout(6000)
-                });
-                if (imgRes.ok) {
-                  const mime = imgRes.headers.get('content-type')?.split(';')[0].toLowerCase() || 'image/jpeg';
-                  const buf = Buffer.from(await imgRes.arrayBuffer());
-                  if (buf.byteLength <= MAX_POSTER_BYTES) {
-                    posterImageDataUrl = `data:${mime};base64,${buf.toString('base64')}`;
-                  } else {
-                    posterImageDataUrl = oembedData.thumbnail_url;
-                  }
-                } else {
-                  posterImageDataUrl = oembedData.thumbnail_url;
-                }
-              } catch (_) {
-                posterImageDataUrl = oembedData.thumbnail_url;
-              }
-            }
+            return {
+              text: [oembedData.author_name ? `Post by @${oembedData.author_name}` : '', oembedData.title, sharedText].filter(Boolean).join(' | '),
+              img: oembedData.thumbnail_url || null
+            };
           } else {
             const html = await res.text();
-
             const ogTitle = (html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i) || [])[1] || '';
             const ogDesc = (html.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i) || [])[1] || '';
-            const captionMatch = html.match(/<div[^>]*class=["']Caption["'][^>]*>(.*?)<\/div>/s) || html.match(/<div[^>]*class=["']CaptionText["'][^>]*>(.*?)<\/div>/s);
-            const captionText = captionMatch ? captionMatch[1].replace(/<[^>]+>/g, ' ').trim() : '';
-
-            if (ogTitle || ogDesc || captionText) {
-              enrichedText = [ogTitle, ogDesc, captionText, sharedText].filter(Boolean).join(' | ');
-            }
-
-            let imgUrl = (html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) || [])[1]
-              || (html.match(/<img[^>]*class=["']EmbeddedMediaImage["'][^>]*src=["']([^"']+)["']/i) || [])[1]
-              || (html.match(/<img[^>]*src=["']([^"']+)["'][^>]*class=["']EmbeddedMediaImage["']/i) || [])[1] || '';
-
-            imgUrl = imgUrl.replace(/&amp;/g, '&');
-
-            if (imgUrl && !posterImageDataUrl) {
-              try {
-                const imgRes = await fetch(imgUrl, {
-                  headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
-                  signal: AbortSignal.timeout(6000)
-                });
-                if (imgRes.ok) {
-                  const mime = imgRes.headers.get('content-type')?.split(';')[0].toLowerCase() || 'image/jpeg';
-                  const buf = Buffer.from(await imgRes.arrayBuffer());
-                  if (buf.byteLength <= MAX_POSTER_BYTES) {
-                    posterImageDataUrl = `data:${mime};base64,${buf.toString('base64')}`;
-                  } else {
-                    posterImageDataUrl = imgUrl;
-                  }
-                } else {
-                  posterImageDataUrl = imgUrl;
-                }
-              } catch (_) {
-                posterImageDataUrl = imgUrl;
-              }
-            }
+            let imgUrl = (html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) || [])[1] || '';
+            return {
+              text: [ogTitle, ogDesc, sharedText].filter(Boolean).join(' | '),
+              img: imgUrl ? imgUrl.replace(/&amp;/g, '&') : null
+            };
           }
+        })
+      );
 
-          if (posterImageDataUrl || enrichedText !== sharedText) break;
+      for (const res of results) {
+        if (res.status === 'fulfilled' && res.value) {
+          if (res.value.text && enrichedText === sharedText) enrichedText = res.value.text;
+          if (res.value.img && !posterImageDataUrl) posterImageDataUrl = res.value.img;
         }
-      } catch (_) {}
-    }
+      }
+    } catch (_) {}
   }
 
   return { enrichedText, posterImageDataUrl };
@@ -178,16 +131,11 @@ export default async function handler(req, res) {
       if (posterImageDataUrl) extractedImageDataUrl = posterImageDataUrl;
 
       const parts = [];
-
-      // If we downloaded a poster image from the Instagram post, pass it directly to Gemini Vision!
       if (posterImageDataUrl && posterImageDataUrl.startsWith('data:image')) {
         const [meta, base64Data] = posterImageDataUrl.split(',');
         const mimeType = meta.match(/data:(.*?);/)?.[1] || 'image/jpeg';
         parts.push({
-          inlineData: {
-            mimeType,
-            data: base64Data
-          }
+          inlineData: { mimeType, data: base64Data }
         });
       }
 
@@ -198,7 +146,7 @@ Extract the music/event details in Portugal.
 Respond ONLY with a JSON object in this exact shape (no markdown):
 {"artist": "Artist or Event Name", "startDate": "YYYY-MM-DD or empty string", "endDate": "YYYY-MM-DD or empty string", "time": "HH:MM in 24h format or empty string", "venue": "Venue name or empty string", "city": "City in Portugal or empty string", "category": "Concert or Festival or Other", "description": "Comma-separated list of artists/lineup, or a short note if lineup not found. No markdown."}
 
-If the year is not mentioned, assume the next upcoming occurrence after today (${today}). Month names in Portuguese: janeiro=01, fevereiro=02, março=03, abril=04, maio=05, junho=06, julho=07, agosto=08, setembro=09, outubro=10, novembro=11, dezembro=12.`
+If the year is not mentioned, assume the next upcoming occurrence after today (${today}).`
       });
 
       body.contents = [{ parts }];
@@ -209,39 +157,17 @@ If the year is not mentioned, assume the next upcoming occurrence after today ($
 If the year isn't shown, assume the next upcoming occurrence after today (${today}).`;
     }
 
-    let modelNamesToTry = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-pro'];
-
-    // Query Google AI Studio ListModels API to get exact supported models for this API Key
-    try {
-      const listRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
-      const listData = await listRes.json();
-      if (listData?.error?.message) {
-        return res.status(400).json({ error: `Chave Gemini API (${apiKey.slice(0, 6)}...): ${listData.error.message}` });
-      }
-
-      if (listData && Array.isArray(listData.models)) {
-        const discovered = listData.models
-          .filter(m => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
-          .map(m => (m.name || '').replace(/^models\//, ''))
-          .filter(Boolean);
-
-        if (discovered.length > 0) {
-          modelNamesToTry = [...new Set([...discovered, ...modelNamesToTry])];
-        }
-      }
-    } catch (listErr) {
-      console.warn('ListModels warning:', listErr);
-    }
-
-    const candidateErrors = [];
+    const modelsToTry = ['gemini-1.5-flash', 'gemini-2.0-flash-exp', 'gemini-1.5-pro'];
     let data = null;
+    let lastErr = null;
 
-    for (const modelName of modelNamesToTry) {
+    for (const modelName of modelsToTry) {
       try {
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
+          body: JSON.stringify(body),
+          signal: AbortSignal.timeout(5000)
         });
 
         const resData = await response.json();
@@ -249,16 +175,15 @@ If the year isn't shown, assume the next upcoming occurrence after today (${toda
           data = resData;
           break;
         } else {
-          const msg = resData?.error?.message || resData?.error || `HTTP ${response.status}`;
-          candidateErrors.push(`[${modelName}]: ${msg}`);
+          lastErr = resData?.error?.message || `HTTP ${response.status}`;
         }
       } catch (err) {
-        candidateErrors.push(`[${modelName}]: ${err.message}`);
+        lastErr = err.message;
       }
     }
 
     if (!data) {
-      return res.status(503).json({ error: `Gemini API Error: ${candidateErrors.join(' | ')}` });
+      return res.status(503).json({ error: `Gemini API Error: ${lastErr || 'Service Unavailable'}` });
     }
 
     if (extractedImageDataUrl) data._extractedImage = extractedImageDataUrl;
