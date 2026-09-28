@@ -2298,7 +2298,11 @@
         });
 
         if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.register('sw.js').catch(err => console.warn('SW registration failed', err));
+          navigator.serviceWorker.getRegistrations().then(registrations => {
+            for (let registration of registrations) {
+              registration.unregister();
+            }
+          });
         }
       }
 
