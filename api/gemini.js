@@ -158,7 +158,7 @@ If the year is not mentioned, assume the next upcoming occurrence after today ($
 If the year isn't shown, assume the next upcoming occurrence after today (${today}).`;
     }
 
-    const modelsToTry = ['gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-flash-lite-latest'];
+    const modelsToTry = ['gemini-3.5-flash-lite', 'gemini-flash-lite-latest', 'gemini-3.5-flash'];
     let data = null;
     let lastErr = null;
 
