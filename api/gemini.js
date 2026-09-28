@@ -211,11 +211,11 @@ If the year isn't shown, assume the next upcoming occurrence after today (${toda
 
     const modelCandidates = [
       { model: 'gemini-1.5-flash', apiVersion: 'v1beta' },
-      { model: 'gemini-1.5-flash-latest', apiVersion: 'v1beta' },
-      { model: 'gemini-1.5-pro-latest', apiVersion: 'v1beta' }
+      { model: 'gemini-2.0-flash-exp', apiVersion: 'v1beta' },
+      { model: 'gemini-1.5-pro', apiVersion: 'v1beta' }
     ];
 
-    let lastError = null;
+    const candidateErrors = [];
     let data = null;
 
     for (const item of modelCandidates) {
@@ -231,15 +231,16 @@ If the year isn't shown, assume the next upcoming occurrence after today (${toda
           data = resData;
           break;
         } else {
-          lastError = resData?.error?.message || resData?.error || `Model ${item.model} failed (${response.status})`;
+          const msg = resData?.error?.message || resData?.error || `HTTP ${response.status}`;
+          candidateErrors.push(`[${item.model}]: ${msg}`);
         }
       } catch (err) {
-        lastError = err.message;
+        candidateErrors.push(`[${item.model}]: ${err.message}`);
       }
     }
 
     if (!data) {
-      return res.status(503).json({ error: lastError || 'Gemini service temporarily unavailable.' });
+      return res.status(503).json({ error: `Gemini API Error: ${candidateErrors.join(' | ')}` });
     }
 
     if (extractedImageDataUrl) data._extractedImage = extractedImageDataUrl;
