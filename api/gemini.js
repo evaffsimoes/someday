@@ -209,18 +209,36 @@ If the year is not mentioned, assume the next upcoming occurrence after today ($
 If the year isn't shown, assume the next upcoming occurrence after today (${today}).`;
     }
 
-    const modelCandidates = [
-      { model: 'gemini-1.5-flash', apiVersion: 'v1beta' },
-      { model: 'gemini-2.0-flash-exp', apiVersion: 'v1beta' },
-      { model: 'gemini-1.5-pro', apiVersion: 'v1beta' }
-    ];
+    let modelNamesToTry = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro', 'gemini-pro'];
+
+    // Query Google AI Studio ListModels API to get exact supported models for this API Key
+    try {
+      const listRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+      const listData = await listRes.json();
+      if (listData?.error?.message) {
+        return res.status(400).json({ error: `Chave Gemini API (${apiKey.slice(0, 6)}...): ${listData.error.message}` });
+      }
+
+      if (listData && Array.isArray(listData.models)) {
+        const discovered = listData.models
+          .filter(m => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
+          .map(m => (m.name || '').replace(/^models\//, ''))
+          .filter(Boolean);
+
+        if (discovered.length > 0) {
+          modelNamesToTry = [...new Set([...discovered, ...modelNamesToTry])];
+        }
+      }
+    } catch (listErr) {
+      console.warn('ListModels warning:', listErr);
+    }
 
     const candidateErrors = [];
     let data = null;
 
-    for (const item of modelCandidates) {
+    for (const modelName of modelNamesToTry) {
       try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/${item.apiVersion}/models/${item.model}:generateContent?key=${apiKey}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body)
@@ -232,10 +250,10 @@ If the year isn't shown, assume the next upcoming occurrence after today (${toda
           break;
         } else {
           const msg = resData?.error?.message || resData?.error || `HTTP ${response.status}`;
-          candidateErrors.push(`[${item.model}]: ${msg}`);
+          candidateErrors.push(`[${modelName}]: ${msg}`);
         }
       } catch (err) {
-        candidateErrors.push(`[${item.model}]: ${err.message}`);
+        candidateErrors.push(`[${modelName}]: ${err.message}`);
       }
     }
 
