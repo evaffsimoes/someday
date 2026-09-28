@@ -140,14 +140,14 @@ window.CueAuth = (() => {
         const errStr = JSON.stringify(nativeErr) || String(nativeErr);
         if (isNative) {
           // Do NOT redirect the WebView on native app, present useful diagnosis instead
-          alert(`Google Sign-In (Android Native) Error:\n${nativeErr?.message || nativeErr?.error || errStr}\n\nSe o erro for 10 ou DEVELOPER_ERROR, verifique se a SHA-1 da chave de assinatura foi adicionada na Firebase Console.`);
+          alert(`Google Sign-In (Android Native) Error:\n${nativeErr?.message || nativeErr?.error || errStr}\n\nIf the error code is 10 or DEVELOPER_ERROR, verify that the SHA-1 signing key fingerprint is added to your Firebase Console.`);
           return;
         }
       }
     }
 
     if (isNative) {
-      alert('O plugin de autenticação nativa do Android não está pronto nesta compilação.');
+      alert('Android native authentication plugin is not ready in this build.');
       return;
     }
 
