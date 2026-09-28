@@ -183,6 +183,11 @@ If the year isn't shown, assume the next upcoming occurrence after today (${toda
     }
 
     if (!data) {
+      if (lastErr && (lastErr.includes('API key') || lastErr.includes('not found') || lastErr.includes('PERMISSION_DENIED') || lastErr.includes('403'))) {
+        return res.status(400).json({
+          error: `A chave API do Gemini no Vercel (GEMINI_API_KEY) precisa ser atualizada. Obtenha uma nova chave gratuita em https://aistudio.google.com/app/apikey e atualize a variável GEMINI_API_KEY nas definições do Vercel.`
+        });
+      }
       return res.status(503).json({ error: `Gemini API Error: ${lastErr || 'Service Unavailable'}` });
     }
 
