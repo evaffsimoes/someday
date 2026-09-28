@@ -3,7 +3,7 @@
   "appName": "cue",
   "webDir": "www",
   "server": {
-    "url": "https://someday-nu.vercel.app",
+    "url": "https://cue-events.vercel.app",
     "cleartext": true
   },
   "plugins": {
