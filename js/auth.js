@@ -213,16 +213,7 @@ window.CueAuth = (() => {
     currentUser = null;
     updateAuthUI(null);
 
-    // Clear local events state and local storage on logout for user privacy
-    if (window.cueAppState) {
-      window.cueAppState.events = [];
-    }
-    if (typeof window.cueSaveEvents === 'function') {
-      try { await window.cueSaveEvents(true); } catch (_) {}
-    } else {
-      localStorage.removeItem('cue-events-v12');
-      localStorage.removeItem('someday-events');
-    }
+    // Keep existing local events intact so user never loses their agenda
     if (typeof window.cueRenderApp === 'function') {
       try { window.cueRenderApp(); } catch (_) {}
     }
