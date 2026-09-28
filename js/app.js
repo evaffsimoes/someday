@@ -1089,72 +1089,84 @@
         };
 
         document.getElementById('saveBtn').onclick = async () => {
-          // Commit any uncommitted text currently in friendsSearch input
-          const searchVal = friendsSearch.value.trim();
-          if (searchVal) {
-            window.addFriend(searchVal);
-            friendsSearch.value = '';
+          try {
+            // Commit any uncommitted text currently in friendsSearch input
+            const searchVal = friendsSearch ? friendsSearch.value.trim() : '';
+            if (searchVal) {
+              window.addFriend(searchVal);
+              if (friendsSearch) friendsSearch.value = '';
+            }
+
+            const artistName = document.getElementById('f_artist')?.value.trim() || '';
+            if (!artistName) {
+              alert('Por favor insira o nome do Artista ou Evento.');
+              document.getElementById('f_artist')?.focus();
+              return;
+            }
+
+            const dateInput = document.getElementById('f_daterange')?.value || '';
+            const [startDate, endDate] = dateInput.includes(' to ') ? dateInput.split(' to ') : [dateInput, dateInput];
+            const companyText = document.getElementById('f_company')?.value.trim() || '';
+            const previousEvents = state.events;
+
+            const event = {
+              id: prefill.id || uid(),
+              artist: artistName,
+              company: companyText,
+              startDate: startDate || new Date().toISOString().slice(0, 10),
+              endDate: endDate || startDate || new Date().toISOString().slice(0, 10),
+              time: document.getElementById('f_time')?.value || '',
+              venue: document.getElementById('f_venue')?.value.trim() || '',
+              city: document.getElementById('f_city')?.value.trim() || '',
+              category: document.getElementById('f_category')?.value || 'Concert',
+              ticketStatus: document.getElementById('f_ticket_status')?.value || '',
+              ticketFile: editedTicketFile,
+              ticketFileName: editedTicketFileName,
+              description: document.getElementById('f_desc')?.value.trim() || '',
+              image: editedImage
+            };
+
+            if (companyText) {
+              const names = companyText.split(',').map(name => name.trim()).filter(Boolean);
+              let changed = false;
+
+              names.forEach(name => {
+                if (!state.savedFriends.find(friend => friend.toLowerCase() === name.toLowerCase())) {
+                  state.savedFriends.push(name);
+                  changed = true;
+                }
+              });
+
+              if (changed) await setStorageItem(FRIENDS_KEY, JSON.stringify(state.savedFriends));
+            }
+
+            if (prefill.id) {
+              state.events = dedupeEvents(state.events.map(item => item.id === event.id ? event : item));
+            } else {
+              state.events = dedupeEvents([...state.events, event]);
+            }
+
+            if (!await saveEvents()) {
+              state.events = previousEvents;
+              alert('Não foi possível guardar este evento. Se anexou uma imagem muito grande, tente uma imagem mais pequena.');
+              return;
+            }
+
+            elements.reviewSlot.innerHTML = '';
+            restoreAddOptions();
+            elements.statusEl.textContent = 'Added to cue ✓';
+            if (elements.fileInput) elements.fileInput.value = '';
+            render();
+            renderCalendar();
+            switchTab('queue');
+            showCalendarToast(event);
+            setTimeout(() => {
+              if (elements.statusEl.textContent === 'Added to cue ✓') elements.statusEl.textContent = '';
+            }, 2500);
+          } catch (saveErr) {
+            console.error('Save button error:', saveErr);
+            alert('Erro ao guardar evento: ' + saveErr.message);
           }
-
-          const dateInput = document.getElementById('f_daterange').value;
-          const [startDate, endDate] = dateInput.includes(' to ') ? dateInput.split(' to ') : [dateInput, dateInput];
-          const companyText = document.getElementById('f_company').value.trim();
-          const previousEvents = state.events;
-
-          const event = {
-            id: prefill.id || uid(),
-            artist: document.getElementById('f_artist').value.trim(),
-            company: companyText,
-            startDate: startDate || '',
-            endDate: endDate || startDate || '',
-            time: document.getElementById('f_time').value,
-            venue: document.getElementById('f_venue').value.trim(),
-            city: document.getElementById('f_city').value.trim(),
-            category: document.getElementById('f_category').value,
-            ticketStatus: document.getElementById('f_ticket_status').value,
-            ticketFile: editedTicketFile,
-            ticketFileName: editedTicketFileName,
-            description: document.getElementById('f_desc').value.trim(),
-            image: editedImage
-          };
-
-          if (companyText) {
-            const names = companyText.split(',').map(name => name.trim()).filter(Boolean);
-            let changed = false;
-
-            names.forEach(name => {
-              if (!state.savedFriends.find(friend => friend.toLowerCase() === name.toLowerCase())) {
-                state.savedFriends.push(name);
-                changed = true;
-              }
-            });
-
-            if (changed) await setStorageItem(FRIENDS_KEY, JSON.stringify(state.savedFriends));
-          }
-
-          if (prefill.id) {
-            state.events = dedupeEvents(state.events.map(item => item.id === event.id ? event : item));
-          } else {
-            state.events = dedupeEvents([...state.events, event]);
-          }
-
-          if (!await saveEvents()) {
-            state.events = previousEvents;
-            elements.statusEl.textContent = 'Could not save this event. Try a smaller image.';
-            return;
-          }
-
-          elements.reviewSlot.innerHTML = '';
-          restoreAddOptions();
-          elements.statusEl.textContent = 'Added to cue ✓';
-          elements.fileInput.value = '';
-          render();
-          renderCalendar();
-          switchTab('queue');
-          showCalendarToast(event);
-          setTimeout(() => {
-            if (elements.statusEl.textContent === 'Added to cue ✓') elements.statusEl.textContent = '';
-          }, 2500);
         };
 
         elements.reviewSlot.scrollIntoView({ behavior: 'smooth' });
