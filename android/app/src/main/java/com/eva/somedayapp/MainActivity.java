@@ -115,8 +115,7 @@ public class MainActivity extends BridgeActivity {
     private void triggerWidgetRefresh() {
         AppWidgetManager mgr = AppWidgetManager.getInstance(this);
 
-        int[] listIds = mgr.getAppWidgetIds(new ComponentName(this, CueWidgetProvider.class));
-        for (int id : listIds) CueWidgetProvider.updateWidget(this, mgr, id);
+        CueWidgetProvider.refreshAll(this);
 
         int[] calIds = mgr.getAppWidgetIds(new ComponentName(this, CueCalendarWidgetProvider.class));
         for (int id : calIds) CueCalendarWidgetProvider.updateWidget(this, mgr, id);

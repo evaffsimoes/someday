@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One event card in the scrollable list widget -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/item_card"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:background="@drawable/cal_cell_bg_empty"
+    android:padding="10dp"
+    android:gravity="center_vertical"
+    android:baselineAligned="false">
+
+    <!-- Date badge: day number(s) over month -->
+    <LinearLayout
+        android:layout_width="54dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="@drawable/badge_background"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp"
+        android:paddingStart="2dp"
+        android:paddingEnd="2dp"
+        android:layout_marginEnd="10dp">
+        <TextView android:id="@+id/item_day"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textColor="#C084FC"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:singleLine="true" />
+        <TextView android:id="@+id/item_month"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textColor="#858B97"
+            android:textSize="9sp"
+            android:textAllCaps="true"
+            android:singleLine="true" />
+    </LinearLayout>
+
+    <!-- Name, when, where and tags -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_weight="1"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+        <TextView android:id="@+id/item_artist"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end" />
+        <TextView android:id="@+id/item_date"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#858B97"
+            android:textSize="11sp"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:drawableStart="@drawable/ic_widget_calendar"
+            android:drawablePadding="5dp"
+            android:gravity="center_vertical"
+            android:layout_marginTop="2dp" />
+        <TextView android:id="@+id/item_loc"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#858B97"
+            android:textSize="11sp"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:drawableStart="@drawable/ic_widget_location"
+            android:drawablePadding="5dp"
+            android:gravity="center_vertical"
+            android:layout_marginTop="2dp" />
+        <TextView android:id="@+id/item_tag"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#C084FC"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:layout_marginTop="3dp"
+            android:visibility="gone" />
+    </LinearLayout>
+</LinearLayout>

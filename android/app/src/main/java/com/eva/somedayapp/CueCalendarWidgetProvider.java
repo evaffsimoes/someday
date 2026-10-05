@@ -181,6 +181,21 @@ public class CueCalendarWidgetProvider extends AppWidgetProvider {
                     views.setViewVisibility(todayId, View.VISIBLE);
                 }
 
+                // Tapping any day opens that day in the app's calendar
+                String cellDate = String.format(Locale.US, "%04d-%02d-%02d", currentYear, currentMonth + 1, dayCounter);
+                if (launchIntent != null) {
+                    Intent cellIntent = new Intent(launchIntent);
+                    cellIntent.putExtra("open_date", cellDate);
+                    cellIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    PendingIntent cellPending = PendingIntent.getActivity(
+                        context,
+                        appWidgetId * 1000 + cid + 10000,
+                        cellIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+                    );
+                    views.setOnClickPendingIntent(bgId, cellPending);
+                }
+
                 if (dayEvents.containsKey(dayCounter)) {
                     java.util.List<JSONObject> evs = dayEvents.get(dayCounter);
                     // Multi-day events first, so their bars stay on the same row across days
@@ -190,25 +205,9 @@ public class CueCalendarWidgetProvider extends AppWidgetProvider {
                         if (multiA != multiB) return multiA - multiB;
                         return a.optString("artist", "").compareToIgnoreCase(b.optString("artist", ""));
                     });
-                    String dayKey = String.format(Locale.US, "%04d-%02d-%02d", currentYear, currentMonth + 1, dayCounter);
+                    String dayKey = cellDate;
                     int column = cid % 7;
 
-                    if (launchIntent != null) {
-                        String firstEvId = evs.get(0).optString("id", "");
-                        String firstEvDate = String.format(Locale.getDefault(), "%04d-%02d-%02d", currentYear, currentMonth + 1, dayCounter);
-                        Intent cellIntent = new Intent(launchIntent);
-                        cellIntent.putExtra("open_event_id", firstEvId);
-                        cellIntent.putExtra("open_date", firstEvDate);
-                        cellIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                        PendingIntent cellPending = PendingIntent.getActivity(
-                            context,
-                            appWidgetId * 1000 + cid + 10000,
-                            cellIntent,
-                            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-                        );
-                        views.setOnClickPendingIntent(bgId, cellPending);
-                    }
-                    
                     for (int eIdx = 0; eIdx < evs.size() && eIdx < 3; eIdx++) {
                         JSONObject ev = evs.get(eIdx);
                         int targetEvId = (eIdx == 0) ? ev1Id : ((eIdx == 1) ? ev2Id : ev3Id);

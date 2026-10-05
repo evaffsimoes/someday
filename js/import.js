@@ -264,18 +264,19 @@ async function checkForSharedData() {
       if (targetId) await window.Capacitor.Plugins.Preferences.remove({ key: 'pending-widget-open-event-id' });
       if (targetDate) await window.Capacitor.Plugins.Preferences.remove({ key: 'pending-widget-open-date' });
 
-      let targetEvent = state.events.find(event => event.id === targetId);
-      if (!targetEvent && targetDate) {
-        targetEvent = state.events.find(event => event.startDate === targetDate || (event.startDate <= targetDate && event.endDate >= targetDate));
-      }
+      // An event tapped in the list widget opens that event; a day tapped in the
+      // calendar widget opens that day in the calendar tab
+      const targetEvent = targetId ? state.events.find(event => event.id === targetId) : null;
 
       if (targetEvent) {
         switchTab('queue');
         openDetailModal(targetEvent);
       } else if (targetDate) {
-        switchTab('calendar');
+        const [year, month] = targetDate.split('-').map(Number);
+        if (year && month) state.calCurrentDate = new Date(year, month - 1, 1);
         state.calSelectedDateStr = targetDate;
-        renderCalendar();
+        switchTab('calendar');
+        setTimeout(() => document.getElementById('calSelectedTitle')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
       }
     }
   };

@@ -4,4 +4,8 @@
     <string name="title_activity_main">cue</string>
     <string name="package_name">com.eva.somedayapp</string>
     <string name="custom_url_scheme">com.eva.somedayapp</string>
+    <string name="widget_list_label">cue · Upcoming</string>
+    <string name="widget_list_description">Your upcoming events, soonest first. Scroll to see them all.</string>
+    <string name="widget_calendar_label">cue · Calendar</string>
+    <string name="widget_calendar_description">Your events on a monthly calendar. Tap a day to open it in cue.</string>
 </resources>
