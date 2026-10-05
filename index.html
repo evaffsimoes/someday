@@ -201,7 +201,7 @@
   <div id="settingsModalOverlay" class="modal-overlay">
     <div class="modal-content">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-        <h3 style="margin:0;">Notification Settings</h3>
+        <h3 style="margin:0;">Settings</h3>
         <button class="modal-close" id="closeSettingsBtn" type="button" aria-label="Close settings">
           <svg class="cue-icon" viewBox="0 0 24 24" aria-hidden="true">
             <path d="m7 7 10 10M17 7 7 17" />
@@ -209,30 +209,37 @@
         </button>
       </div>
       <div class="settings-section-heading">
-        <h3>When do you want to be reminded?</h3>
+        <h3>Notifications</h3>
+        <span class="settings-saved" id="prefsSavedIndicator" aria-live="polite"></span>
         <a class="settings-link" id="testNotifBtn" href="#">Test alert</a>
       </div>
-      <p style="font-size:13px; color:var(--text-muted); margin:0;">Choose any reminder days for your events.</p>
+      <p style="font-size:13px; color:var(--text-muted); margin:0;">Remind me…</p>
 
       <div class="reminder-options">
-        <label class="reminder-option"><input type="checkbox" id="pref-1h" checked> 1 hour before</label>
-        <label class="reminder-option"><input type="checkbox" id="pref-0" checked> Day of event</label>
-        <label class="reminder-option"><input type="checkbox" id="pref-1" checked> 1 day before</label>
-        <label class="reminder-option"><input type="checkbox" id="pref-3"> 3 days before</label>
-        <label class="reminder-option"><input type="checkbox" id="pref-custom"> Custom...</label>
-
-
-
-
-
-
+        <label class="reminder-option">
+          <span class="reminder-text">3 days before<small>at 10:00</small></span>
+          <input type="checkbox" class="switch" id="pref-3">
+        </label>
+        <label class="reminder-option">
+          <span class="reminder-text">1 day before<small>at 10:00</small></span>
+          <input type="checkbox" class="switch" id="pref-1" checked>
+        </label>
+        <label class="reminder-option">
+          <span class="reminder-text">On the day<small>at 10:00, or 2h before morning events</small></span>
+          <input type="checkbox" class="switch" id="pref-0" checked>
+        </label>
+        <label class="reminder-option">
+          <span class="reminder-text">1 hour before<small>only for events with a time</small></span>
+          <input type="checkbox" class="switch" id="pref-1h" checked>
+        </label>
+        <label class="reminder-option">
+          <span class="reminder-text">Custom<small>pick your own timing</small></span>
+          <input type="checkbox" class="switch" id="pref-custom">
+        </label>
       </div>
 
       <div id="customReminderSection"
-        style="display:none; margin-top:12px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:12px;">
-        <label
-          style="font-size:12px; font-weight:600; color:var(--text-muted); display:block; margin-bottom:8px;">Custom
-          Reminder Timing</label>
+        style="display:none; margin-top:8px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:12px;">
         <div style="display:flex; gap:8px; align-items:center;">
           <input type="number" id="pref-custom-num" min="1" max="999" value="30" placeholder="30"
             style="width:80px; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:8px; color:#fff; padding:8px 10px; font-size:13px; box-sizing:border-box;">
@@ -245,19 +252,9 @@
         </div>
       </div>
 
-
-
-
-
-
-
-      <div class="btn-row" style="margin-top: 24px;">
-        <button class="btn btn-primary" id="saveSettingsBtn">Save Settings</button>
-      </div>
-
       <div style="margin-top: 32px; border-top: 1px solid var(--border); padding-top: 24px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <h3 style="margin:0;">Cloud Sync & Account</h3>
+          <h3 style="margin:0;">Account</h3>
           <span id="accountStatusBadge" class="status-badge status-local"
             style="display:none; font-size:11px; padding:3px 8px; border-radius:12px; background:rgba(255,255,255,0.08); color:var(--text-muted);">Not
             signed in</span>

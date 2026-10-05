@@ -658,6 +658,7 @@
       function renderAiParsedSuccess(parsed) {
         elements.aiParsingSlot.innerHTML = '';
         openReview(parsed);
+        markFieldsAiMissed(parsed);
         setTimeout(() => {
           if (elements.reviewSlot) elements.reviewSlot.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 100);
@@ -804,6 +805,51 @@
 
         const addSub = document.querySelector('.add-screen-sub');
         if (addSub) addSub.style.display = '';
+      }
+
+      // Flags the review fields the AI could not read, so the user knows what to fill in
+      function markFieldsAiMissed(parsed) {
+        const review = elements.reviewSlot.querySelector('.review');
+        if (!review) return;
+
+        const checks = [
+          { inputId: 'f_artist', label: 'name', found: parsed.artist || parsed.name },
+          { inputId: 'f_daterange', label: 'date', found: parsed.startDate },
+          { inputId: 'f_time', label: 'time', found: parsed.time },
+          { inputId: 'f_city', label: 'city', found: parsed.city },
+          { inputId: 'f_venue', label: 'venue', found: parsed.venue }
+        ];
+        const missing = checks.filter(check => !String(check.found || '').trim());
+        if (missing.length === 0) return;
+
+        const banner = document.createElement('div');
+        banner.className = 'ai-missing-banner';
+        banner.textContent = missing.length === checks.length
+          ? '⚠️ We couldn\'t read the event details. Please fill them in below.'
+          : `⚠️ We couldn't find the ${missing.map(check => check.label).join(', ')}. Please check the highlighted fields.`;
+        review.prepend(banner);
+
+        missing.forEach(({ inputId }) => {
+          const input = document.getElementById(inputId);
+          const field = input?.closest('.field');
+          if (!field) return;
+
+          field.classList.add('ai-missing');
+          const hint = document.createElement('div');
+          hint.className = 'ai-missing-hint';
+          hint.textContent = 'Not found in the post';
+          field.querySelector('label')?.after(hint);
+
+          const clear = () => {
+            if (!input.value.trim()) return;
+            field.classList.remove('ai-missing');
+            hint.remove();
+            input.removeEventListener('input', clear);
+            input.removeEventListener('change', clear);
+          };
+          input.addEventListener('input', clear);
+          input.addEventListener('change', clear);
+        });
       }
 
       function openReview(prefill, focusField = '') {
@@ -1738,7 +1784,7 @@
         } else {
           button.style.borderColor = 'var(--border)';
           button.style.color = 'var(--text-main)';
-          button.title = 'Notification Settings';
+          button.title = 'Settings';
         }
       }
 
@@ -1925,7 +1971,7 @@
           console.error('Link/Share Parsing Error:', error);
           elements.aiParsingSlot.innerHTML = '';
           elements.statusEl.textContent = `Error: ${error.message || 'Could not read link details'}`;
-          alert(`AI Link Reading Error:\n\n${error.message || 'Service temporarily unavailable.'}\n\nYou can fill in the details manually below.`);
+          alert(`Couldn't read this link:\n\n${error.message || 'Service temporarily unavailable.'}\n\nYou can fill in the details manually below.`);
           openReview({});
         }
       }
@@ -2143,7 +2189,9 @@
           }
         };
 
-        document.getElementById('saveSettingsBtn').onclick = () => {
+        // Reminder preferences save as soon as they change
+        let savedIndicatorTimer;
+        const saveNotificationPrefs = () => {
           const leadTimes = ['1h', '0', '1', '3'].filter(key => {
             const el = document.getElementById(`pref-${key}`);
             return el && el.checked;
@@ -2161,10 +2209,20 @@
           };
 
           localStorage.setItem('cue-notification-prefs', JSON.stringify(prefs));
-          document.getElementById('settingsModalOverlay').classList.remove('active');
           checkEventNotifications();
-          customAlert('✓ Notification preferences saved!');
+
+          const indicator = document.getElementById('prefsSavedIndicator');
+          if (indicator) {
+            indicator.textContent = '✓ Saved';
+            indicator.classList.add('visible');
+            clearTimeout(savedIndicatorTimer);
+            savedIndicatorTimer = setTimeout(() => indicator.classList.remove('visible'), 1500);
+          }
         };
+
+        ['pref-3', 'pref-1', 'pref-0', 'pref-1h', 'pref-custom', 'pref-custom-num', 'pref-custom-unit'].forEach(id => {
+          document.getElementById(id)?.addEventListener('change', saveNotificationPrefs);
+        });
 
         document.getElementById('exportFileBtn').onclick = async () => {
           const events = state.events || [];

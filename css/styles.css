@@ -716,6 +716,28 @@
       resize: vertical;
     }
 
+    /* Fields the AI could not read from the post */
+    .ai-missing-banner {
+      margin-bottom: 16px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      color: #fbbf24;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .ai-missing-hint {
+      margin: -2px 0 6px;
+      font-size: 11px;
+      color: #fbbf24;
+    }
+
+    .field.ai-missing input:not([type="checkbox"]) {
+      border-color: rgba(245, 158, 11, 0.6);
+    }
+
     .friend-chips-container {
       display: flex;
       flex-wrap: wrap;
@@ -1056,35 +1078,93 @@
     }
 
     .reminder-options {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 8px;
-      margin-top: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 12px;
     }
 
     .reminder-option {
       display: flex;
       align-items: center;
-      gap: 8px;
-      min-height: 42px;
-      padding: 0 11px;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 52px;
+      padding: 8px 12px;
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: 12px;
       background: rgba(255, 255, 255, 0.02);
       color: var(--text-muted);
-      font-size: 13px;
+      font-size: 14px;
       cursor: pointer;
     }
 
     .reminder-option:has(input:checked) {
-      border-color: rgba(168, 85, 247, 0.55);
-      background: var(--accent-soft);
       color: var(--text-main);
     }
 
-    .reminder-option input {
-      accent-color: var(--accent);
+    .reminder-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .reminder-text small {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Toggle switch built on a checkbox */
+    input.switch {
+      appearance: none;
+      -webkit-appearance: none;
+      position: relative;
+      flex: 0 0 auto;
+      width: 40px;
+      height: 24px;
       margin: 0;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.14);
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    input.switch::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #fff;
+      transition: transform 0.2s;
+    }
+
+    input.switch:checked {
+      background: var(--accent);
+    }
+
+    input.switch:checked::after {
+      transform: translateX(16px);
+    }
+
+    input.switch:focus-visible {
+      outline: 2px solid var(--accent-strong);
+      outline-offset: 2px;
+    }
+
+    .settings-saved {
+      margin-left: auto;
+      font-size: 12px;
+      color: #4ade80;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .settings-saved.visible {
+      opacity: 1;
     }
 
     .undo-toast {
