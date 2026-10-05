@@ -2230,9 +2230,50 @@
           }
         };
 
-        document.getElementById('importFileBtn').onclick = () => {
-          elements.fileInputBackup.click();
-        };
+        const importFileBtn = document.getElementById('importFileBtn');
+        if (importFileBtn) {
+          importFileBtn.onclick = () => {
+            elements.fileInputBackup.value = '';
+            elements.fileInputBackup.click();
+          };
+        }
+
+        const importPasteBtn = document.getElementById('importPasteBtn');
+        if (importPasteBtn) {
+          importPasteBtn.onclick = () => {
+            const overlay = document.getElementById('importModalOverlay');
+            if (overlay) overlay.classList.add('active');
+          };
+        }
+
+        const confirmImportBtn = document.getElementById('confirmImportBtn');
+        if (confirmImportBtn) {
+          confirmImportBtn.onclick = async () => {
+            const textarea = document.getElementById('importTextArea');
+            const rawText = textarea ? textarea.value.trim() : '';
+            if (!rawText) {
+              customAlert('Please paste event data code first.');
+              return;
+            }
+            try {
+              const importedEvents = JSON.parse(rawText);
+              if (Array.isArray(importedEvents) && importedEvents.length > 0) {
+                state.events = dedupeEvents([...state.events, ...importedEvents]);
+                await saveEvents();
+                render();
+                renderCalendar();
+                document.getElementById('importModalOverlay').classList.remove('active');
+                document.getElementById('settingsModalOverlay').classList.remove('active');
+                if (textarea) textarea.value = '';
+                customAlert(`✓ Successfully imported ${importedEvents.length} events!`);
+              } else {
+                customAlert('No valid array of events found in the pasted data.');
+              }
+            } catch (err) {
+              customAlert('Invalid JSON code format: ' + err.message);
+            }
+          };
+        }
 
         elements.fileInputBackup.onchange = event => {
           const file = event.target.files[0];
@@ -2243,13 +2284,13 @@
             try {
               const text = loadEvent.target.result;
               const importedEvents = JSON.parse(text);
-              if (Array.isArray(importedEvents) && window.confirm(`Import ${importedEvents.length} events? This will replace your current events!`)) {
-                state.events = importedEvents;
+              if (Array.isArray(importedEvents) && importedEvents.length > 0) {
+                state.events = dedupeEvents([...state.events, ...importedEvents]);
                 await saveEvents();
                 render();
                 renderCalendar();
                 document.getElementById('settingsModalOverlay').classList.remove('active');
-                customAlert('Data loaded successfully from file!');
+                customAlert(`✓ Successfully loaded ${importedEvents.length} events from file!`);
               } else {
                 customAlert('No valid event data found in file.');
               }
@@ -2259,7 +2300,6 @@
           };
 
           reader.readAsText(file);
-          elements.fileInputBackup.value = '';
         };
 
         updateNotificationBtn();
