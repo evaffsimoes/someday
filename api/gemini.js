@@ -145,7 +145,7 @@ export default async function handler(req, res) {
 Extract the music/event details in Portugal.
 
 Respond ONLY with a JSON object in this exact shape (no markdown):
-{"artist": "Artist or Event Name", "startDate": "YYYY-MM-DD or empty string", "endDate": "YYYY-MM-DD or empty string", "time": "HH:MM in 24h format or empty string", "venue": "Venue name or empty string", "city": "City in Portugal or empty string", "category": "Concert or Festival or Other", "description": "Comma-separated list of artists/lineup, or a short note if lineup not found. No markdown."}
+{"artist": "Artist or Event Name", "startDate": "YYYY-MM-DD or empty string", "endDate": "YYYY-MM-DD or empty string", "time": "HH:MM in 24h format or empty string", "venue": "Venue name or empty string", "city": "City in Portugal or empty string", "category": "Concert or Festival or Other", "description": "Comma-separated list of extra artists/lineup, or an empty string '' if no extra notes or lineup are found. Do NOT write generic placeholder text."}
 
 If the year is not mentioned, assume the next upcoming occurrence after today (${today}).`
       });
@@ -154,7 +154,7 @@ If the year is not mentioned, assume the next upcoming occurrence after today ($
 
     } else if (body.contents?.[0]?.parts?.[0]) {
       body.contents[0].parts[0].text = `Today's date is ${today}. This image is a screenshot or poster of an Instagram event post. Extract the music/event details and respond ONLY with a JSON object (no markdown) in this exact shape:
-{"artist": "Artist or Event Name", "startDate": "YYYY-MM-DD or empty string", "endDate": "YYYY-MM-DD or empty string", "time": "HH:MM in 24h format or empty string", "venue": "Venue name or empty string", "city": "City in Portugal or empty string", "category": "Concert or Festival or Other", "description": "Comma-separated list of artists/lineup, or a short note if lineup not found. No markdown."}
+{"artist": "Artist or Event Name", "startDate": "YYYY-MM-DD or empty string", "endDate": "YYYY-MM-DD or empty string", "time": "HH:MM in 24h format or empty string", "venue": "Venue name or empty string", "city": "City in Portugal or empty string", "category": "Concert or Festival or Other", "description": "Comma-separated list of extra artists/lineup, or an empty string '' if no extra notes or lineup are found. Do NOT write generic placeholder text."}
 If the year isn't shown, assume the next upcoming occurrence after today (${today}).`;
     }
 
