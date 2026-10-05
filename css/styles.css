@@ -1736,14 +1736,36 @@
       padding: 4px 0;
     }
 
+    /* Round chevron buttons for month navigation */
     .cal-nav-btn {
       flex: none;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 6px 14px;
-      font-size: var(--fs-sm);
-      line-height: 1;
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      background: var(--surface);
+      color: var(--text-main);
+      cursor: pointer;
+      transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease;
+    }
+
+    .cal-nav-btn .cue-icon {
+      width: 20px;
+      height: 20px;
+      stroke-width: 2.25;
+    }
+
+    .cal-nav-btn:hover {
+      border-color: rgba(168, 85, 247, 0.45);
+      color: var(--accent-strong);
+    }
+
+    .cal-nav-btn:active {
+      background: var(--accent-soft);
     }
 
     .cal-month-title {

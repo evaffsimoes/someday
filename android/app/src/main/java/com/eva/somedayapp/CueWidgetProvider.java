@@ -12,7 +12,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.Calendar;
 import java.util.Locale;
 
 public class CueWidgetProvider extends AppWidgetProvider {
@@ -70,6 +70,7 @@ public class CueWidgetProvider extends AppWidgetProvider {
         int[] dayIds    = { R.id.w_item_0_day,    R.id.w_item_1_day,    R.id.w_item_2_day,    R.id.w_item_3_day,    R.id.w_item_4_day,    R.id.w_item_5_day    };
         int[] monthIds  = { R.id.w_item_0_month,  R.id.w_item_1_month,  R.id.w_item_2_month,  R.id.w_item_3_month,  R.id.w_item_4_month,  R.id.w_item_5_month  };
         int[] cardIds   = { R.id.w_card_0,        R.id.w_card_1,        R.id.w_card_2,        R.id.w_card_3,        R.id.w_card_4,        R.id.w_card_5        };
+        int[] tagIds    = { R.id.w_item_0_tag,    R.id.w_item_1_tag,    R.id.w_item_2_tag,    R.id.w_item_3_tag,    R.id.w_item_4_tag,    R.id.w_item_5_tag    };
 
         for (int i = 0; i < MAX_ITEMS; i++) {
             views.setTextViewText(artistIds[i], "");
@@ -77,6 +78,8 @@ public class CueWidgetProvider extends AppWidgetProvider {
             views.setTextViewText(locIds[i], "");
             views.setTextViewText(dayIds[i], "");
             views.setTextViewText(monthIds[i], "");
+            views.setTextViewText(tagIds[i], "");
+            views.setViewVisibility(tagIds[i], android.view.View.GONE);
             views.setViewVisibility(cardIds[i], android.view.View.GONE);
         }
 
@@ -93,7 +96,7 @@ public class CueWidgetProvider extends AppWidgetProvider {
 
         try {
             JSONArray all = new JSONArray(eventsJson);
-            String todayStr = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+            String todayStr = WidgetFormat.todayKey();
 
             // Filter upcoming events & sort chronologically by startDate
             java.util.List<JSONObject> upcomingList = new java.util.ArrayList<>();
@@ -116,10 +119,7 @@ public class CueWidgetProvider extends AppWidgetProvider {
                 views.setTextViewText(R.id.w_item_0_artist, "No upcoming events");
                 views.setTextViewText(R.id.w_item_0_loc, "Add one in cue");
             } else {
-                SimpleDateFormat inFmt = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-                SimpleDateFormat outFmt = new SimpleDateFormat("MMM d", Locale.getDefault());
-                SimpleDateFormat dayFmt = new SimpleDateFormat("d", Locale.getDefault());
-                SimpleDateFormat monFmt = new SimpleDateFormat("MMM", Locale.getDefault());
+                SimpleDateFormat monFmt = new SimpleDateFormat("MMM", Locale.UK);
 
                 for (int i = 0; i < MAX_ITEMS; i++) {
                     if (i < upcomingList.size() && i < maxItemsToShow) {
@@ -130,37 +130,32 @@ public class CueWidgetProvider extends AppWidgetProvider {
                         String city   = ev.optString("city", "");
                         String startDate = ev.optString("startDate", "");
                         String endDate   = ev.optString("endDate", "");
-                        String time      = ev.optString("time", "");
 
                         StringBuilder loc = new StringBuilder();
                         if (!city.isEmpty()) loc.append(city);
                         if (!venue.isEmpty()) { if (loc.length() > 0) loc.append(" · "); loc.append(venue); }
 
-                        String dayStr2 = "", monStr = "", dateLineStr = "";
-                        try {
-                            Date d = inFmt.parse(startDate);
-                            dayStr2 = dayFmt.format(d);
-                            monStr  = monFmt.format(d);
-                            dateLineStr = outFmt.format(d);
-
-                            if (!endDate.isEmpty() && !endDate.equals(startDate)) {
-                                Date dEnd = inFmt.parse(endDate);
-                                if (dEnd != null) {
-                                    dayStr2 = dayFmt.format(d) + "–" + dayFmt.format(dEnd);
-                                    dateLineStr = outFmt.format(d) + " – " + outFmt.format(dEnd);
-                                }
+                        // Date badge: "8" / "OCT", or "17–19" / "OCT" for multi-day events
+                        String badgeDay = "", badgeMonth = "";
+                        Calendar start = WidgetFormat.parse(startDate);
+                        if (start != null) {
+                            badgeDay = String.valueOf(start.get(Calendar.DAY_OF_MONTH));
+                            badgeMonth = monFmt.format(start.getTime());
+                            Calendar end = WidgetFormat.parse(endDate);
+                            if (end != null && end.after(start)) {
+                                badgeDay += "–" + end.get(Calendar.DAY_OF_MONTH);
                             }
-                        } catch (Exception ignored) {}
-
-                        if (!time.isEmpty()) {
-                            dateLineStr += (dateLineStr.isEmpty() ? "" : " · ") + time;
                         }
 
                         views.setTextViewText(artistIds[i], artist);
-                        views.setTextViewText(dateIds[i], dateLineStr);
+                        views.setTextViewText(dateIds[i], WidgetFormat.formatWhen(ev));
                         views.setTextViewText(locIds[i], loc.length() > 0 ? loc.toString() : "");
-                        views.setTextViewText(dayIds[i], dayStr2);
-                        views.setTextViewText(monthIds[i], monStr);
+                        views.setTextViewText(dayIds[i], badgeDay);
+                        views.setTextViewText(monthIds[i], badgeMonth);
+
+                        String tags = WidgetFormat.tagLine(ev);
+                        views.setTextViewText(tagIds[i], tags);
+                        views.setViewVisibility(tagIds[i], tags.isEmpty() ? android.view.View.GONE : android.view.View.VISIBLE);
 
                         if (launchIntent != null) {
                             String evId = ev.optString("id", "");

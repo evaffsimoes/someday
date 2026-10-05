@@ -43,11 +43,16 @@ public class CueCalendarWidgetProvider extends AppWidgetProvider {
 
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
-        // Reset offsets for updated widgets
+        // Return to the current month once a day, not on every periodic update,
+        // so browsing other months isn't undone every 30 minutes
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         SharedPreferences.Editor edit = prefs.edit();
+        String today = WidgetFormat.todayKey();
         for (int id : appWidgetIds) {
-            edit.putInt("cal_offset_" + id, 0);
+            if (!today.equals(prefs.getString("cal_offset_day_" + id, ""))) {
+                edit.putInt("cal_offset_" + id, 0);
+                edit.putString("cal_offset_day_" + id, today);
+            }
         }
         edit.apply();
 
@@ -73,7 +78,8 @@ public class CueCalendarWidgetProvider extends AppWidgetProvider {
         int currentYear = cal.get(Calendar.YEAR);
         
         cal.set(Calendar.DAY_OF_MONTH, 1);
-        int firstDayOfWeek = cal.get(Calendar.DAY_OF_WEEK) - 1; 
+        // Weeks start on Monday (Calendar.SUNDAY == 1, MONDAY == 2)
+        int firstDayOfWeek = (cal.get(Calendar.DAY_OF_WEEK) + 5) % 7;
         int daysInMonth = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
 
         cal.add(Calendar.MONTH, -1);
@@ -177,6 +183,15 @@ public class CueCalendarWidgetProvider extends AppWidgetProvider {
 
                 if (dayEvents.containsKey(dayCounter)) {
                     java.util.List<JSONObject> evs = dayEvents.get(dayCounter);
+                    // Multi-day events first, so their bars stay on the same row across days
+                    java.util.Collections.sort(evs, (a, b) -> {
+                        int multiA = isMultiDay(a) ? 0 : 1;
+                        int multiB = isMultiDay(b) ? 0 : 1;
+                        if (multiA != multiB) return multiA - multiB;
+                        return a.optString("artist", "").compareToIgnoreCase(b.optString("artist", ""));
+                    });
+                    String dayKey = String.format(Locale.US, "%04d-%02d-%02d", currentYear, currentMonth + 1, dayCounter);
+                    int column = cid % 7;
 
                     if (launchIntent != null) {
                         String firstEvId = evs.get(0).optString("id", "");
@@ -205,17 +220,29 @@ public class CueCalendarWidgetProvider extends AppWidgetProvider {
                             views.setViewVisibility(targetEvId, View.VISIBLE);
                         } else {
                             String cat = ev.optString("category", "Concert");
-                            int bgRes = R.drawable.bg_cat_concert;
+                            String catKey = "concert";
                             int textClr = 0xFFFFFFFF;
                             if ("Festival".equals(cat)) {
-                                bgRes = R.drawable.bg_cat_festival;
+                                catKey = "festival";
                                 textClr = 0xFFFEF08A;
                             } else if ("Other".equals(cat) || "Party".equals(cat)) {
-                                bgRes = R.drawable.bg_cat_other;
+                                catKey = "other";
                                 textClr = 0xFF99F6E4;
                             }
 
-                            views.setTextViewText(targetEvId, ev.optString("artist", "Event"));
+                            // Multi-day events are drawn as start / mid / end pieces of one bar;
+                            // the name shows where the bar starts and again at the start of each week
+                            String label = ev.optString("artist", "Event");
+                            String piece = "";
+                            if (isMultiDay(ev)) {
+                                boolean isStart = dayKey.equals(ev.optString("startDate", ""));
+                                boolean isEnd = dayKey.equals(ev.optString("endDate", ""));
+                                piece = isStart ? (isEnd ? "" : "_start") : (isEnd ? "_end" : "_mid");
+                                if (!isStart && column != 0) label = " ";
+                            }
+                            int bgRes = context.getResources().getIdentifier("bg_cat_" + catKey + piece, "drawable", context.getPackageName());
+
+                            views.setTextViewText(targetEvId, label);
                             views.setTextColor(targetEvId, textClr);
                             views.setInt(targetEvId, "setBackgroundResource", bgRes);
                             views.setViewVisibility(targetEvId, View.VISIBLE);
@@ -223,7 +250,7 @@ public class CueCalendarWidgetProvider extends AppWidgetProvider {
                     }
                     views.setTextColor(numId, 0xFFF5F5F5);
                 } else {
-                    views.setTextColor(numId, isToday ? 0xFFC084FC : 0xFF94949E);
+                    views.setTextColor(numId, isToday ? 0xFFC084FC : 0xFF858B97);
                 }
                 
                 dayCounter++;
@@ -231,5 +258,11 @@ public class CueCalendarWidgetProvider extends AppWidgetProvider {
         }
 
         appWidgetManager.updateAppWidget(appWidgetId, views);
+    }
+
+    private static boolean isMultiDay(JSONObject ev) {
+        String start = ev.optString("startDate", "");
+        String end = ev.optString("endDate", "");
+        return !end.isEmpty() && !end.equals(start);
     }
 }
