@@ -204,6 +204,9 @@
             // Ignore native preference errors.
           }
 
+          // Keep scheduled reminders in sync with added, edited or deleted events
+          checkEventNotifications();
+
           if (!skipCloud && window.CueAuth && typeof window.CueAuth.saveEventToCloud === 'function') {
             window.CueAuth.saveEventToCloud();
           }
@@ -853,13 +856,13 @@
             <div class="form-section-title">2. When & Where</div>
 
             <div class="field">
-              <div style="display:flex; justify-content:space-between; align-items:center;">
-                <label for="f_daterange">Date</label>
-                <label style="display:flex; align-items:center; gap:6px; font-weight:500; cursor:pointer;">
+              <label for="f_daterange">Date</label>
+              <div style="display:flex; align-items:center; gap:10px;">
+                <input id="f_daterange" type="text" placeholder="Select date" style="flex:1; min-width:0;">
+                <label style="display:flex; align-items:center; gap:6px; margin:0; white-space:nowrap; cursor:pointer;">
                   <input id="f_multiday" type="checkbox" style="width:auto; margin:0; padding:0; accent-color:#a855f7;"> Multi-day
                 </label>
               </div>
-              <input id="f_daterange" type="text" placeholder="Select date">
             </div>
 
             <div class="review-row">
@@ -970,7 +973,8 @@
 
         const multiDayInput = document.getElementById('f_multiday');
         const dateRangeInput = document.getElementById('f_daterange');
-        multiDayInput.checked = defaultDates.length > 1;
+        const categorySelect = document.getElementById('f_category');
+        multiDayInput.checked = defaultDates.length > 1 || categorySelect?.value === 'Festival';
 
         // Single mode picks one day with one tap; range mode needs start + end
         const initDatePicker = dates => flatpickr(dateRangeInput, {
@@ -980,13 +984,30 @@
         });
         let datePicker = initDatePicker(defaultDates);
 
-        multiDayInput.onchange = () => {
+        const applyDateMode = () => {
           const dates = datePicker.selectedDates.slice(0, multiDayInput.checked ? 2 : 1);
           datePicker.destroy();
           datePicker = initDatePicker(dates);
           dateRangeInput.placeholder = multiDayInput.checked ? 'Select start and end dates' : 'Select date';
+        };
+        if (multiDayInput.checked) dateRangeInput.placeholder = 'Select start and end dates';
+
+        multiDayInput.onchange = () => {
+          applyDateMode();
           if (multiDayInput.checked) datePicker.open();
         };
+
+        // Festivals are usually multi-day; other categories default to a single day
+        // unless a real range is already selected
+        if (categorySelect) {
+          categorySelect.addEventListener('change', () => {
+            const wantsMultiDay = categorySelect.value === 'Festival' || datePicker.selectedDates.length > 1;
+            if (wantsMultiDay !== multiDayInput.checked) {
+              multiDayInput.checked = wantsMultiDay;
+              applyDateMode();
+            }
+          });
+        }
 
         const statusChips = document.querySelectorAll('#ticketStatusChips .status-chip');
         const ticketStatusInput = document.getElementById('f_ticket_status');
@@ -1566,39 +1587,38 @@
         }, 5000);
       }
 
-      async function enableNotifications() {
-        customAlert('Checking notification support...', 2000);
+      // Native Android uses the LocalNotifications plugin; the WebView has no web Notification API
+      function getLocalNotifications() {
+        return window.Capacitor?.isNativePlatform?.() ? window.Capacitor.Plugins?.LocalNotifications || null : null;
+      }
 
-        if (!('Notification' in window)) {
-          customAlert('Your browser does not support native web notifications.');
-          return;
+      // Resolves to 'granted', 'denied' or 'prompt'
+      async function getNotificationPermission() {
+        const LN = getLocalNotifications();
+        if (LN) {
+          try {
+            const { display } = await LN.checkPermissions();
+            return display === 'granted' || display === 'denied' ? display : 'prompt';
+          } catch (error) {
+            return 'prompt';
+          }
         }
+        if (!('Notification' in window)) return 'denied';
+        return Notification.permission === 'default' ? 'prompt' : Notification.permission;
+      }
 
-        if (Notification.permission === 'granted') {
-          customAlert('Notifications are already enabled. Use the settings button to edit reminder preferences.', 3000);
-          return;
-        }
-
+      async function requestNotificationPermission() {
         try {
-          const requestPromise = Notification.requestPermission();
-          let permission;
-          if (requestPromise && typeof requestPromise.then === 'function') {
-            permission = await requestPromise;
-          } else {
-            permission = Notification.permission;
+          const LN = getLocalNotifications();
+          if (LN) {
+            const { display } = await LN.requestPermissions();
+            return display === 'granted';
           }
-
-          if (permission === 'granted') {
-            updateNotificationBtn();
-            checkEventNotifications();
-            openSettingsModal();
-          } else if (permission === 'denied') {
-            customAlert('Notifications are blocked. Update this site’s browser permissions to allow them.');
-          } else {
-            customAlert('Notification status: ' + permission);
-          }
+          if (!('Notification' in window)) return false;
+          return (await Notification.requestPermission()) === 'granted';
         } catch (error) {
-          customAlert('Error requesting notifications: ' + error.message);
+          console.warn('Could not request notification permission', error);
+          return false;
         }
       }
 
@@ -1627,13 +1647,10 @@
       }
 
       async function openSettingsModal() {
-        if ('Notification' in window && Notification.permission === 'default') {
-          try {
-            await Notification.requestPermission();
-            updateNotificationBtn();
-          } catch (e) {
-            console.warn('Could not request notification permission', e);
-          }
+        if (await getNotificationPermission() === 'prompt') {
+          await requestNotificationPermission();
+          updateNotificationBtn();
+          checkEventNotifications();
         }
         const prefs = loadNotificationPrefs();
 
@@ -1663,34 +1680,25 @@
 
       async function triggerNotification(title, options) {
         try {
-          const LN = window.Capacitor?.Plugins?.LocalNotifications || window.Capacitor?.Plugins?.['LocalNotifications'];
-          if (LN && typeof LN.requestPermissions === 'function') {
-            const perm = await LN.requestPermissions();
-            if (perm.display === 'granted') {
-              await LN.schedule({
-                notifications: [{
-                  title: title,
-                  body: options.body || '',
-                  id: Math.floor(Math.random() * 100000) + 1,
-                  schedule: { at: new Date(Date.now() + 300) }
-                }]
-              });
-              return true;
-            }
-          }
-
-          if (!('Notification' in window)) {
+          if (await getNotificationPermission() !== 'granted' && !(await requestNotificationPermission())) {
             return false;
           }
 
-          if (Notification.permission !== 'granted') {
-            const res = await Notification.requestPermission();
-            if (res !== 'granted') {
-              return false;
-            }
+          const LN = getLocalNotifications();
+          if (LN) {
+            await LN.schedule({
+              notifications: [{
+                title: title,
+                body: options.body || '',
+                id: options.id || Math.floor(Math.random() * 100000) + 1,
+                schedule: { at: new Date(Date.now() + 300), allowWhileIdle: true },
+                extra: options.data || null
+              }]
+            });
+            return true;
           }
 
-          if (Notification.permission === 'granted') {
+          if ('Notification' in window && Notification.permission === 'granted') {
             try {
               if ('serviceWorker' in navigator) {
                 let reg = await navigator.serviceWorker.getRegistration();
@@ -1719,15 +1727,11 @@
         return false;
       }
 
-      function updateNotificationBtn() {
+      async function updateNotificationBtn() {
         const button = document.getElementById('settingsBtn');
         if (!button) return;
 
-        if (!('Notification' in window)) {
-          return;
-        }
-
-        if (Notification.permission === 'granted') {
+        if (await getNotificationPermission() === 'granted') {
           button.style.borderColor = 'rgba(168,85,247,0.5)';
           button.style.color = '#c084fc';
           button.title = 'Notifications Active';
@@ -1749,137 +1753,140 @@
         }
       }
 
-      function checkEventNotifications() {
-        const isNative = !!(window.Capacitor?.isNative || window.Capacitor?.Plugins?.LocalNotifications);
-        if (!isNative && (!('Notification' in window) || Notification.permission !== 'granted')) return;
+      // Day-based reminders (day of, days before, ticket) fire at this local hour
+      const DAY_REMINDER_HOUR = 10;
+      // Android keeps at most 500 alarms per app; stay well below that
+      const MAX_SCHEDULED_REMINDERS = 200;
 
+      function notificationId(key) {
+        let hash = 0;
+        for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) | 0;
+        return (hash & 0x7fffffff) || 1;
+      }
+
+      // Every reminder an event should get, with when it fires (at) and until when it is still useful (expiresAt)
+      function buildReminders(prefs) {
+        const leadTimes = prefs.leadTimes || [];
+        const reminders = [];
+
+        state.events.forEach(event => {
+          const [year, month, day] = (event.startDate || '').split('-').map(Number);
+          if (!year || !month || !day) return;
+
+          const timeMatch = /^(\d{1,2}):(\d{2})/.exec(event.time || '');
+          const start = timeMatch ? new Date(year, month - 1, day, Number(timeMatch[1]), Number(timeMatch[2])) : null;
+          const dayStart = daysBefore => new Date(year, month - 1, day - daysBefore);
+          const dayAt = daysBefore => new Date(year, month - 1, day - daysBefore, DAY_REMINDER_HOUR);
+          const dayEnd = daysBefore => new Date(year, month - 1, day - daysBefore + 1);
+
+          const timeText = event.time ? ` · ${event.time}` : '';
+          const locationText = [event.venue, event.city].filter(Boolean).join(' · ');
+          const body = `${event.artist || 'Event'}${timeText}${locationText ? ` · ${locationText}` : ''}`;
+          const add = (suffix, at, expiresAt, title, customBody = body) => {
+            reminders.push({ key: `${event.id}-${event.startDate}-${suffix}`, at, expiresAt, title, body: customBody, eventId: event.id });
+          };
+
+          // Time-based reminders only make sense when the event has a start time
+          if (leadTimes.includes('1h') && start) {
+            add('1h', new Date(start.getTime() - 60 * 60 * 1000), start, 'Event starts in 1 hour!');
+          }
+
+          [0, 1, 3].forEach(daysBefore => {
+            if (!leadTimes.includes(String(daysBefore))) return;
+            let at = dayAt(daysBefore);
+            let expiresAt = dayEnd(daysBefore);
+            if (daysBefore === 0 && start) {
+              // Morning events: remind 2h before instead of after they started
+              const twoHoursBefore = new Date(start.getTime() - 2 * 60 * 60 * 1000);
+              if (twoHoursBefore < at) at = twoHoursBefore < dayStart(0) ? dayStart(0) : twoHoursBefore;
+              expiresAt = start;
+            }
+            const title = daysBefore === 0 ? 'Your event is today!'
+              : daysBefore === 1 ? 'Your event is tomorrow!'
+              : `${daysBefore} days until your next event!`;
+            add(`d${daysBefore}`, at, expiresAt, title);
+          });
+
+          if (prefs.customEnabled && prefs.customValue > 0) {
+            const value = prefs.customValue;
+            const unit = prefs.customUnit || 'm';
+            const unitLabel = { m: 'minute', h: 'hour', d: 'day' }[unit] + (value === 1 ? '' : 's');
+            const title = `Event starts in ${value} ${unitLabel}!`;
+            if (unit === 'd') {
+              add(`custom-${value}${unit}`, dayAt(value), dayEnd(value), title);
+            } else if (start) {
+              const offsetMs = value * (unit === 'h' ? 60 : 1) * 60 * 1000;
+              add(`custom-${value}${unit}`, new Date(start.getTime() - offsetMs), start, title);
+            }
+          }
+
+          // Ticket reminder one week before for "need ticket", "maybe" or no ticket status
+          if (!event.ticketStatus || event.ticketStatus === 'need_ticket' || event.ticketStatus === 'maybe') {
+            const statusLabel = event.ticketStatus === 'need_ticket' ? 'Need ticket' : event.ticketStatus === 'maybe' ? 'Maybe going' : 'No ticket status set';
+            add('ticket-7d', dayAt(7), dayStart(0), '🎟️ Ticket Reminder: 1 week left!',
+              `${event.artist || 'Event'} (${statusLabel}). Don't forget to check or get your tickets!`);
+          }
+        });
+
+        return reminders.sort((a, b) => a.at - b.at);
+      }
+
+      let lastScheduleSignature = '';
+
+      async function checkEventNotifications() {
         updateAppBadge();
+        if (await getNotificationPermission() !== 'granted') return;
 
         const now = new Date();
         const sent = JSON.parse(localStorage.getItem(NOTIFICATION_KEY) || '{}');
-        const prefs = loadNotificationPrefs();
-        const leadTimes = prefs.leadTimes || [];
+        const reminders = buildReminders(loadNotificationPrefs());
+        const LN = getLocalNotifications();
 
-        state.events.forEach(event => {
-          if (!event.startDate) return;
+        // Reminders whose time has passed but are still relevant (e.g. event added late, or app was
+        // closed on web) are shown once right away
+        reminders
+          .filter(r => r.at <= now && now < r.expiresAt && !sent[r.key])
+          .forEach(r => {
+            triggerNotification(r.title, {
+              body: r.body,
+              icon: 'icon-192.png',
+              badge: 'icon-192.png',
+              tag: r.key,
+              renotify: true,
+              id: notificationId(r.key),
+              data: { eventId: r.eventId }
+            });
+            sent[r.key] = true;
+          });
 
-          const fullStart = new Date(`${event.startDate}T${event.time ? (event.time.length === 5 ? event.time + ':00' : event.time) : '00:00:00'}`);
-          if (Number.isNaN(fullStart.getTime())) return;
+        // Native: hand every future reminder to Android so it fires even when the app is closed
+        if (LN) {
+          const upcoming = reminders.filter(r => r.at > now).slice(0, MAX_SCHEDULED_REMINDERS);
+          upcoming.forEach(r => { sent[r.key] = true; });
 
-          const [sYear, sMonth, sDay] = (event.startDate || '').split('-').map(Number);
-          if (!sYear || !sMonth || !sDay) return;
-
-          const eventDate = new Date(sYear, sMonth - 1, sDay);
-          const localToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-          const diffMs = eventDate.getTime() - localToday.getTime();
-          const daysUntil = Math.round(diffMs / (1000 * 60 * 60 * 24));
-
-          // 1. Check 1 hour before reminder
-          if (leadTimes.includes('1h')) {
-            const timeUntilMs = fullStart.getTime() - now.getTime();
-            const minsUntil = Math.floor(timeUntilMs / (1000 * 60));
-            if (minsUntil >= 0 && minsUntil <= 65) {
-              const key1h = `${event.id}-${event.startDate}-1h`;
-              if (!sent[key1h]) {
-                const timeText = event.time ? ` · ${event.time}` : '';
-                const locationText = [event.venue, event.city].filter(Boolean).join(' · ');
-                triggerNotification('Event starts in 1 hour!', {
-                  body: `${event.artist || 'Event'}${timeText}${locationText ? ` · ${locationText}` : ''}`,
-                  icon: 'icon-192.png',
-                  badge: 'icon-192.png',
-                  tag: key1h,
-                  renotify: true
+          const signature = JSON.stringify(upcoming.map(r => [r.key, r.at.getTime(), r.title, r.body]));
+          if (signature !== lastScheduleSignature) {
+            lastScheduleSignature = signature;
+            try {
+              const { notifications: pending } = await LN.getPending();
+              if (pending.length) await LN.cancel({ notifications: pending.map(n => ({ id: n.id })) });
+              if (upcoming.length) {
+                await LN.schedule({
+                  notifications: upcoming.map(r => ({
+                    id: notificationId(r.key),
+                    title: r.title,
+                    body: r.body,
+                    schedule: { at: r.at, allowWhileIdle: true },
+                    extra: { eventId: r.eventId }
+                  }))
                 });
-                sent[key1h] = true;
               }
+            } catch (error) {
+              lastScheduleSignature = '';
+              console.warn('Could not schedule reminders', error);
             }
           }
-
-          // 2. Check Custom Reminder if enabled
-          if (prefs.customEnabled && prefs.customValue > 0) {
-            const cVal = prefs.customValue;
-            const cUnit = prefs.customUnit || 'm';
-            const customKey = `${event.id}-${event.startDate}-custom-${cVal}${cUnit}`;
-
-            if (!sent[customKey]) {
-              let shouldTrigger = false;
-              let unitLabel = cUnit === 'm' ? 'minutes' : cUnit === 'h' ? 'hours' : 'days';
-
-              if (cUnit === 'm') {
-                const timeUntilMs = fullStart.getTime() - now.getTime();
-                const minsUntil = Math.floor(timeUntilMs / (1000 * 60));
-                if (minsUntil >= 0 && minsUntil <= cVal + 5) {
-                  shouldTrigger = true;
-                }
-              } else if (cUnit === 'h') {
-                const timeUntilMs = fullStart.getTime() - now.getTime();
-                const minsUntil = Math.floor(timeUntilMs / (1000 * 60));
-                const targetMins = cVal * 60;
-                if (minsUntil >= 0 && minsUntil <= targetMins + 15) {
-                  shouldTrigger = true;
-                }
-              } else if (cUnit === 'd') {
-                if (daysUntil === cVal) {
-                  shouldTrigger = true;
-                }
-              }
-
-              if (shouldTrigger) {
-                const timeText = event.time ? ` · ${event.time}` : '';
-                const locationText = [event.venue, event.city].filter(Boolean).join(' · ');
-                triggerNotification(`Event starts in ${cVal} ${unitLabel}!`, {
-                  body: `${event.artist || 'Event'}${timeText}${locationText ? ` · ${locationText}` : ''}`,
-                  icon: 'icon-192.png',
-                  badge: 'icon-192.png',
-                  tag: customKey,
-                  renotify: true
-                });
-                sent[customKey] = true;
-              }
-            }
-          }
-
-          // 3. Check days before reminder (3 days, 1 day, Day of event = 0)
-          const matchesPref = leadTimes.some(pref => Number(pref) === daysUntil || String(pref) === String(daysUntil));
-          if (matchesPref) {
-            const key = `${event.id}-${event.startDate}-d${daysUntil}`;
-            if (!sent[key]) {
-              let title;
-              if (daysUntil === 0) title = 'Your event is today!';
-              else if (daysUntil === 1) title = 'Your event is tomorrow!';
-              else title = `${daysUntil} days until your next event!`;
-
-              const timeText = event.time ? ` · ${event.time}` : '';
-              const locationText = [event.venue, event.city].filter(Boolean).join(' · ');
-              triggerNotification(title, {
-                body: `${event.artist || 'Event'}${timeText}${locationText ? ` · ${locationText}` : ''}`,
-                icon: 'icon-192.png',
-                badge: 'icon-192.png',
-                tag: key,
-                renotify: true
-              });
-
-              sent[key] = true;
-            }
-          }
-
-          // 4. Automatic 1-week ticket reminder for "need_ticket", "maybe", or unselected ticket status
-          const needsTicketReminder = !event.ticketStatus || event.ticketStatus === 'need_ticket' || event.ticketStatus === 'maybe';
-          if (needsTicketReminder && daysUntil <= 7 && daysUntil > 0) {
-            const ticketKey = `${event.id}-${event.startDate}-ticket-7d`;
-            if (!sent[ticketKey]) {
-              let statusLabel = event.ticketStatus === 'need_ticket' ? 'Need ticket' : event.ticketStatus === 'maybe' ? 'Maybe going' : 'No ticket status set';
-              triggerNotification(`🎟️ Ticket Reminder: 1 week left!`, {
-                body: `${event.artist || 'Event'} (${statusLabel}). Don't forget to check or get your tickets!`,
-                icon: 'icon-192.png',
-                badge: 'icon-192.png',
-                tag: ticketKey,
-                renotify: true
-              });
-              sent[ticketKey] = true;
-            }
-          }
-        });
+        }
 
         localStorage.setItem(NOTIFICATION_KEY, JSON.stringify(sent));
       }
