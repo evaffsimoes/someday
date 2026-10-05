@@ -853,8 +853,13 @@
             <div class="form-section-title">2. When & Where</div>
 
             <div class="field">
-              <label>Dates (Start - End)</label>
-              <input id="f_daterange" type="text" placeholder="Select dates">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <label for="f_daterange">Date</label>
+                <label style="display:flex; align-items:center; gap:6px; font-weight:500; cursor:pointer;">
+                  <input id="f_multiday" type="checkbox" style="width:auto; margin:0; padding:0; accent-color:#a855f7;"> Multi-day
+                </label>
+              </div>
+              <input id="f_daterange" type="text" placeholder="Select date">
             </div>
 
             <div class="review-row">
@@ -963,11 +968,25 @@
         if (prefill.startDate) defaultDates.push(new Date(prefill.startDate + 'T12:00:00'));
         if (prefill.endDate && prefill.endDate !== prefill.startDate) defaultDates.push(new Date(prefill.endDate + 'T12:00:00'));
 
-        flatpickr('#f_daterange', {
-          mode: 'range',
+        const multiDayInput = document.getElementById('f_multiday');
+        const dateRangeInput = document.getElementById('f_daterange');
+        multiDayInput.checked = defaultDates.length > 1;
+
+        // Single mode picks one day with one tap; range mode needs start + end
+        const initDatePicker = dates => flatpickr(dateRangeInput, {
+          mode: multiDayInput.checked ? 'range' : 'single',
           dateFormat: 'Y-m-d',
-          defaultDate: defaultDates
+          defaultDate: dates
         });
+        let datePicker = initDatePicker(defaultDates);
+
+        multiDayInput.onchange = () => {
+          const dates = datePicker.selectedDates.slice(0, multiDayInput.checked ? 2 : 1);
+          datePicker.destroy();
+          datePicker = initDatePicker(dates);
+          dateRangeInput.placeholder = multiDayInput.checked ? 'Select start and end dates' : 'Select date';
+          if (multiDayInput.checked) datePicker.open();
+        };
 
         const statusChips = document.querySelectorAll('#ticketStatusChips .status-chip');
         const ticketStatusInput = document.getElementById('f_ticket_status');
