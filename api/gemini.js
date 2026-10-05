@@ -5,14 +5,51 @@ const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX_REQUESTS = 12;
 const requestLog = new Map();
 
-function isRateLimited(req) {
-  const forwarded = req.headers['x-forwarded-for'];
-  const ip = (Array.isArray(forwarded) ? forwarded[0] : forwarded || req.socket?.remoteAddress || 'unknown').split(',')[0].trim();
+// Public Firebase web API key (same as js/config.js); only used to validate sign-in tokens
+const FIREBASE_WEB_API_KEY = process.env.FIREBASE_API_KEY || 'AIzaSyDaP-4tCRmwXrdo4l3zAJIz257TG9s_15A';
+const TOKEN_CACHE_MS = 5 * 60_000;
+const verifiedTokens = new Map();
+
+function isRateLimited(userId) {
   const now = Date.now();
-  const recent = (requestLog.get(ip) || []).filter(time => now - time < RATE_LIMIT_WINDOW_MS);
+  const recent = (requestLog.get(userId) || []).filter(time => now - time < RATE_LIMIT_WINDOW_MS);
   recent.push(now);
-  requestLog.set(ip, recent);
+  requestLog.set(userId, recent);
   return recent.length > RATE_LIMIT_MAX_REQUESTS;
+}
+
+// Resolves to the signed-in Firebase user ({ uid, email }) or null
+async function verifyFirebaseUser(req) {
+  const header = req.headers.authorization || '';
+  const idToken = header.startsWith('Bearer ') ? header.slice(7).trim() : '';
+  if (!idToken) return null;
+
+  const cached = verifiedTokens.get(idToken);
+  if (cached && cached.expiresAt > Date.now()) return cached.user;
+
+  try {
+    const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${FIREBASE_WEB_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken }),
+      signal: AbortSignal.timeout(5000)
+    });
+    if (!response.ok) return null;
+    const account = (await response.json())?.users?.[0];
+    if (!account?.localId) return null;
+
+    const user = { uid: account.localId, email: (account.email || '').toLowerCase() };
+    verifiedTokens.set(idToken, { user, expiresAt: Date.now() + TOKEN_CACHE_MS });
+    return user;
+  } catch (_) {
+    return null;
+  }
+}
+
+// Optional allow-list: set ALLOWED_EMAILS in Vercel (comma-separated) to restrict who can use the endpoint
+function isEmailAllowed(email) {
+  const allowed = (process.env.ALLOWED_EMAILS || '').split(',').map(value => value.trim().toLowerCase()).filter(Boolean);
+  return allowed.length === 0 || allowed.includes(email);
 }
 
 function extractInstagramUrl(sharedText) {
@@ -108,25 +145,34 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const defaultKey = ['AQ', 'Ab8RN6IpgxvwZ1S0dMtc8VhEEJ80zY6LgyGkeDhu-lR26qn86A'].join('.');
-  const apiKey = (process.env.GEMINI_API_KEY || defaultKey).trim().replace(/^["']|["']$/g, '');
+  const apiKey = (process.env.GEMINI_API_KEY || '').trim().replace(/^["']|["']$/g, '');
   if (!apiKey) {
     return res.status(500).json({ error: 'GEMINI_API_KEY is missing' });
   }
-  if (isRateLimited(req)) {
+
+  const user = await verifyFirebaseUser(req);
+  if (!user) {
+    return res.status(401).json({ error: 'Please sign in with Google to import events automatically.' });
+  }
+  if (!isEmailAllowed(user.email)) {
+    return res.status(403).json({ error: 'This account is not allowed to import events automatically.' });
+  }
+  if (isRateLimited(user.uid)) {
     return res.status(429).json({ error: 'Too many requests. Please try again in a minute.' });
   }
 
   let extractedImageDataUrl = null;
 
   try {
-    const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
-    validatePayload(body);
+    const input = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {});
+    validatePayload(input);
     const today = new Date().toISOString().slice(0, 10);
 
-    if (body.sharedUrl) {
-      const sharedUrlStr = body.sharedUrl;
-      delete body.sharedUrl;
+    // The Gemini request is always built here; nothing else from the client is forwarded
+    const body = {};
+
+    if (input.sharedUrl) {
+      const sharedUrlStr = input.sharedUrl;
 
       const { enrichedText, posterImageDataUrl } = await scrapeInstagramMetadata(sharedUrlStr);
       if (posterImageDataUrl) extractedImageDataUrl = posterImageDataUrl;
@@ -152,10 +198,21 @@ If the year is not mentioned, assume the next upcoming occurrence after today ($
 
       body.contents = [{ parts }];
 
-    } else if (body.contents?.[0]?.parts?.[0]) {
-      body.contents[0].parts[0].text = `Today's date is ${today}. This image is a screenshot or poster of an Instagram event post. Extract the music/event details and respond ONLY with a JSON object (no markdown) in this exact shape:
+    } else {
+      const inlineData = input.contents?.[0]?.parts?.find(part => part.inlineData)?.inlineData;
+      if (!inlineData) {
+        return res.status(400).json({ error: 'Send an image or a shared link.' });
+      }
+      body.contents = [{
+        parts: [
+          {
+            text: `Today's date is ${today}. This image is a screenshot or poster of an Instagram event post. Extract the music/event details and respond ONLY with a JSON object (no markdown) in this exact shape:
 {"artist": "Artist or Event Name", "startDate": "YYYY-MM-DD or empty string", "endDate": "YYYY-MM-DD or empty string", "time": "HH:MM in 24h format or empty string", "venue": "Venue name or empty string", "city": "City in Portugal or empty string", "category": "Concert or Festival or Other", "description": "Comma-separated list of extra artists/lineup, or an empty string '' if no extra notes or lineup are found. Do NOT write generic placeholder text."}
-If the year isn't shown, assume the next upcoming occurrence after today (${today}).`;
+If the year isn't shown, assume the next upcoming occurrence after today (${today}).`
+          },
+          { inlineData: { mimeType: inlineData.mimeType, data: inlineData.data } }
+        ]
+      }];
     }
 
     const modelsToTry = ['gemini-3.5-flash-lite', 'gemini-flash-lite-latest', 'gemini-3.5-flash'];

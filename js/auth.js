@@ -231,56 +231,191 @@ window.CueAuth = (() => {
     }, 10);
   }
 
-  async function syncCloudEvents() {
-    if (!currentUser || !db) return;
+  /*
+   * Cloud layout (a Firestore document is limited to 1 MB):
+   *   users/{uid}                 -> { events: [...] } text fields only
+   *   users/{uid}/media/{eventId} -> { image, ticketFile, ticketFileName }
+   */
+  const MEDIA_SYNCED_KEY = 'cue-media-synced-v1';
+  const MAX_MEDIA_DOC_CHARS = 900 * 1024;
+  const shownSyncWarnings = new Set();
+
+  function warnSyncOnce(kind, message, err) {
+    console.error(`Cloud sync (${kind}) failed:`, err);
+    if (shownSyncWarnings.has(kind)) return;
+    shownSyncWarnings.add(kind);
+    if (typeof window.cueToast === 'function') window.cueToast(message);
+  }
+
+  function withoutMedia(event) {
+    const { image, ticketFile, ...rest } = event;
+    return rest;
+  }
+
+  function hashString(value) {
+    let hash = 0;
+    for (let i = 0; i < value.length; i++) hash = (hash * 31 + value.charCodeAt(i)) | 0;
+    return `${value.length}:${hash}`;
+  }
+
+  function mediaSignature(event) {
+    if (!event.image && !event.ticketFile) return '';
+    return `${hashString(event.image || '')}|${hashString(event.ticketFile || '')}`;
+  }
+
+  function loadSyncedMedia() {
     try {
-      const userRef = db.collection('users').doc(currentUser.uid);
-      const doc = await userRef.get();
-
-      let cloudEvents = [];
-      if (doc.exists && Array.isArray(doc.data().events)) {
-        cloudEvents = doc.data().events;
-      }
-
-      // Merge local events and cloud events
-      if (window.cueAppState && Array.isArray(window.cueAppState.events)) {
-        const merged = dedupeEvents([...cloudEvents, ...window.cueAppState.events]);
-        window.cueAppState.events = merged;
-
-        // Save merged events locally and in cloud
-        if (typeof window.cueSaveEvents === 'function') {
-          await window.cueSaveEvents(true); // skip cloud loop to avoid recursion
-        }
-
-        await userRef.set({
-          events: merged,
-          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-          email: currentUser.email,
-          displayName: currentUser.displayName
-        }, { merge: true });
-
-        if (typeof window.cueRenderApp === 'function') {
-          window.cueRenderApp();
-        }
-      }
-    } catch (err) {
-      console.error('Cloud events sync failed:', err);
+      return JSON.parse(localStorage.getItem(`${MEDIA_SYNCED_KEY}-${currentUser.uid}`) || '{}');
+    } catch (_) {
+      return {};
     }
+  }
+
+  function storeSyncedMedia(synced) {
+    try {
+      localStorage.setItem(`${MEDIA_SYNCED_KEY}-${currentUser.uid}`, JSON.stringify(synced));
+    } catch (_) {}
+  }
+
+  // Same event on both sides: the most recently edited copy wins (local wins ties).
+  // Returns the merged list and the ids whose cloud copy was taken.
+  function mergeEvents(localEvents, cloudEvents) {
+    const cloudById = new Map(cloudEvents.filter(event => event && event.id).map(event => [event.id, event]));
+    const localIds = new Set();
+    const fromCloud = new Set();
+
+    const merged = localEvents.map(event => {
+      localIds.add(event.id);
+      const cloud = cloudById.get(event.id);
+      if (cloud && (cloud.updatedAt || 0) > (event.updatedAt || 0)) {
+        fromCloud.add(event.id);
+        return { ...cloud, image: cloud.image || event.image, ticketFile: cloud.ticketFile || event.ticketFile };
+      }
+      return event;
+    });
+    cloudEvents.forEach(event => {
+      if (event && !localIds.has(event.id)) {
+        fromCloud.add(event.id);
+        merged.push(event);
+      }
+    });
+
+    const deduped = typeof window.cueDedupeEvents === 'function' ? window.cueDedupeEvents(merged) : merged;
+    return { merged: deduped, fromCloud };
+  }
+
+  async function syncCloudEvents() {
+    if (!currentUser || !db || !window.cueAppState) return;
+    const userRef = db.collection('users').doc(currentUser.uid);
+
+    let cloudEvents = [];
+    try {
+      const doc = await userRef.get();
+      if (doc.exists && Array.isArray(doc.data().events)) cloudEvents = doc.data().events;
+    } catch (err) {
+      warnSyncOnce('read', 'Couldn\'t load your events from the cloud. They\'re still saved on this device.', err);
+      return;
+    }
+
+    const media = new Map();
+    try {
+      const snapshot = await userRef.collection('media').get();
+      snapshot.forEach(doc => media.set(doc.id, doc.data()));
+    } catch (err) {
+      warnSyncOnce('media', 'Event images couldn\'t be synced to the cloud.', err);
+    }
+
+    const { merged, fromCloud } = mergeEvents(window.cueAppState.events, cloudEvents);
+    const synced = loadSyncedMedia();
+    merged.forEach(event => {
+      const cloudMedia = media.get(event.id);
+      if (!cloudMedia) return;
+      // Cloud media replaces local media when the cloud copy of the event was newer; otherwise it only fills gaps
+      const preferCloud = fromCloud.has(event.id);
+      if (cloudMedia.image && (preferCloud || !event.image)) event.image = cloudMedia.image;
+      if (cloudMedia.ticketFile && (preferCloud || !event.ticketFile)) {
+        event.ticketFile = cloudMedia.ticketFile;
+        event.ticketFileName = cloudMedia.ticketFileName || event.ticketFileName || '';
+      }
+      // Remember what the cloud holds so unchanged media is not uploaded again
+      synced[event.id] = mediaSignature(cloudMedia);
+    });
+    storeSyncedMedia(synced);
+
+    // Old cloud data may still hold full-size posters
+    if (typeof window.cueShrinkEventImages === 'function') await window.cueShrinkEventImages(merged);
+
+    window.cueAppState.events = merged;
+    if (typeof window.cueSaveEvents === 'function') await window.cueSaveEvents(true);
+    if (typeof window.cueRenderApp === 'function') window.cueRenderApp();
+
+    await saveEventToCloud();
   }
 
   async function saveEventToCloud() {
     if (!currentUser || !db) return;
+    const events = window.cueAppState?.events || [];
+    const userRef = db.collection('users').doc(currentUser.uid);
+
     try {
-      const userRef = db.collection('users').doc(currentUser.uid);
       await userRef.set({
-        events: window.cueAppState?.events || [],
+        events: events.map(withoutMedia),
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
         email: currentUser.email,
         displayName: currentUser.displayName
       }, { merge: true });
     } catch (err) {
-      console.error('Failed saving event to cloud:', err);
+      warnSyncOnce('events', 'Couldn\'t sync your events to the cloud. They\'re still saved on this device.', err);
+      return;
     }
+
+    await syncMedia(userRef, events);
+  }
+
+  // Uploads only the images/tickets that changed since the last sync, and removes deleted ones
+  async function syncMedia(userRef, events) {
+    const synced = loadSyncedMedia();
+    const currentIds = new Set();
+    const writes = [];
+
+    events.forEach(event => {
+      if (!event.id) return;
+      currentIds.add(event.id);
+      const signature = mediaSignature(event);
+      if ((synced[event.id] || '') === signature) return;
+
+      if (!signature) {
+        writes.push({ id: event.id, signature, run: () => userRef.collection('media').doc(event.id).delete() });
+        return;
+      }
+
+      const data = { image: event.image || '', ticketFile: event.ticketFile || '', ticketFileName: event.ticketFileName || '' };
+      if (data.image.length + data.ticketFile.length > MAX_MEDIA_DOC_CHARS) {
+        // Ticket too big for a cloud document: it stays on this device only
+        data.ticketFile = '';
+        data.ticketFileName = '';
+        warnSyncOnce('ticket-size', 'A ticket file is too large to sync and is only saved on this device.', null);
+      }
+      writes.push({ id: event.id, signature, run: () => userRef.collection('media').doc(event.id).set(data) });
+    });
+
+    Object.keys(synced).forEach(id => {
+      if (!currentIds.has(id)) {
+        writes.push({ id, signature: null, run: () => userRef.collection('media').doc(id).delete() });
+      }
+    });
+
+    for (const write of writes) {
+      try {
+        await write.run();
+        if (write.signature === null || write.signature === '') delete synced[write.id];
+        else synced[write.id] = write.signature;
+      } catch (err) {
+        warnSyncOnce('media', 'Event images couldn\'t be synced to the cloud.', err);
+        break;
+      }
+    }
+    storeSyncedMedia(synced);
   }
 
   function escapeHtml(str) {
@@ -348,6 +483,17 @@ window.CueAuth = (() => {
     syncCloudEvents,
     saveEventToCloud,
     getUser: () => currentUser,
+    // Waits for the saved session to be restored (e.g. when a post is shared right as the app opens)
+    getIdToken: async () => {
+      if (!auth) return null;
+      const user = currentUser || await new Promise(resolve => {
+        const unsubscribe = auth.onAuthStateChanged(restored => {
+          unsubscribe();
+          resolve(restored);
+        });
+      });
+      return user ? user.getIdToken() : null;
+    },
     isConfigured: () => isConfigured
   };
 })();

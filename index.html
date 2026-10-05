@@ -217,23 +217,23 @@
 
       <div class="reminder-options">
         <label class="reminder-option">
-          <span class="reminder-text">3 days before<small>at 10:00</small></span>
+          <span class="reminder-text">3 days before</span>
           <input type="checkbox" class="switch" id="pref-3">
         </label>
         <label class="reminder-option">
-          <span class="reminder-text">1 day before<small>at 10:00</small></span>
+          <span class="reminder-text">1 day before</span>
           <input type="checkbox" class="switch" id="pref-1" checked>
         </label>
         <label class="reminder-option">
-          <span class="reminder-text">On the day<small>at 10:00, or 2h before morning events</small></span>
+          <span class="reminder-text">On the day</span>
           <input type="checkbox" class="switch" id="pref-0" checked>
         </label>
         <label class="reminder-option">
-          <span class="reminder-text">1 hour before<small>only for events with a time</small></span>
+          <span class="reminder-text">1 hour before</span>
           <input type="checkbox" class="switch" id="pref-1h" checked>
         </label>
         <label class="reminder-option">
-          <span class="reminder-text">Custom<small>pick your own timing</small></span>
+          <span class="reminder-text">Custom</span>
           <input type="checkbox" class="switch" id="pref-custom">
         </label>
       </div>
@@ -296,7 +296,7 @@
       </div>
 
       <div style="margin-top: 32px; border-top: 1px solid var(--border); padding-top: 24px;">
-        <h3 style="margin-bottom:12px;">Backup</h3>
+        <h3 style="margin:0 0 12px;">Backup</h3>
         <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">Export your events to a .json file,
           or restore them from a previously exported file. Duplicates are skipped.</p>
         <div class="btn-row" style="flex-wrap:wrap; gap:8px;">
@@ -319,7 +319,15 @@
 
   <script src="js/config.js"></script>
   <script src="js/auth.js"></script>
-  <script src="js/app.js"></script>
+  <!-- App scripts share the global scope; core first, main last -->
+  <script src="js/core.js"></script>
+  <script src="js/media.js"></script>
+  <script src="js/views.js"></script>
+  <script src="js/import.js"></script>
+  <script src="js/review.js"></script>
+  <script src="js/notifications.js"></script>
+  <script src="js/backup.js"></script>
+  <script src="js/main.js"></script>
 </body>
 
 </html>
