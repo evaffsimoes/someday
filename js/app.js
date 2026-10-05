@@ -2141,155 +2141,63 @@
         };
 
         document.getElementById('exportFileBtn').onclick = async () => {
+          const events = state.events || [];
+          if (events.length === 0) {
+            customAlert('There are no events to back up yet.');
+            return;
+          }
+
+          const backup = {
+            app: 'cue',
+            version: 1,
+            exportedAt: new Date().toISOString(),
+            count: events.length,
+            events
+          };
+          const dataToExport = JSON.stringify(backup, null, 2);
+          const filename = `cue-backup-${new Date().toISOString().slice(0, 10)}.json`;
+
           try {
-            const dataToExport = (state.events && state.events.length > 0)
-              ? JSON.stringify(state.events, null, 2)
-              : (localStorage.getItem(STORE_KEY) || '[]');
-
-            const dateStr = new Date().toISOString().slice(0, 10);
-            const filename = `cue-backup-${dateStr}.json`;
-            const blob = new Blob([dataToExport], { type: 'application/json' });
-
-            // Helper to open copyable backup modal
-            const openBackupModal = () => {
-              const existing = document.getElementById('backupDataModal');
-              if (existing) existing.remove();
-
-              const modal = document.createElement('div');
-              modal.id = 'backupDataModal';
-              modal.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; z-index:999999; padding:20px;';
-
-              modal.innerHTML = `
-                <div style="background:#18181b; border:1px solid rgba(255,255,255,0.15); border-radius:20px; padding:24px; max-width:460px; width:100%; color:#fff; box-shadow:0 20px 40px rgba(0,0,0,0.6);">
-                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                    <h3 style="margin:0; font-size:18px; font-weight:700;">Backup Data</h3>
-                    <button id="closeBackupDataModalBtn" type="button" style="background:none; border:none; color:#9ca3af; font-size:20px; cursor:pointer;">✕</button>
-                  </div>
-                  <textarea id="backupTextarea" readonly style="width:100%; height:150px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.15); border-radius:10px; color:#c084fc; font-family:monospace; font-size:11px; padding:12px; resize:none; margin-bottom:16px; box-sizing:border-box;"></textarea>
-                  <div style="display:flex; gap:10px;">
-                    <button id="copyBackupCodeBtn" class="btn btn-primary" type="button" style="flex:1; padding:12px; font-weight:700; font-size:13px;">Copy</button>
-                  </div>
-                </div>
-              `;
-
-              document.body.appendChild(modal);
-              const textarea = modal.querySelector('#backupTextarea');
-              textarea.value = dataToExport;
-
-              modal.querySelector('#closeBackupDataModalBtn').onclick = () => modal.remove();
-              modal.querySelector('#copyBackupCodeBtn').onclick = async () => {
-                textarea.focus();
-                textarea.select();
-                textarea.setSelectionRange(0, 999999); // Mobile selection
-
-                let copied = false;
-                try {
-                  copied = document.execCommand('copy');
-                } catch (e) {}
-
-                if (!copied && navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
-                  try {
-                    await navigator.clipboard.writeText(dataToExport);
-                    copied = true;
-                  } catch (clipErr) {
-                    console.warn('navigator.clipboard error:', clipErr);
-                  }
-                }
-
-                if (!copied && window.Capacitor?.Plugins?.Clipboard) {
-                  try {
-                    await window.Capacitor.Plugins.Clipboard.write({ string: dataToExport });
-                    copied = true;
-                  } catch (capClipErr) {}
-                }
-
-                if (copied) {
-                  customAlert('✓ Backup code copied to clipboard!');
-                } else {
-                  customAlert('Could not copy automatically. Please select all text in the box and choose Copy.');
-                }
-              };
-            };
-
-            // 1. Try native Web Share API (opens native Android save/share dialog)
-            if (navigator.share) {
-              try {
-                const file = new File([blob], filename, { type: 'application/json' });
-                if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                  await navigator.share({
-                    title: 'Someday Backup',
-                    files: [file]
-                  });
-                  return;
-                }
-              } catch (shareErr) {
-                if (shareErr.name === 'AbortError') return;
+            const { Filesystem, Share } = window.Capacitor?.Plugins || {};
+            if (window.Capacitor?.isNativePlatform?.()) {
+              if (!Filesystem || !Share) {
+                customAlert('Please update the app to export backups.');
+                return;
               }
+              // Native Android: write to cache, then open the system share sheet
+              // so the user can save it to Files, Drive, email, etc.
+              const { uri } = await Filesystem.writeFile({
+                path: filename,
+                data: dataToExport,
+                directory: 'CACHE',
+                encoding: 'utf8'
+              });
+              try {
+                await Share.share({ title: 'cue backup', files: [uri], dialogTitle: 'Save backup' });
+              } catch (shareErr) {
+                if (!/cancel/i.test(shareErr?.message || '')) throw shareErr;
+              }
+              return;
             }
 
-            // 2. Browser anchor download fallback
-            try {
-              const encodedData = encodeURIComponent(dataToExport);
-              const downloadAnchor = document.createElement('a');
-              downloadAnchor.setAttribute('href', 'data:application/json;charset=utf-8,' + encodedData);
-              downloadAnchor.setAttribute('download', filename);
-              downloadAnchor.style.display = 'none';
-              document.body.appendChild(downloadAnchor);
-              downloadAnchor.click();
-              document.body.removeChild(downloadAnchor);
-            } catch (e) {}
-
-            // 3. Always open Backup Modal on mobile native WebView so user is never stuck
-            openBackupModal();
+            // Web: regular file download
+            const url = URL.createObjectURL(new Blob([dataToExport], { type: 'application/json' }));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.href = url;
+            downloadAnchor.download = filename;
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
           } catch (e) {
-            alert('Could not export backup: ' + e.message);
+            customAlert('Could not export backup: ' + e.message);
           }
         };
 
-        const importFileBtn = document.getElementById('importFileBtn');
-        if (importFileBtn) {
-          importFileBtn.onclick = () => {
-            elements.fileInputBackup.value = '';
-            elements.fileInputBackup.click();
-          };
-        }
-
-        const importPasteBtn = document.getElementById('importPasteBtn');
-        if (importPasteBtn) {
-          importPasteBtn.onclick = () => {
-            const overlay = document.getElementById('importModalOverlay');
-            if (overlay) overlay.classList.add('active');
-          };
-        }
-
-        const confirmImportBtn = document.getElementById('confirmImportBtn');
-        if (confirmImportBtn) {
-          confirmImportBtn.onclick = async () => {
-            const textarea = document.getElementById('importTextArea');
-            const rawText = textarea ? textarea.value.trim() : '';
-            if (!rawText) {
-              customAlert('Please paste event data code first.');
-              return;
-            }
-            try {
-              const importedEvents = JSON.parse(rawText);
-              if (Array.isArray(importedEvents) && importedEvents.length > 0) {
-                state.events = dedupeEvents([...state.events, ...importedEvents]);
-                await saveEvents();
-                render();
-                renderCalendar();
-                document.getElementById('importModalOverlay').classList.remove('active');
-                document.getElementById('settingsModalOverlay').classList.remove('active');
-                if (textarea) textarea.value = '';
-                customAlert(`✓ Successfully imported ${importedEvents.length} events!`);
-              } else {
-                customAlert('No valid array of events found in the pasted data.');
-              }
-            } catch (err) {
-              customAlert('Invalid JSON code format: ' + err.message);
-            }
-          };
-        }
+        document.getElementById('importFileBtn').onclick = () => {
+          elements.fileInputBackup.value = '';
+          elements.fileInputBackup.click();
+        };
 
         elements.fileInputBackup.onchange = event => {
           const file = event.target.files[0];
@@ -2297,22 +2205,32 @@
 
           const reader = new FileReader();
           reader.onload = async loadEvent => {
+            let parsed;
             try {
-              const text = loadEvent.target.result;
-              const importedEvents = JSON.parse(text);
-              if (Array.isArray(importedEvents) && importedEvents.length > 0) {
-                state.events = dedupeEvents([...state.events, ...importedEvents]);
-                await saveEvents();
-                render();
-                renderCalendar();
-                document.getElementById('settingsModalOverlay').classList.remove('active');
-                customAlert(`✓ Successfully loaded ${importedEvents.length} events from file!`);
-              } else {
-                customAlert('No valid event data found in file.');
-              }
+              parsed = JSON.parse(loadEvent.target.result);
             } catch (error) {
-              customAlert('Invalid file format. ' + error.message);
+              customAlert('This file is not a valid backup (invalid JSON).');
+              return;
             }
+
+            // Accept the current { events: [...] } format and old plain-array backups
+            const importedEvents = (Array.isArray(parsed) ? parsed : parsed?.events || [])
+              .filter(ev => ev && typeof ev === 'object' && !Array.isArray(ev));
+            if (importedEvents.length === 0) {
+              customAlert('No events found in this backup file.');
+              return;
+            }
+
+            const before = state.events.length;
+            state.events = dedupeEvents([...state.events, ...importedEvents]);
+            const added = state.events.length - before;
+            await saveEvents();
+            render();
+            renderCalendar();
+            document.getElementById('settingsModalOverlay').classList.remove('active');
+            customAlert(added > 0
+              ? `✓ Restored ${added} new event${added === 1 ? '' : 's'} (${importedEvents.length - added} already existed).`
+              : '✓ All events in this backup already exist.');
           };
 
           reader.readAsText(file);

@@ -299,35 +299,14 @@
       </div>
 
       <div style="margin-top: 32px; border-top: 1px solid var(--border); padding-top: 24px;">
-        <h3 style="margin-bottom:12px;">Data Backup (File)</h3>
-        <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">Download a backup file of your events,
-          or load a previously saved backup file.</p>
+        <h3 style="margin-bottom:12px;">Backup</h3>
+        <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">Export your events to a .json file,
+          or restore them from a previously exported file. Duplicates are skipped.</p>
         <div class="btn-row" style="flex-wrap:wrap; gap:8px;">
-          <button class="btn btn-ghost" id="exportFileBtn" style="flex:1; min-width:140px;">Download Backup</button>
-          <button class="btn btn-ghost" id="importFileBtn" style="flex:1; min-width:140px;">Load Backup (.json)</button>
-          <button class="btn btn-ghost" id="importPasteBtn" style="flex:1; min-width:140px;">Paste Code</button>
+          <button class="btn btn-ghost" id="exportFileBtn" style="flex:1; min-width:140px;">Export backup</button>
+          <button class="btn btn-ghost" id="importFileBtn" style="flex:1; min-width:140px;">Import backup</button>
           <input type="file" id="fileInputBackup" accept=".json,application/json,text/plain" style="display:none;" />
         </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Manual Import Modal Overlay -->
-  <div id="importModalOverlay" class="modal-overlay">
-    <div class="modal-content">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-        <h3 style="margin:0;">Paste Data</h3>
-        <button class="icon-btn" onclick="document.getElementById('importModalOverlay').classList.remove('active')"
-          style="font-size:18px; color:var(--text-muted);">✕</button>
-      </div>
-      <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">Paste the event code you copied below:</p>
-
-      <textarea id="importTextArea"
-        style="width:100%; height:150px; background:rgba(0,0,0,0.5); color:white; border:1px solid var(--border); border-radius:8px; padding:10px; font-family:monospace; font-size:11px;"
-        placeholder='[{"id":"cue_..."}]'></textarea>
-
-      <div class="btn-row" style="margin-top: 24px;">
-        <button class="btn btn-primary" id="confirmImportBtn">Import now</button>
       </div>
     </div>
   </div>
