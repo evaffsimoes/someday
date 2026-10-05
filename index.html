@@ -47,8 +47,8 @@
       <div id="spotlightSlot"></div>
 
       <div class="section-title">
-        <span class="section-title-left">YOUR EVENTS</span>
-        <span class="section-see-all">See all <span style="font-size:12px; margin-left:1px;">›</span></span>
+        <span class="section-title-left">Your events</span>
+        <span class="section-see-all">See all ›</span>
       </div>
 
       <div class="feed-tabs" aria-label="Filters">
@@ -58,7 +58,7 @@
         <button class="feed-tab" type="button" data-filter="past">Past</button>
       </div>
       <div id="upcomingList"></div>
-      <div class="section-title" style="margin-top: 28px;"><span class="section-title-left">PAST EVENTS</span></div>
+      <div class="section-title section-title-spaced"><span class="section-title-left">Past events</span></div>
       <div id="pastList"></div>
     </div>
 
@@ -66,7 +66,7 @@
       <div class="add-screen-header">
         <h2 class="add-screen-title">Add an event</h2>
       </div>
-      <p class="add-screen-sub">Import a event automatically or add it manually.</p>
+      <p class="add-screen-sub">Import an event automatically or add it manually.</p>
 
       <div class="add-option-card" id="btnOptionScreenshot">
         <div class="add-icon">
@@ -82,7 +82,7 @@
         </div>
         <span class="add-chevron">›</span>
       </div>
-      <input type="file" id="fileInput" accept="image/*" style="display: none;">
+      <input type="file" id="fileInput" class="hidden-input" accept="image/*">
 
       <div class="add-option-card" id="btnOptionManual">
         <div class="add-icon">
@@ -106,27 +106,22 @@
     <!-- TAB 3: CALENDAR -->
     <div id="screen-calendar" class="tab-screen">
       <div class="cal-header">
-        <button class="btn btn-ghost" id="calPrevBtn"
-          style="padding: 6px 14px; font-size:12px; flex:none; display:inline-flex; align-items:center; justify-content:center; gap:6px; line-height:1;"><span
-            style="display:inline-block; transform:translateY(-0.5px);">←</span></button>
-        <h3 id="calMonthTitle"
-          style="margin:0; font-size:16px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em;"></h3>
-        <button class="btn btn-ghost" id="calNextBtn"
-          style="padding: 6px 14px; font-size:12px; flex:none; display:inline-flex; align-items:center; justify-content:center; gap:6px; line-height:1;">
-          <span style="display:inline-block; transform:translateY(-0.5px);">→</span></button>
+        <button class="btn btn-ghost cal-nav-btn" id="calPrevBtn" aria-label="Previous month">←</button>
+        <h3 id="calMonthTitle" class="cal-month-title"></h3>
+        <button class="btn btn-ghost cal-nav-btn" id="calNextBtn" aria-label="Next month">→</button>
       </div>
       <div class="cal-grid" id="calDaysHeader">
-        <div class="cal-day-label">Sun</div>
         <div class="cal-day-label">Mon</div>
         <div class="cal-day-label">Tue</div>
         <div class="cal-day-label">Wed</div>
         <div class="cal-day-label">Thu</div>
         <div class="cal-day-label">Fri</div>
         <div class="cal-day-label">Sat</div>
+        <div class="cal-day-label">Sun</div>
       </div>
-      <div class="cal-grid" id="calGrid" style="margin-top: 8px;"></div>
+      <div class="cal-grid cal-grid-days" id="calGrid"></div>
 
-      <div class="section-title" id="calSelectedTitle" style="margin-top:32px;">YOUR EVENTS</div>
+      <div class="section-title section-title-spaced" id="calSelectedTitle">Your events</div>
       <div id="calSelectedList"></div>
     </div>
 
@@ -200,8 +195,8 @@
   <!-- Settings Modal Overlay -->
   <div id="settingsModalOverlay" class="modal-overlay">
     <div class="modal-content">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-        <h3 style="margin:0;">Settings</h3>
+      <div class="modal-title-row">
+        <h3>Settings</h3>
         <button class="modal-close" id="closeSettingsBtn" type="button" aria-label="Close settings">
           <svg class="cue-icon" viewBox="0 0 24 24" aria-hidden="true">
             <path d="m7 7 10 10M17 7 7 17" />
@@ -213,7 +208,7 @@
         <span class="settings-saved" id="prefsSavedIndicator" aria-live="polite"></span>
         <a class="settings-link" id="testNotifBtn" href="#">Test alert</a>
       </div>
-      <p style="font-size:13px; color:var(--text-muted); margin:0;">Remind me…</p>
+      <p class="settings-hint">Remind me…</p>
 
       <div class="reminder-options">
         <label class="reminder-option">
@@ -238,13 +233,10 @@
         </label>
       </div>
 
-      <div id="customReminderSection"
-        style="display:none; margin-top:8px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:12px;">
-        <div style="display:flex; gap:8px; align-items:center;">
-          <input type="number" id="pref-custom-num" min="1" max="999" value="30" placeholder="30"
-            style="width:80px; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:8px; color:#fff; padding:8px 10px; font-size:13px; box-sizing:border-box;">
-          <select id="pref-custom-unit"
-            style="flex:1; background:#18181b; border:1px solid var(--border); border-radius:8px; color:#fff; padding:8px 10px; font-size:13px; box-sizing:border-box;">
+      <div id="customReminderSection" class="settings-panel">
+        <div class="custom-reminder-row">
+          <input type="number" id="pref-custom-num" class="settings-input settings-input-num" min="1" max="999" value="30" placeholder="30">
+          <select id="pref-custom-unit" class="settings-input">
             <option value="m">Minutes before</option>
             <option value="h">Hours before</option>
             <option value="d">Days before</option>
@@ -252,30 +244,23 @@
         </div>
       </div>
 
-      <div style="margin-top: 32px; border-top: 1px solid var(--border); padding-top: 24px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <h3 style="margin:0;">Account</h3>
-          <span id="accountStatusBadge" class="status-badge status-local"
-            style="display:none; font-size:11px; padding:3px 8px; border-radius:12px; background:rgba(255,255,255,0.08); color:var(--text-muted);">Not
-            signed in</span>
+      <div class="settings-section">
+        <div class="settings-section-heading">
+          <h3>Account</h3>
+          <span id="accountStatusBadge" class="status-badge status-local">Not signed in</span>
         </div>
-        <p id="accountSubText" style="font-size:12px; color:var(--text-muted); margin-bottom:14px;">Sign in with Google
+        <p id="accountSubText" class="settings-hint settings-hint-spaced">Sign in with Google
           to sync your events across devices.</p>
 
-        <div id="accountUserInfo"
-          style="display:none; margin-bottom:14px; background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:12px;">
-          <div style="display:flex; align-items:center; gap:10px;">
-            <img id="accountAvatarImg" src="" alt="Avatar"
-              style="width:36px; height:36px; border-radius:50%; display:none;">
-            <div>
-              <div id="accountUserName" class="user-name" style="font-size:13px; font-weight:600; color:#fff;"></div>
-            </div>
+        <div id="accountUserInfo" class="settings-panel account-user-info">
+          <div class="account-user-row">
+            <img id="accountAvatarImg" class="account-avatar" src="" alt="Avatar">
+            <div id="accountUserName" class="user-name"></div>
           </div>
         </div>
 
         <div class="btn-row">
-          <button class="btn btn-ghost" id="accountLoginBtn" type="button" onclick="CueAuth.signInWithGoogle()"
-            style="flex:1; display:inline-flex; align-items:center; justify-content:center; gap:8px;">
+          <button class="btn btn-ghost btn-google-signin" id="accountLoginBtn" type="button" onclick="CueAuth.signInWithGoogle()">
             <svg width="16" height="16" viewBox="0 0 24 24">
               <path fill="#4285F4"
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -288,21 +273,20 @@
             </svg>
             Sign in with Google
           </button>
-          <button class="btn btn-ghost" id="accountLogoutBtn" type="button" onclick="CueAuth.signOutUser()"
-            style="flex:1; display:none; color:#f87171; border-color:rgba(248,113,113,0.3);">
-            Sign Out
+          <button class="btn btn-ghost btn-danger-ghost" id="accountLogoutBtn" type="button" onclick="CueAuth.signOutUser()">
+            Sign out
           </button>
         </div>
       </div>
 
-      <div style="margin-top: 32px; border-top: 1px solid var(--border); padding-top: 24px;">
-        <h3 style="margin:0 0 12px;">Backup</h3>
-        <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">Export your events to a .json file,
+      <div class="settings-section">
+        <h3 class="settings-section-title">Backup</h3>
+        <p class="settings-hint settings-hint-spaced">Export your events to a .json file,
           or restore them from a previously exported file. Duplicates are skipped.</p>
-        <div class="btn-row" style="flex-wrap:wrap; gap:8px;">
-          <button class="btn btn-ghost" id="exportFileBtn" style="flex:1; min-width:140px;">Export backup</button>
-          <button class="btn btn-ghost" id="importFileBtn" style="flex:1; min-width:140px;">Import backup</button>
-          <input type="file" id="fileInputBackup" accept=".json,application/json,text/plain" style="display:none;" />
+        <div class="btn-row btn-row-wrap">
+          <button class="btn btn-ghost" id="exportFileBtn">Export backup</button>
+          <button class="btn btn-ghost" id="importFileBtn">Import backup</button>
+          <input type="file" id="fileInputBackup" class="hidden-input" accept=".json,application/json,text/plain" />
         </div>
       </div>
     </div>

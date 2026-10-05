@@ -146,15 +146,9 @@ async function updateNotificationBtn() {
   const button = document.getElementById('settingsBtn');
   if (!button) return;
 
-  if (await getNotificationPermission() === 'granted') {
-    button.style.borderColor = 'rgba(168,85,247,0.5)';
-    button.style.color = '#c084fc';
-    button.title = 'Notifications Active';
-  } else {
-    button.style.borderColor = 'var(--border)';
-    button.style.color = 'var(--text-main)';
-    button.title = 'Settings';
-  }
+  const active = await getNotificationPermission() === 'granted';
+  button.classList.toggle('is-active', active);
+  button.title = active ? 'Notifications active' : 'Settings';
 }
 
 function updateAppBadge() {

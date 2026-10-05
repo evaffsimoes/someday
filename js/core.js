@@ -59,11 +59,59 @@ function setStorageItem(key, val) {
   return Promise.resolve();
 }
 
-function fmtDate(dateStr) {
-  if (!dateStr) return 'Date unknown';
+// Dates follow the app's language (English), e.g. "Thu 8 Oct"
+const DATE_LOCALE = 'en-GB';
+
+function parseLocalDate(dateStr) {
   const parsed = new Date(dateStr + 'T00:00:00');
-  if (Number.isNaN(parsed.getTime())) return dateStr;
-  return parsed.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+// "Thu 8 Oct"; the year is only added when it isn't the current one
+function fmtDate(dateStr, { weekday = true } = {}) {
+  if (!dateStr) return 'Date unknown';
+  const parsed = parseLocalDate(dateStr);
+  if (!parsed) return dateStr;
+  const options = { day: 'numeric', month: 'short' };
+  if (weekday) options.weekday = 'short';
+  if (parsed.getFullYear() !== new Date().getFullYear()) options.year = 'numeric';
+  return parsed.toLocaleDateString(DATE_LOCALE, options);
+}
+
+// "Thu 8 Oct · 21:00" or "17–19 Oct"
+function fmtEventWhen(event) {
+  const dateText = fmtDateRange(event.startDate, event.endDate);
+  return event.time ? `${dateText} · ${event.time}` : dateText;
+}
+
+// "Today", "Tomorrow", "In 3 days", "In 2 weeks", "Happening now" — empty when far away or past
+function relativeDayLabel(event) {
+  const start = parseLocalDate(event.startDate || '');
+  if (!start) return '';
+  const end = parseLocalDate(event.endDate || event.startDate) || start;
+  const today = dateOnly(new Date());
+  if (start < today && end >= today) return 'Happening now';
+  const days = Math.round((start - today) / 86400000);
+  if (days < 0) return '';
+  if (days === 0) return 'Today';
+  if (days === 1) return 'Tomorrow';
+  if (days < 14) return `In ${days} days`;
+  if (days <= 60) return `In ${Math.round(days / 7)} weeks`;
+  return '';
+}
+
+// Small pills under an event: how soon it is, and whether a ticket is still missing
+function eventTagsHTML(event) {
+  const tags = [];
+  const relative = isPast(event) ? '' : relativeDayLabel(event);
+  if (relative) {
+    const urgent = relative === 'Today' || relative === 'Happening now';
+    tags.push(`<span class="day-chip${urgent ? ' day-chip-today' : ''}">${escapeHtml(relative)}</span>`);
+  }
+  if (!isPast(event) && (event.ticketStatus === 'need_ticket' || event.ticketStatus === 'maybe')) {
+    tags.push(`<span class="ticket-badge ${event.ticketStatus}">${escapeHtml(ticketLabel(event.ticketStatus))}</span>`);
+  }
+  return tags.length ? `<div class="event-tags">${tags.join('')}</div>` : '';
 }
 
 function isPast(event) {
@@ -115,16 +163,20 @@ function matchesQueueFilter(event, targetFilter = state.queueFilter) {
   return eventOverlapsRange(event, rangeStart, rangeEnd);
 }
 
+// Single day: "Thu 8 Oct". Range: "17–19 Oct" or "30 Oct – 1 Nov"
 function fmtDateRange(startDate, endDate) {
   if (!startDate) return 'Date unknown';
-  const start = new Date(startDate + 'T00:00:00');
-  if (endDate && endDate !== startDate) {
-    const end = new Date(endDate + 'T00:00:00');
-    const startStr = start.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
-    const endStr = end.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
-    return `${startStr} – ${endStr} ${end.getFullYear()}`;
+  if (!endDate || endDate === startDate) return fmtDate(startDate);
+
+  const start = parseLocalDate(startDate);
+  const end = parseLocalDate(endDate);
+  if (!start || !end) return `${startDate} – ${endDate}`;
+
+  if (start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear()) {
+    const monthYear = fmtDate(endDate, { weekday: false }).replace(/^\d+\s*/, '');
+    return `${start.getDate()}–${end.getDate()} ${monthYear}`;
   }
-  return start.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+  return `${fmtDate(startDate, { weekday: false })} – ${fmtDate(endDate, { weekday: false })}`;
 }
 
 function escapeHtml(value) {
@@ -327,23 +379,13 @@ function customAlert(message) {
   if (!box) {
     box = document.createElement('div');
     box.id = 'debugAlertBox';
-    box.style.position = 'fixed';
-    box.style.bottom = '20px';
-    box.style.left = '50%';
-    box.style.transform = 'translateX(-50%)';
-    box.style.background = '#333';
-    box.style.color = '#fff';
-    box.style.padding = '12px 20px';
-    box.style.borderRadius = '8px';
-    box.style.zIndex = '99999';
-    box.style.boxShadow = '0 4px 12px rgba(0,0,0,0.5)';
-    box.style.textAlign = 'center';
+    box.className = 'app-toast';
+    box.setAttribute('role', 'status');
     document.body.appendChild(box);
   }
 
   box.textContent = message;
-  box.style.display = 'block';
-  setTimeout(() => {
-    box.style.display = 'none';
-  }, 5000);
+  box.classList.add('visible');
+  clearTimeout(customAlert.hideTimer);
+  customAlert.hideTimer = setTimeout(() => box.classList.remove('visible'), 5000);
 }

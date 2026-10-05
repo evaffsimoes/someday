@@ -19,7 +19,6 @@ function switchTab(tabName) {
 }
 
 function renderQueueItem(event) {
-  const dateStr = fmtDateRange(event.startDate, event.endDate);
   const locStr = [event.city, event.venue].filter(Boolean).join(' · ');
   const imageSrc = safeImageUrl(event.image);
 
@@ -30,19 +29,20 @@ function renderQueueItem(event) {
   const eventIsPast = isPast(event);
   return `
     <div class="queue-swipe-wrapper">
-      <div class="queue-item ${eventIsPast ? 'is-past' : ''}" data-view="${escapeAttr(event.id)}" onclick="window.openDetailModalById('${escapeAttr(event.id)}')">
+      <div class="queue-item ${eventIsPast ? 'is-past' : ''}" data-view="${escapeAttr(event.id)}">
         ${imageHTML}
 
         <div class="queue-info">
           <div class="queue-artist">${escapeHtml(event.artist || 'Untitled event')}</div>
           <div class="queue-date-row">
-            <span>${escapeHtml(dateStr.toUpperCase())}</span>
+            <span>${escapeHtml(fmtEventWhen(event))}</span>
           </div>
           ${locStr ? `<div class="queue-loc-row"><span>${escapeHtml(locStr)}</span></div>` : ''}
-          ${event.company ? `<div class="queue-loc-row" style="color:var(--accent-strong); font-weight:500;"><span>With ${escapeHtml(event.company)}</span></div>` : ''}
+          ${event.company ? `<div class="queue-loc-row queue-company"><span>With ${escapeHtml(event.company)}</span></div>` : ''}
+          ${eventTagsHTML(event)}
         </div>
 
-        <div class="queue-arrow" style="color:#6b7280; font-size:18px; line-height:1; font-weight:300;">›</div>
+        <div class="queue-arrow">›</div>
       </div>
     </div>`;
 }
@@ -66,33 +66,20 @@ function render() {
 
   if (!isPastFilter && upcoming.length > 0) {
     const nextEvent = upcoming[0];
-    const dateStr = fmtDateRange(nextEvent.startDate, nextEvent.endDate).toUpperCase();
-    const locationText = [nextEvent.city, nextEvent.venue].filter(Boolean).join(' · ').toUpperCase();
+    const locationText = [nextEvent.city, nextEvent.venue].filter(Boolean).join(' · ');
     const heroImgSrc = safeImageUrl(nextEvent.image);
-
+    // Only the bottom of the poster is darkened, so the artwork stays visible
     const heroBgStyle = heroImgSrc
-      ? `background-image: linear-gradient(180deg, rgba(9, 9, 11, 0.2) 0%, rgba(9, 9, 11, 0.95) 100%), url('${escapeAttr(heroImgSrc)}');`
-      : `background: linear-gradient(135deg, #2e1065 0%, #09090b 100%);`;
+      ? `background-image: linear-gradient(180deg, rgba(9, 9, 11, 0) 25%, rgba(9, 9, 11, 0.55) 55%, rgba(9, 9, 11, 0.95) 100%), url('${escapeAttr(heroImgSrc)}');`
+      : '';
 
     spotlightSlot.innerHTML = `
-      <div class="hero-spotlight-card" style="position: relative; width: 100%; height: 320px; border-radius: 20px; overflow: hidden; margin-bottom: 24px; background-size: cover; background-position: center; display: flex; flex-direction: column; justify-content: flex-end; padding: 24px 20px; box-sizing: border-box; cursor: pointer; ${heroBgStyle}" onclick="const evt = state.events.find(e => e.id === '${nextEvent.id}'); if (evt) openDetailModal(evt);">
-        <div style="font-size: 11px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.16em; margin-bottom: 6px;">
-          NEXT UP
-        </div>
-        <div style="font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: #ffffff; line-height: 1.15; letter-spacing: -0.02em; margin-bottom: 8px; text-transform: uppercase;">
-          ${escapeHtml(nextEvent.artist || 'Next Event')}
-        </div>
-        <div style="font-size: 13px; font-weight: 600; color: #d1d5db; letter-spacing: 0.04em; margin-bottom: 4px;">
-          ${escapeHtml(dateStr)}
-        </div>
-        ${locationText ? `<div style="font-size: 12px; font-weight: 500; color: #9ca3af; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 16px;">${escapeHtml(locationText)}</div>` : ''}
-        
-        <div>
-          <button type="button" style="display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid rgba(192, 132, 252, 0.8); border-radius: 999px; background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(8px); color: #ffffff; padding: 9px 18px; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer;">
-            <span>I'M GOING</span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-          </button>
-        </div>
+      <div class="hero-spotlight-card${heroImgSrc ? '' : ' hero-no-image'}" style="${heroBgStyle}" data-view="${escapeAttr(nextEvent.id)}">
+        <div class="hero-eyebrow">Next up</div>
+        <div class="hero-title">${escapeHtml(nextEvent.artist || 'Next event')}</div>
+        <div class="hero-when">${escapeHtml(fmtEventWhen(nextEvent))}</div>
+        ${locationText ? `<div class="hero-where">${escapeHtml(locationText)}</div>` : ''}
+        ${eventTagsHTML(nextEvent)}
       </div>
     `;
   }
@@ -340,8 +327,6 @@ function showCalendarToast(event) {
 function openDetailModal(event) {
   if (!event) return;
   try {
-    const dateStr = fmtDateRange(event.startDate, event.endDate);
-    const timeStr = event.time ? ` · ${event.time}` : '';
     const locationText = [event.city, event.venue].filter(Boolean).join(' · ');
     const overlay = document.getElementById('eventModalOverlay');
     const content = document.getElementById('eventModalContent');
@@ -351,96 +336,82 @@ function openDetailModal(event) {
       return;
     }
 
-  let dayBadgeText = '';
-  if (event.startDate) {
-    const d = new Date(event.startDate + 'T00:00:00');
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    const diffDays = Math.round((d - now) / 86400000);
-    if (diffDays === 0) dayBadgeText = 'today';
-    else if (diffDays === 1) dayBadgeText = 'tomorrow';
-    else if (diffDays > 1) dayBadgeText = `in ${diffDays} days`;
-  }
+  const dayBadgeText = isPast(event) ? '' : relativeDayLabel(event);
+
+  const ticketHTML = (() => {
+    let html = '';
+    if (event.ticketFile) {
+      html += `<a href="${escapeAttr(event.ticketFile)}" download="${escapeAttr(event.ticketFileName || 'ticket')}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost detail-ticket-link">
+          ${iconSvg('ticket')} Open attached ticket (${escapeHtml(event.ticketFileName || 'File')}) ↗
+        </a>`;
+    }
+    if (!event.ticketInfo) return html;
+    const info = event.ticketInfo.trim();
+    const isUrl = /^https?:\/\//i.test(info) || /^www\./i.test(info);
+    const hrefUrl = /^www\./i.test(info) ? `https://${info}` : info;
+    if (isUrl) {
+      html += `<a href="${escapeAttr(hrefUrl)}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost detail-ticket-link">
+          ${iconSvg('ticket')} Open ticket link ↗
+        </a>`;
+    } else {
+      html += `<div class="detail-ticket-info">
+          <span class="detail-section-label">Ticket details</span>
+          ${escapeHtml(info)}
+        </div>`;
+    }
+    return html;
+  })();
 
   content.innerHTML = `
-    <div class="event-modal-header" style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+    <div class="event-modal-header">
       <button class="modal-close" id="closeModalBtn" type="button" aria-label="Close event details">${iconSvg('close')}</button>
     </div>
 
     ${safeImageUrl(event.image)
-      ? `<img class="event-detail-image" src="${escapeAttr(safeImageUrl(event.image))}" alt="Poster" style="height:190px; width:100%; object-fit:cover; border-radius:14px; margin-bottom:14px;">`
-      : `<div class="event-detail-placeholder" aria-label="No event photo" style="height:110px; border-radius:14px; margin-bottom:14px;">${iconSvg('ticket')}</div>`}
+      ? `<img class="event-detail-image" src="${escapeAttr(safeImageUrl(event.image))}" alt="Poster">`
+      : `<div class="event-detail-placeholder" aria-label="No event photo">${iconSvg('ticket')}</div>`}
 
-    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px;">
-      <h2 class="event-detail-title" style="margin:0; font-family:'Outfit', sans-serif; font-size:24px; font-weight:800; color:var(--text-main); line-height:1.2;">${escapeHtml(event.artist || 'Untitled event')}</h2>
+    <div class="detail-title-row">
+      <h2 class="event-detail-title">${escapeHtml(event.artist || 'Untitled event')}</h2>
       ${event.ticketStatus && ticketLabel(event.ticketStatus) ? `<span class="ticket-badge ${escapeAttr(event.ticketStatus)}">${escapeHtml(ticketLabel(event.ticketStatus))}</span>` : ''}
     </div>
 
-    ${(() => {
-      let html = '';
-      if (event.ticketFile) {
-        html += `<div style="margin-bottom:14px;">
-          <a href="${escapeAttr(event.ticketFile)}" download="${escapeAttr(event.ticketFileName || 'ticket')}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost" style="font-size:12px; display:inline-flex; align-items:center; gap:6px; color:var(--accent-strong); border-color:rgba(168,85,247,0.3); text-decoration:none;">
-            ${iconSvg('ticket')} Open Attached Ticket (${escapeHtml(event.ticketFileName || 'File')}) ↗
-          </a>
-        </div>`;
-      }
-      if (!event.ticketInfo) return html;
-      const info = event.ticketInfo.trim();
-      const isUrl = /^https?:\/\//i.test(info) || /^www\./i.test(info);
-      const hrefUrl = /^www\./i.test(info) ? `https://${info}` : info;
-      if (isUrl) {
-        html += `<div style="margin-bottom:14px;">
-          <a href="${escapeAttr(hrefUrl)}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost" style="font-size:12px; display:inline-flex; align-items:center; gap:6px; color:var(--accent-strong); border-color:rgba(168,85,247,0.3); text-decoration:none;">
-            ${iconSvg('ticket')} Open Ticket Link ↗
-          </a>
-        </div>`;
-      } else {
-        html += `<div style="font-size:13px; color:var(--text-main); background:var(--surface-soft); padding:8px 12px; border-radius:10px; border:1px solid var(--border); margin-bottom:14px;">
-          <strong style="color:var(--text-muted); font-size:10px; letter-spacing:0.08em; text-transform:uppercase; display:block; margin-bottom:2px;">TICKET DETAILS</strong>
-          ${escapeHtml(info)}
-        </div>`;
-      }
-      return html;
-    })()}
+    ${ticketHTML ? `<div class="detail-ticket">${ticketHTML}</div>` : ''}
 
-    <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px;">
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:14px; font-weight:600; color:#ffffff;">
-        <div style="display:flex; align-items:center; gap:8px;">
-          <span style="color:var(--text-muted); display:inline-flex; align-items:center;">${iconSvg('calendar')}</span>
-          <span>${escapeHtml(dateStr)}${escapeHtml(timeStr)}</span>
-        </div>
-        ${dayBadgeText ? `<span style="font-size:11px; font-weight:700; color:var(--purple-light); background:rgba(168,85,247,0.12); border:1px solid rgba(168,85,247,0.5); border-radius:99px; padding:3px 10px; letter-spacing:0.02em; flex-shrink:0;">${escapeHtml(dayBadgeText)}</span>` : ''}
+    <div class="detail-meta">
+      <div class="detail-meta-row detail-meta-when">
+        <span class="detail-meta-icon">${iconSvg('calendar')}</span>
+        <span class="detail-meta-text">${escapeHtml(fmtEventWhen(event))}</span>
+        ${dayBadgeText ? `<span class="day-chip${dayBadgeText === 'Today' || dayBadgeText === 'Happening now' ? ' day-chip-today' : ''}">${escapeHtml(dayBadgeText)}</span>` : ''}
       </div>
 
       ${locationText ? `
-        <div style="display:flex; align-items:center; gap:8px; font-size:14px; font-weight:500; color:var(--text-muted);">
-          <span style="color:var(--text-muted); display:inline-flex; align-items:center;">${iconSvg('location')}</span>
-          <a href="https://maps.google.com/?q=${encodeURIComponent(locationText)}" target="_blank" rel="noopener noreferrer" class="map-link" style="color:var(--purple-light); font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:4px;">${escapeHtml(locationText)} <span style="font-size:11px; opacity:0.7;">↗</span></a>
+        <div class="detail-meta-row">
+          <span class="detail-meta-icon">${iconSvg('location')}</span>
+          <a href="https://maps.google.com/?q=${encodeURIComponent(locationText)}" target="_blank" rel="noopener noreferrer" class="map-link detail-map-link">${escapeHtml(locationText)} <span aria-hidden="true">↗</span></a>
         </div>
       ` : ''}
 
       ${event.company ? `
-        <div style="display:flex; align-items:center; gap:8px; font-size:14px; font-weight:500; color:var(--text-muted);">
-          <span style="color:var(--text-muted); display:inline-flex; align-items:center;">${iconSvg('users')}</span>
-          <span>With <strong style="color:#ffffff; font-weight:600;">${escapeHtml(event.company)}</strong></span>
+        <div class="detail-meta-row">
+          <span class="detail-meta-icon">${iconSvg('users')}</span>
+          <span class="detail-meta-text">With <strong>${escapeHtml(event.company)}</strong></span>
         </div>
       ` : ''}
     </div>
 
     ${event.description ? `
-      <hr style="border:0; border-top:1px solid rgba(255,255,255,0.08); margin:16px 0;">
-      <div style="margin-bottom:16px;">
-        <div style="font-size:11px; font-weight:700; letter-spacing:0.08em; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">ABOUT</div>
-        <p style="margin:0; font-size:14px; line-height:1.5; color:#d4d4d8; white-space:pre-wrap; word-break:break-word;">${escapeHtml(event.description)}</p>
+      <div class="detail-about">
+        <div class="detail-section-label">About</div>
+        <p>${escapeHtml(event.description)}</p>
       </div>
     ` : ''}
 
-    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:16px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.08);">
-      <button class="btn btn-ghost" id="gcalFromModalBtn" style="font-size:12px; padding:10px 12px; color:var(--purple-light); border-color:rgba(168,85,247,0.3); flex:1;">Calendar</button>
-      <button class="btn btn-ghost" id="editFromModalBtn" style="font-size:12px; padding:10px 12px; color:var(--text-muted); border-color:var(--border); flex:1;">Edit</button>
-      <button class="btn btn-ghost" id="btnDelFromModal" style="font-size:12px; padding:10px 12px; color:var(--danger); border-color:rgba(239,68,68,0.25); flex:1;">Delete</button>
+    <div class="detail-actions">
+      <button class="btn btn-primary" id="gcalFromModalBtn" type="button">Add to calendar</button>
+      <button class="btn btn-ghost" id="editFromModalBtn" type="button">Edit</button>
     </div>
+    <button class="detail-delete" id="btnDelFromModal" type="button">Delete event</button>
   `;
 
   overlay.style.display = 'flex';
@@ -488,7 +459,8 @@ function renderCalendar() {
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   document.getElementById('calMonthTitle').textContent = `${monthNames[month]} ${year}`;
 
-  const firstDay = new Date(year, month, 1).getDay();
+  // Weeks start on Monday
+  const firstDay = (new Date(year, month, 1).getDay() + 6) % 7;
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const todayStr = new Date().toISOString().slice(0, 10);
   const grid = document.getElementById('calGrid');
@@ -525,42 +497,29 @@ function renderCalendar() {
 
     if (dayEvents.length > 0) {
       const visibleEvents = dayEvents.slice(0, 2);
+      const weekColumn = (firstDay + day - 1) % 7;
       visibleEvents.forEach(event => {
         const isMultiDay = event.endDate && event.endDate !== event.startDate;
         const isStart = event.startDate === dateKey;
         const isEnd = event.endDate === dateKey;
 
-        let background = 'linear-gradient(135deg, rgba(168, 85, 247, 0.35), rgba(192, 132, 252, 0.45))';
-        let border = 'rgba(168, 85, 247, 0.6)';
-        let textColor = '#ffffff';
-
-        if (event.category === 'Festival') {
-          background = 'linear-gradient(135deg, rgba(245, 158, 11, 0.35), rgba(251, 191, 36, 0.45))';
-          border = 'rgba(245, 158, 11, 0.7)';
-          textColor = '#fef08a';
-        } else if (event.category === 'Other' || event.category === 'Party') {
-          background = 'linear-gradient(135deg, rgba(20, 184, 166, 0.35), rgba(45, 212, 191, 0.45))';
-          border = 'rgba(20, 184, 166, 0.7)';
-          textColor = '#99f6e4';
-        }
-
         const pill = document.createElement('div');
-        pill.className = 'cal-event-pill';
-        pill.style.background = background;
-        pill.style.border = `1px solid ${border}`;
-        pill.style.color = textColor;
-        pill.textContent = event.artist || 'Event';
+        const categoryClass = event.category === 'Festival' ? 'festival'
+          : (event.category === 'Other' || event.category === 'Party') ? 'other' : 'concert';
+        pill.className = `cal-event-pill cal-event-${categoryClass}`;
         pill.title = event.artist || 'Event';
         pill.setAttribute('aria-label', event.artist || 'Event');
 
         if (isMultiDay) {
-          if (isStart && !isEnd) {
-            pill.classList.add('cal-event-pill-start');
-          } else if (isEnd && !isStart) {
-            pill.classList.add('cal-event-pill-end');
-          } else if (!isStart && !isEnd) {
-            pill.classList.add('cal-event-pill-mid');
-          }
+          // Multi-day events read as one bar across the days; the name shows where the bar starts
+          // and again at the start of each week row
+          if (!isStart) pill.classList.add('cal-event-continues-left');
+          if (!isEnd) pill.classList.add('cal-event-continues-right');
+          if (weekColumn === 0) pill.classList.add('cal-event-week-start');
+          if (weekColumn === 6) pill.classList.add('cal-event-week-end');
+          pill.textContent = isStart || weekColumn === 0 ? (event.artist || 'Event') : '';
+        } else {
+          pill.textContent = event.artist || 'Event';
         }
 
         cell.appendChild(pill);
@@ -569,10 +528,7 @@ function renderCalendar() {
       const hiddenEventCount = dayEvents.length - visibleEvents.length;
       if (hiddenEventCount > 0) {
         const more = document.createElement('div');
-        more.style.fontSize = '8px';
-        more.style.fontWeight = '700';
-        more.style.color = 'var(--purple-light)';
-        more.style.marginTop = '1px';
+        more.className = 'cal-more';
         more.textContent = `+${hiddenEventCount} more`;
         more.title = 'Select this day to view all events';
         cell.appendChild(more);
@@ -605,7 +561,7 @@ function renderSelectedDateEvents(dateStr, dayEvents) {
   const list = document.getElementById('calSelectedList');
 
   if (dateStr) {
-    title.textContent = `EVENTS ON ${dateStr}`;
+    title.textContent = `Events on ${fmtDate(dateStr)}`;
     const rest = state.events
       .filter(event => !isPast(event) && event.startDate)
       .filter(event => {
@@ -616,20 +572,20 @@ function renderSelectedDateEvents(dateStr, dayEvents) {
 
     let html = '';
     if (dayEvents.length) {
-      html += `<div class="month-header" style="color:var(--purple-light);border-color:rgba(168,85,247,0.3)"> ${dateStr}</div>`;
+      html += `<div class="month-header month-header-accent">${escapeHtml(fmtDate(dateStr))}</div>`;
       html += dayEvents.map(renderQueueItem).join('');
     } else {
       html += '<div class="empty">No events this day.</div>';
     }
 
     if (rest.length) {
-      html += '<div class="month-header" style="margin-top:16px;">Other upcoming</div>';
+      html += '<div class="month-header month-header-spaced">Other upcoming</div>';
       html += rest.map(renderQueueItem).join('');
     }
 
     list.innerHTML = html || '<div class="empty">No events this month.</div>';
   } else {
-    title.textContent = 'UPCOMING EVENTS';
+    title.textContent = 'Upcoming events';
     const upcoming = state.events
       .filter(event => !isPast(event) && event.startDate)
       .sort((a, b) => a.startDate.localeCompare(b.startDate));

@@ -18,25 +18,25 @@ function openReview(prefill, focusField = '') {
       <div class="form-section-title">1. Event Basics</div>
 
       <div class="field">
-        <div class="event-image-editor" style="background:var(--surface-soft); padding:12px; border-radius:14px; border:1px solid var(--border); display:flex; align-items:center; gap:14px;">
-          <div id="eventImagePreviewWrapper" class="event-image-preview-wrapper" style="width:72px; height:72px; border-radius:12px; overflow:hidden; background:var(--surface); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+        <div class="event-image-editor">
+          <div id="eventImagePreviewWrapper" class="event-image-preview-wrapper">
             ${safeImageUrl(prefill.image)
-      ? `<img src="${escapeAttr(safeImageUrl(prefill.image))}" style="width:100%; height:100%; object-fit:cover;" alt="Event image">`
-      : `<div style="text-align:center; padding:4px; font-size:10px; color:var(--text-muted);">No image</div>`}
+      ? `<img src="${escapeAttr(safeImageUrl(prefill.image))}" alt="Event image">`
+      : `<div class="event-image-empty">No image</div>`}
           </div>
-          <div class="event-image-actions" style="display:flex; flex-direction:column; gap:6px; flex:1;">
-            <span style="font-size:12px; font-weight:600; color:var(--text-main);">${safeImageUrl(prefill.image) ? 'Event Poster' : 'Poster not found?'}</span>
-            <input class="event-image-input" id="eventImageInput" type="file" accept="image/jpeg,image/png,image/webp" style="display:none;">
-            <label class="btn btn-ghost" for="eventImageInput" style="font-size:12px; padding:6px 12px; margin:0; display:inline-flex; align-items:center; gap:6px; width:fit-content; cursor:pointer;">
+          <div class="event-image-actions">
+            <span class="event-image-caption">${safeImageUrl(prefill.image) ? 'Event poster' : 'No poster yet'}</span>
+            <input class="event-image-input" id="eventImageInput" type="file" accept="image/jpeg,image/png,image/webp">
+            <label class="btn btn-ghost btn-small" for="eventImageInput">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-              <span>${safeImageUrl(prefill.image) ? 'Change photo' : 'Choose from Gallery'}</span>
+              <span>${safeImageUrl(prefill.image) ? 'Change photo' : 'Choose from gallery'}</span>
             </label>
           </div>
         </div>
       </div>
 
       <div class="field">
-        <label>Artist / Event Name</label>
+        <label>Artist / event name</label>
         <input id="f_artist" value="${escapeAttr(prefill.artist || prefill.name || '')}" placeholder="e.g. Tino de Rans DJ Set, Festival X">
       </div>
 
@@ -53,10 +53,10 @@ function openReview(prefill, focusField = '') {
 
       <div class="field">
         <label for="f_daterange">Date</label>
-        <div style="display:flex; align-items:center; gap:10px;">
-          <input id="f_daterange" type="text" placeholder="Select date" style="flex:1; min-width:0;">
-          <label style="display:flex; align-items:center; gap:6px; margin:0; white-space:nowrap; cursor:pointer;">
-            <input id="f_multiday" type="checkbox" style="width:auto; margin:0; padding:0; accent-color:#a855f7;"> Multi-day
+        <div class="date-field-row">
+          <input id="f_daterange" type="text" placeholder="Select date">
+          <label class="multiday-toggle">
+            <input id="f_multiday" type="checkbox"> Multi-day
           </label>
         </div>
       </div>
@@ -89,7 +89,7 @@ function openReview(prefill, focusField = '') {
       </div>
 
       <div class="field">
-        <label>Ticket Status</label>
+        <label>Ticket status</label>
         <input type="hidden" id="f_ticket_status" value="${escapeAttr(prefill.ticketStatus || '')}">
         <div class="status-chip-group" id="ticketStatusChips">
           <button type="button" class="status-chip ${(prefill.ticketStatus === 'need_ticket') ? 'selected' : ''}" data-val="need_ticket">Need ticket</button>
@@ -99,13 +99,13 @@ function openReview(prefill, focusField = '') {
       </div>
 
       <div class="field" id="ticketInfoField" style="display: ${(prefill.ticketStatus || prefill.ticketFile) ? 'block' : 'none'};">
-        <label>Attach Ticket</label>
-        <div style="display: flex; align-items: center; gap: 10px;">
+        <label>Attach ticket</label>
+        <div class="ticket-file-row">
           <input class="event-image-input" id="ticketFileInput" type="file" accept="image/*,.pdf">
-          <label for="ticketFileInput" class="btn btn-ghost" style="font-size: 12px; padding: 8px 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-            <span>${prefill.ticketFile ? 'Replace ticket file' : 'Attach PDF / Image'}</span>
+          <label for="ticketFileInput" class="btn btn-ghost btn-small">
+            <span>${prefill.ticketFile ? 'Replace ticket file' : 'Attach PDF / image'}</span>
           </label>
-          <span id="ticketFileStatus" style="font-size: 12px; color: var(--text-muted);">${prefill.ticketFile ? (prefill.ticketFileName || 'Attached') : 'No file attached'}</span>
+          <span id="ticketFileStatus" class="ticket-file-status">${prefill.ticketFile ? (prefill.ticketFileName || 'Attached') : 'No file attached'}</span>
         </div>
       </div>
 

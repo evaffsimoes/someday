@@ -14,12 +14,11 @@ function renderAiParsingState() {
   closeLinkInput();
   elements.reviewSlot.innerHTML = '';
   elements.aiParsingSlot.innerHTML = `
-    <div class="ai-parsing-card" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:28px 16px; text-align:center; border:1px solid var(--border); border-radius:16px; background:var(--surface-soft);">
-      <div style="width:32px; height:32px; border:3px solid var(--border); border-top-color:var(--accent-strong); border-radius:50%; animation:cueSpin 0.75s linear infinite; margin-bottom:14px;"></div>
-      <div style="font-size:14px; font-weight:600; color:var(--text-main); font-family:'Outfit', sans-serif;">Reading event poster...</div>
-      <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Extracting event details</div>
-    </div>
-    <style>@keyframes cueSpin { to { transform: rotate(360deg); } }</style>`;
+    <div class="ai-parsing-card">
+      <div class="spinner"></div>
+      <div class="ai-parsing-title">Reading event poster...</div>
+      <div class="ai-parsing-sub">Extracting event details</div>
+    </div>`;
   elements.aiParsingSlot.scrollIntoView({ behavior: 'smooth' });
 }
 
@@ -48,11 +47,11 @@ function openLinkInput() {
   if (!slot) return;
 
   slot.innerHTML = `
-    <form class="inline-link-form" id="sharedLinkForm" style="margin-top:6px; margin-bottom:6px;">
-      <div style="position:relative; display:flex; align-items:center; background:var(--surface); border:1px solid rgba(168,85,247,0.3); border-radius:16px; padding:4px 6px 4px 14px; box-shadow:0 8px 24px rgba(0,0,0,0.3); transition:all 0.2s ease;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-strong)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-right:10px;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
-        <input id="sharedLinkInput" type="text" autocomplete="url" placeholder="Paste Instagram link or caption..." aria-label="Instagram link or caption" style="flex:1; background:transparent; border:none; outline:none; color:var(--text-main); font-size:13px; font-weight:500; padding:10px 0;">
-        <button class="btn btn-primary" type="submit" style="padding:9px 18px; border-radius:12px; font-size:12px; font-weight:700; flex-shrink:0; display:inline-flex; align-items:center; gap:6px; background:linear-gradient(135deg, #a855f7, #7c3aed); border:none; box-shadow:0 4px 14px rgba(168,85,247,0.35); cursor:pointer;">
+    <form class="inline-link-form" id="sharedLinkForm">
+      <div class="link-input-box">
+        <svg class="link-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+        <input id="sharedLinkInput" type="text" autocomplete="url" placeholder="Paste Instagram link or caption..." aria-label="Instagram link or caption">
+        <button class="btn btn-primary link-input-submit" type="submit">
           <span>Read</span>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
         </button>
