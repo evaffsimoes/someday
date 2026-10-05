@@ -1843,6 +1843,23 @@
               sent[key] = true;
             }
           }
+
+          // 4. Automatic 1-week ticket reminder for "need_ticket", "maybe", or unselected ticket status
+          const needsTicketReminder = !event.ticketStatus || event.ticketStatus === 'need_ticket' || event.ticketStatus === 'maybe';
+          if (needsTicketReminder && daysUntil <= 7 && daysUntil > 0) {
+            const ticketKey = `${event.id}-${event.startDate}-ticket-7d`;
+            if (!sent[ticketKey]) {
+              let statusLabel = event.ticketStatus === 'need_ticket' ? 'Need ticket' : event.ticketStatus === 'maybe' ? 'Maybe going' : 'No ticket status set';
+              triggerNotification(`🎟️ Ticket Reminder: 1 week left!`, {
+                body: `${event.artist || 'Event'} (${statusLabel}). Don't forget to check or get your tickets!`,
+                icon: 'icon-192.png',
+                badge: 'icon-192.png',
+                tag: ticketKey,
+                renotify: true
+              });
+              sent[ticketKey] = true;
+            }
+          }
         });
 
         localStorage.setItem(NOTIFICATION_KEY, JSON.stringify(sent));
