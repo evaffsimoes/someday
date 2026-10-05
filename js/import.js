@@ -129,6 +129,10 @@ function restoreAddOptions() {
 
   const addSub = document.querySelector('.add-screen-sub');
   if (addSub) addSub.style.display = '';
+
+  // Form closed: the glow goes back to the next event's colour
+  state.reviewColor = null;
+  refreshGlow();
 }
 
 // Flags the review fields the AI could not read, so the user knows what to fill in
@@ -159,10 +163,11 @@ function markFieldsAiMissed(parsed) {
     if (!field) return;
 
     field.classList.add('ai-missing');
-    const hint = document.createElement('div');
+    // On the label's line, so fields side by side stay aligned whether or not they're flagged
+    const hint = document.createElement('span');
     hint.className = 'ai-missing-hint';
-    hint.textContent = 'Not found in the post';
-    field.querySelector('label')?.after(hint);
+    hint.textContent = 'Not found';
+    field.querySelector('label')?.append(hint);
 
     const clear = () => {
       if (!input.value.trim()) return;

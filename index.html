@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>cue — Never miss your cue.</title>
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#000000">
+  <meta name="theme-color" content="#08070d">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -16,7 +16,7 @@
   <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -28,9 +28,11 @@
 </head>
 
 <body>
+  <!-- Glow in the next event's poster colour (set from JS via --glow / --glow2) -->
+  <div class="app-aura" aria-hidden="true"></div>
   <div class="wrap">
     <header class="cue-header">
-      <div class="cue-logo">cue<span class="cue-gem">✦</span></div>
+      <div class="cue-logo">cue</div>
       <div class="cue-header-actions">
         <button class="notification-btn" id="settingsBtn" aria-label="Settings">
           <svg class="cue-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"

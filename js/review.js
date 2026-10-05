@@ -56,7 +56,7 @@ function openReview(prefill, focusField = '') {
         <div class="date-field-row">
           <input id="f_daterange" type="text" placeholder="Select date">
           <label class="multiday-toggle">
-            <input id="f_multiday" type="checkbox"> Multi-day
+            <input id="f_multiday" type="checkbox" class="switch"> Multi-day
           </label>
         </div>
       </div>
@@ -91,10 +91,16 @@ function openReview(prefill, focusField = '') {
       <div class="field">
         <label>Ticket status</label>
         <input type="hidden" id="f_ticket_status" value="${escapeAttr(prefill.ticketStatus || '')}">
-        <div class="status-chip-group" id="ticketStatusChips">
-          <button type="button" class="status-chip ${(prefill.ticketStatus === 'need_ticket') ? 'selected' : ''}" data-val="need_ticket">Need ticket</button>
-          <button type="button" class="status-chip ${(prefill.ticketStatus === 'going') ? 'selected' : ''}" data-val="going">Going</button>
-          <button type="button" class="status-chip ${(prefill.ticketStatus === 'maybe') ? 'selected' : ''}" data-val="maybe">Maybe</button>
+        <div class="status-options glass" id="ticketStatusChips" role="radiogroup" aria-label="Ticket status">
+          ${[
+            ['need_ticket', 'Need ticket', 'Reminds you a week before'],
+            ['going', 'Going', 'You have your ticket'],
+            ['maybe', 'Maybe', '']
+          ].map(([value, label, hint]) => `
+          <button type="button" class="status-chip status-option ${prefill.ticketStatus === value ? 'selected' : ''}" data-val="${value}" role="radio" aria-checked="${prefill.ticketStatus === value}">
+            <span>${label}${hint ? `<small>${hint}</small>` : ''}</span>
+            <span class="status-radio" aria-hidden="true"></span>
+          </button>`).join('')}
         </div>
       </div>
 
@@ -114,11 +120,19 @@ function openReview(prefill, focusField = '') {
         <textarea id="f_desc" placeholder="Anything worth remembering">${escapeHtml(prefill.description || '')}</textarea>
       </div>
 
-      <div class="btn-row">
-        <button class="btn btn-ghost" id="cancelBtn">Cancel</button>
-        <button class="btn btn-primary" id="saveBtn">Save</button>
+      <div class="form-actions">
+        <button class="text-btn" id="cancelBtn" type="button">Cancel</button>
+        <button class="save-pill" id="saveBtn" type="button">Save event</button>
       </div>
     </div>`;
+
+  // While the form is open the page glows in the colour of the poster being added
+  const setReviewColorFrom = async image => {
+    const fromPoster = image ? await extractPosterColor(image) : '';
+    state.reviewColor = fromPoster || prefill.color || (image ? categoryColor(prefill.category) : null);
+    refreshGlow();
+  };
+  setReviewColorFrom(prefill.image);
 
   let editedImage = prefill.image || '';
   let editedTicketFile = prefill.ticketFile || '';
@@ -161,6 +175,7 @@ function openReview(prefill, focusField = '') {
       const prepared = await prepareImage(file);
       editedImage = `data:${prepared.mediaType};base64,${prepared.base64}`;
       imagePreview.innerHTML = `<img src="${editedImage}" alt="Event image">`;
+      setReviewColorFrom(editedImage);
     } catch (error) {
       alert(error.message);
       imageInput.value = '';
@@ -218,14 +233,13 @@ function openReview(prefill, focusField = '') {
   statusChips.forEach(chip => {
     chip.onclick = () => {
       const val = chip.getAttribute('data-val');
-      if (ticketStatusInput.value === val) {
-        ticketStatusInput.value = '';
-        chip.classList.remove('selected');
-      } else {
-        ticketStatusInput.value = val;
-        statusChips.forEach(c => c.classList.remove('selected'));
-        chip.classList.add('selected');
-      }
+      // Tapping the chosen option again clears it
+      ticketStatusInput.value = ticketStatusInput.value === val ? '' : val;
+      statusChips.forEach(c => {
+        const selected = c.getAttribute('data-val') === ticketStatusInput.value;
+        c.classList.toggle('selected', selected);
+        c.setAttribute('aria-checked', String(selected));
+      });
       if (ticketInfoField) {
         ticketInfoField.style.display = (ticketStatusInput.value || editedTicketFile) ? 'block' : 'none';
       }
@@ -349,6 +363,8 @@ function openReview(prefill, focusField = '') {
   document.getElementById('cancelBtn').onclick = () => {
     elements.reviewSlot.innerHTML = '';
     elements.statusEl.textContent = '';
+    state.reviewColor = null;
+    refreshGlow();
     restoreAddOptions();
   };
 
@@ -390,6 +406,8 @@ function openReview(prefill, focusField = '') {
         image: await shrinkImageDataUrl(editedImage),
         updatedAt: Date.now()
       };
+      // Poster colour for the glow, calendar and widgets; events without one use their category colour
+      event.color = event.image ? await extractPosterColor(event.image) : '';
 
       if (companyText) {
         const names = companyText.split(',').map(name => name.trim()).filter(Boolean);
@@ -418,6 +436,7 @@ function openReview(prefill, focusField = '') {
       }
 
       elements.reviewSlot.innerHTML = '';
+      state.reviewColor = null;
       restoreAddOptions();
       elements.statusEl.textContent = 'Added to cue ✓';
       if (elements.fileInput) elements.fileInput.value = '';

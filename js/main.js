@@ -44,6 +44,20 @@ async function loadEvents() {
   if (await shrinkEventImages(state.events)) {
     await saveEvents(true);
   }
+
+  // Events saved before poster colours existed get theirs once ('' means the poster had no usable colour)
+  let coloured = false;
+  for (const event of state.events) {
+    if (event.image && event.color === undefined) {
+      event.color = await extractPosterColor(event.image);
+      coloured = true;
+    }
+  }
+  if (coloured) {
+    await saveEvents();
+    render();
+    renderCalendar();
+  }
 }
 
 function bindStaticEventHandlers() {

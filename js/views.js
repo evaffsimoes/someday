@@ -15,22 +15,23 @@ function switchTab(tabName) {
     renderCalendar();
   }
 
+  refreshGlow();
   window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// The page glow follows the poster being edited on the Add tab, otherwise the next event
+function refreshGlow() {
+  const onAdd = document.getElementById('screen-add')?.classList.contains('active');
+  applyGlow(onAdd && state.reviewColor ? state.reviewColor : state.nextUpColor);
 }
 
 function renderQueueItem(event) {
   const locStr = [event.city, event.venue].filter(Boolean).join(' · ');
-  const imageSrc = safeImageUrl(event.image);
-
-  const imageHTML = imageSrc
-    ? `<img src="${escapeAttr(imageSrc)}" class="queue-img" alt="Event image">`
-    : '<div class="queue-img-placeholder">' + iconSvg('ticket') + '</div>';
-
   const eventIsPast = isPast(event);
   return `
     <div class="queue-swipe-wrapper">
       <div class="queue-item ${eventIsPast ? 'is-past' : ''}" data-view="${escapeAttr(event.id)}">
-        ${imageHTML}
+        ${posterArtHTML(event, 'queue-img')}
 
         <div class="queue-info">
           <div class="queue-artist">${escapeHtml(event.artist || 'Untitled event')}</div>
@@ -64,22 +65,27 @@ function render() {
   const spotlightSlot = document.getElementById('spotlightSlot');
   spotlightSlot.innerHTML = '';
 
+  // The next event (whatever the filter) lights the page with its poster colour
+  const nextUp = state.events
+    .filter(event => !isPast(event) && event.startDate)
+    .sort((a, b) => a.startDate.localeCompare(b.startDate))[0];
+  state.nextUpColor = nextUp ? eventColor(nextUp) : null;
+  refreshGlow();
+
   if (!isPastFilter && upcoming.length > 0) {
     const nextEvent = upcoming[0];
     const locationText = [nextEvent.city, nextEvent.venue].filter(Boolean).join(' · ');
-    const heroImgSrc = safeImageUrl(nextEvent.image);
-    // Only the bottom of the poster is darkened, so the artwork stays visible
-    const heroBgStyle = heroImgSrc
-      ? `background-image: linear-gradient(180deg, rgba(9, 9, 11, 0) 25%, rgba(9, 9, 11, 0.55) 55%, rgba(9, 9, 11, 0.95) 100%), url('${escapeAttr(heroImgSrc)}');`
-      : '';
 
     spotlightSlot.innerHTML = `
-      <div class="hero-spotlight-card${heroImgSrc ? '' : ' hero-no-image'}" style="${heroBgStyle}" data-view="${escapeAttr(nextEvent.id)}">
-        <div class="hero-eyebrow">Next up</div>
-        <div class="hero-title">${escapeHtml(nextEvent.artist || 'Next event')}</div>
-        <div class="hero-when">${escapeHtml(fmtEventWhen(nextEvent))}</div>
-        ${locationText ? `<div class="hero-where">${escapeHtml(locationText)}</div>` : ''}
-        ${eventTagsHTML(nextEvent)}
+      <div class="hero-spotlight-card glass" style="--ev: ${eventColor(nextEvent)}" data-view="${escapeAttr(nextEvent.id)}">
+        ${posterArtHTML(nextEvent, 'hero-poster')}
+        <div class="hero-info">
+          <div class="hero-eyebrow">Next up</div>
+          <div class="hero-title">${escapeHtml(nextEvent.artist || 'Next event')}</div>
+          <div class="hero-when">${escapeHtml(fmtEventWhen(nextEvent))}</div>
+          ${locationText ? `<div class="hero-where">${escapeHtml(locationText)}</div>` : ''}
+          ${eventTagsHTML(nextEvent)}
+        </div>
       </div>
     `;
   }
@@ -324,24 +330,45 @@ function showCalendarToast(event) {
   }, 8000);
 }
 
+// The poster element for an event in the screen that's showing, used to animate into the detail
+function findVisiblePoster(eventId) {
+  const candidates = document.querySelectorAll(`.tab-screen.active [data-poster="${CSS.escape(String(eventId))}"]`);
+  return Array.from(candidates).find(element => element.getClientRects().length > 0) || null;
+}
+
+// Runs a DOM update as a view transition where supported, so the poster grows into the detail
+// (and shrinks back on close); otherwise just runs the update
+function withPosterTransition(update, { from, to } = {}) {
+  const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  if (!document.startViewTransition || reduceMotion || !from) {
+    update();
+    return;
+  }
+  from.style.viewTransitionName = 'event-poster';
+  const transition = document.startViewTransition(() => {
+    from.style.viewTransitionName = '';
+    update();
+    const target = typeof to === 'function' ? to() : to;
+    if (target) target.style.viewTransitionName = 'event-poster';
+  });
+  transition.finished.finally(() => {
+    const target = typeof to === 'function' ? to() : to;
+    if (target) target.style.viewTransitionName = '';
+  });
+}
+
 function openDetailModal(event) {
   if (!event) return;
-  try {
-    const locationText = [event.city, event.venue].filter(Boolean).join(' · ');
-    const overlay = document.getElementById('eventModalOverlay');
-    const content = document.getElementById('eventModalContent');
+  const overlay = document.getElementById('eventModalOverlay');
+  const content = document.getElementById('eventModalContent');
+  if (!overlay || !content) return;
 
-    if (!overlay || !content) {
-      alert('Modal element missing');
-      return;
-    }
-
-  const dayBadgeText = isPast(event) ? '' : relativeDayLabel(event);
+  const locationText = [event.city, event.venue].filter(Boolean).join(' · ');
 
   const ticketHTML = (() => {
     let html = '';
     if (event.ticketFile) {
-      html += `<a href="${escapeAttr(event.ticketFile)}" download="${escapeAttr(event.ticketFileName || 'ticket')}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost detail-ticket-link">
+      html += `<a href="${escapeAttr(event.ticketFile)}" download="${escapeAttr(event.ticketFileName || 'ticket')}" target="_blank" rel="noopener noreferrer" class="detail-ticket-link glass">
           ${iconSvg('ticket')} Open attached ticket (${escapeHtml(event.ticketFileName || 'File')}) ↗
         </a>`;
     }
@@ -350,11 +377,11 @@ function openDetailModal(event) {
     const isUrl = /^https?:\/\//i.test(info) || /^www\./i.test(info);
     const hrefUrl = /^www\./i.test(info) ? `https://${info}` : info;
     if (isUrl) {
-      html += `<a href="${escapeAttr(hrefUrl)}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost detail-ticket-link">
+      html += `<a href="${escapeAttr(hrefUrl)}" target="_blank" rel="noopener noreferrer" class="detail-ticket-link glass">
           ${iconSvg('ticket')} Open ticket link ↗
         </a>`;
     } else {
-      html += `<div class="detail-ticket-info">
+      html += `<div class="detail-ticket-info glass">
           <span class="detail-section-label">Ticket details</span>
           ${escapeHtml(info)}
         </div>`;
@@ -362,95 +389,100 @@ function openDetailModal(event) {
     return html;
   })();
 
-  content.innerHTML = `
-    <div class="event-modal-header">
-      <button class="modal-close" id="closeModalBtn" type="button" aria-label="Close event details">${iconSvg('close')}</button>
-    </div>
-
-    ${safeImageUrl(event.image)
-      ? `<img class="event-detail-image" src="${escapeAttr(safeImageUrl(event.image))}" alt="Poster">`
-      : `<div class="event-detail-placeholder" aria-label="No event photo">${iconSvg('ticket')}</div>`}
-
-    <div class="detail-title-row">
-      <h2 class="event-detail-title">${escapeHtml(event.artist || 'Untitled event')}</h2>
-      ${event.ticketStatus && ticketLabel(event.ticketStatus) ? `<span class="ticket-badge ${escapeAttr(event.ticketStatus)}">${escapeHtml(ticketLabel(event.ticketStatus))}</span>` : ''}
-    </div>
-
-    ${ticketHTML ? `<div class="detail-ticket">${ticketHTML}</div>` : ''}
-
-    <div class="detail-meta">
-      <div class="detail-meta-row detail-meta-when">
-        <span class="detail-meta-icon">${iconSvg('calendar')}</span>
-        <span class="detail-meta-text">${escapeHtml(fmtEventWhen(event))}</span>
-        ${dayBadgeText ? `<span class="day-chip${dayBadgeText === 'Today' || dayBadgeText === 'Happening now' ? ' day-chip-today' : ''}">${escapeHtml(dayBadgeText)}</span>` : ''}
+  const render = () => {
+    // The sheet takes the glow of this event's poster
+    overlay.style.setProperty('--ev', eventColor(event));
+    content.innerHTML = `
+      <div class="event-modal-header">
+        <button class="modal-close glass" id="closeModalBtn" type="button" aria-label="Close event details">${iconSvg('close')}</button>
       </div>
 
-      ${locationText ? `
-        <div class="detail-meta-row">
-          <span class="detail-meta-icon">${iconSvg('location')}</span>
-          <a href="https://maps.google.com/?q=${encodeURIComponent(locationText)}" target="_blank" rel="noopener noreferrer" class="map-link detail-map-link">${escapeHtml(locationText)} <span aria-hidden="true">↗</span></a>
-        </div>
-      ` : ''}
+      <div class="detail-sheet glass">
+        ${posterArtHTML(event, 'event-detail-image')}
 
-      ${event.company ? `
-        <div class="detail-meta-row">
-          <span class="detail-meta-icon">${iconSvg('users')}</span>
-          <span class="detail-meta-text">With <strong>${escapeHtml(event.company)}</strong></span>
+        <div class="detail-title-row">
+          <h2 class="event-detail-title">${escapeHtml(event.artist || 'Untitled event')}</h2>
+          ${event.ticketStatus && ticketLabel(event.ticketStatus) ? `<span class="ticket-badge ${escapeAttr(event.ticketStatus)}">${escapeHtml(ticketLabel(event.ticketStatus))}</span>` : ''}
         </div>
-      ` : ''}
-    </div>
 
-    ${event.description ? `
-      <div class="detail-about">
-        <div class="detail-section-label">About</div>
-        <p>${escapeHtml(event.description)}</p>
+        <div class="detail-meta">
+          <div class="detail-meta-row detail-meta-when">
+            <span class="detail-meta-icon">${iconSvg('calendar')}</span>
+            <span class="detail-meta-text">${escapeHtml(fmtEventWhen(event))}</span>
+          </div>
+
+          ${locationText ? `
+            <div class="detail-meta-row">
+              <span class="detail-meta-icon">${iconSvg('location')}</span>
+              <a href="https://maps.google.com/?q=${encodeURIComponent(locationText)}" target="_blank" rel="noopener noreferrer" class="map-link detail-map-link">${escapeHtml(locationText)} <span aria-hidden="true">↗</span></a>
+            </div>
+          ` : ''}
+
+          ${event.company ? `
+            <div class="detail-meta-row">
+              <span class="detail-meta-icon">${iconSvg('users')}</span>
+              <span class="detail-meta-text">With <strong>${escapeHtml(event.company)}</strong></span>
+            </div>
+          ` : ''}
+        </div>
+
+        ${ticketHTML ? `<div class="detail-ticket">${ticketHTML}</div>` : ''}
+
+        ${event.description ? `
+          <div class="detail-about">
+            <div class="detail-section-label">About</div>
+            <p>${escapeHtml(event.description)}</p>
+          </div>
+        ` : ''}
+
+        <div class="detail-actions">
+          <button class="detail-action" id="gcalFromModalBtn" type="button">
+            <span class="detail-action-circle primary">${iconSvg('calendar')}</span>Calendar
+          </button>
+          <button class="detail-action" id="editFromModalBtn" type="button">
+            <span class="detail-action-circle glass">${iconSvg('edit')}</span>Edit
+          </button>
+          <button class="detail-action danger" id="btnDelFromModal" type="button">
+            <span class="detail-action-circle glass">${iconSvg('trash')}</span>Delete
+          </button>
+        </div>
       </div>
-    ` : ''}
+    `;
+    overlay.classList.add('active');
+    // Bound here: with a view transition this runs after openDetailModal returns
+    bindActions();
+  };
 
-    <div class="detail-actions">
-      <button class="btn btn-primary" id="gcalFromModalBtn" type="button">Add to calendar</button>
-      <button class="btn btn-ghost" id="editFromModalBtn" type="button">Edit</button>
-    </div>
-    <button class="detail-delete" id="btnDelFromModal" type="button">Delete event</button>
-  `;
-
-  overlay.style.display = 'flex';
-  overlay.style.visibility = 'visible';
-  overlay.style.opacity = '1';
-  overlay.style.zIndex = '99999';
-  overlay.classList.add('active');
-
+  const modalPoster = () => content.querySelector('.event-detail-image');
+  const hide = () => overlay.classList.remove('active');
   const closeModal = () => {
-    overlay.style.display = 'none';
-    overlay.style.visibility = 'hidden';
-    overlay.style.opacity = '0';
-    overlay.classList.remove('active');
-  };
-  document.getElementById('closeModalBtn').onclick = closeModal;
-  overlay.onclick = e => {
-    if (e.target === overlay) closeModal();
+    // Shrink the poster back into its card when that card is still on screen
+    withPosterTransition(hide, { from: modalPoster(), to: () => findVisiblePoster(event.id) });
   };
 
-  document.getElementById('btnDelFromModal').onclick = async () => {
-    closeModal();
-    await deleteEvent(event.id);
-  };
+  const bindActions = () => {
+    document.getElementById('closeModalBtn').onclick = closeModal;
+    overlay.onclick = e => {
+      if (e.target === overlay) closeModal();
+    };
 
-  document.getElementById('editFromModalBtn').onclick = () => {
-    closeModal();
-    switchTab('add');
-    openReview(event);
-  };
+    document.getElementById('btnDelFromModal').onclick = async () => {
+      hide();
+      await deleteEvent(event.id);
+    };
 
-  const gcalBtn = document.getElementById('gcalFromModalBtn');
-  if (gcalBtn) {
-    gcalBtn.onclick = () => {
+    document.getElementById('editFromModalBtn').onclick = () => {
+      hide();
+      switchTab('add');
+      openReview(event);
+    };
+
+    document.getElementById('gcalFromModalBtn').onclick = () => {
       window.open(gcalUrl(event), '_blank', 'noopener,noreferrer');
     };
-  }
-  } catch (err) {
-    alert('Error opening event: ' + err.message);
-  }
+  };
+
+  withPosterTransition(render, { from: findVisiblePoster(event.id), to: modalPoster });
 }
 
 function renderCalendar() {
@@ -503,10 +535,10 @@ function renderCalendar() {
         const isStart = event.startDate === dateKey;
         const isEnd = event.endDate === dateKey;
 
+        // Each event shows in its own poster colour
         const pill = document.createElement('div');
-        const categoryClass = event.category === 'Festival' ? 'festival'
-          : (event.category === 'Other' || event.category === 'Party') ? 'other' : 'concert';
-        pill.className = `cal-event-pill cal-event-${categoryClass}`;
+        pill.className = 'cal-event-pill';
+        pill.style.setProperty('--ev', eventColor(event));
         pill.title = event.artist || 'Event';
         pill.setAttribute('aria-label', event.artist || 'Event');
 

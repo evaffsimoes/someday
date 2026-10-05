@@ -213,6 +213,38 @@ function categoryPillHTML(category) {
   return `<span class="${className}">${escapeHtml(value)}</span>`;
 }
 
+// Event colours are "r, g, b" strings (used as rgba(var(--ev), a) in CSS).
+// A poster gives its own colour (see extractPosterColor); otherwise the category decides.
+const CATEGORY_COLORS = {
+  Concert: '124, 58, 237',
+  Festival: '234, 88, 12',
+  Other: '13, 148, 136'
+};
+
+function categoryColor(category) {
+  return CATEGORY_COLORS[category === 'Party' ? 'Other' : category] || CATEGORY_COLORS.Concert;
+}
+
+function eventColor(event) {
+  return (event && event.color) || categoryColor(event && event.category);
+}
+
+function eventInitials(event) {
+  const words = String(event.artist || '').replace(/[^\p{L}\p{N}\s]/gu, ' ').trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return '?';
+  return ((words[0][0] || '') + (words[1] ? words[1][0] : '')).toUpperCase();
+}
+
+// The poster, or generated art (initials on the event colour) when there's no poster.
+// data-poster lets the detail view animate from this element.
+function posterArtHTML(event, className) {
+  const src = safeImageUrl(event.image);
+  if (src) {
+    return `<img src="${escapeAttr(src)}" class="${className}" alt="" data-poster="${escapeAttr(event.id)}">`;
+  }
+  return `<div class="${className} poster-fallback" style="--ev: ${eventColor(event)}" data-poster="${escapeAttr(event.id)}" aria-hidden="true"><span>${escapeHtml(eventInitials(event))}</span></div>`;
+}
+
 function ticketLabel(status) {
   const map = {
     need_ticket: 'Need ticket',
