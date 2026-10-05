@@ -2162,13 +2162,12 @@
               modal.innerHTML = `
                 <div style="background:#18181b; border:1px solid rgba(255,255,255,0.15); border-radius:20px; padding:24px; max-width:460px; width:100%; color:#fff; box-shadow:0 20px 40px rgba(0,0,0,0.6);">
                   <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                    <h3 style="margin:0; font-size:18px; font-weight:700;">📦 Backup do Someday</h3>
+                    <h3 style="margin:0; font-size:18px; font-weight:700;">Backup Data</h3>
                     <button id="closeBackupDataModalBtn" type="button" style="background:none; border:none; color:#9ca3af; font-size:20px; cursor:pointer;">✕</button>
                   </div>
-                  <p style="font-size:12px; color:#9ca3af; margin-bottom:12px; line-height:1.4;">No Android, pode copiar o código de backup ou partilhar com o seu telemóvel:</p>
                   <textarea id="backupTextarea" readonly style="width:100%; height:150px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.15); border-radius:10px; color:#c084fc; font-family:monospace; font-size:11px; padding:12px; resize:none; margin-bottom:16px; box-sizing:border-box;"></textarea>
                   <div style="display:flex; gap:10px;">
-                    <button id="copyBackupCodeBtn" class="btn btn-primary" type="button" style="flex:1; padding:12px; font-weight:700; font-size:13px;">📋 Copiar Código</button>
+                    <button id="copyBackupCodeBtn" class="btn btn-primary" type="button" style="flex:1; padding:12px; font-weight:700; font-size:13px;">Copy</button>
                   </div>
                 </div>
               `;
@@ -2205,9 +2204,9 @@
                 }
 
                 if (copied) {
-                  customAlert('✓ Código de backup copiado para a área de transferência!');
+                  customAlert('✓ Backup code copied to clipboard!');
                 } else {
-                  customAlert('Não foi possível copiar automaticamente. Selecione todo o texto da caixa e escolha Copiar.');
+                  customAlert('Could not copy automatically. Please select all text in the box and choose Copy.');
                 }
               };
             };
