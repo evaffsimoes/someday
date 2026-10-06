@@ -2,8 +2,19 @@
  * cue — The add / edit event form.
  */
 
+function closeReviewForm() {
+  elements.reviewSlot.innerHTML = '';
+  elements.statusEl.textContent = '';
+  restoreAddOptions();
+}
+
 function openReview(prefill, focusField = '') {
   const isEditing = !!(prefill && prefill.id);
+
+  // The back gesture closes the form (an edit opened from the detail already has its own layer)
+  if (!backLayers.some(layer => layer.name === 'review' || layer.name === 'edit')) {
+    pushBackLayer('review', closeReviewForm);
+  }
 
   ['btnOptionScreenshot', 'btnOptionManual'].forEach(id => {
     const element = document.getElementById(id);
@@ -361,11 +372,7 @@ function openReview(prefill, focusField = '') {
   }
 
   document.getElementById('cancelBtn').onclick = () => {
-    elements.reviewSlot.innerHTML = '';
-    elements.statusEl.textContent = '';
-    state.reviewColor = null;
-    refreshGlow();
-    restoreAddOptions();
+    closeBackLayer(topBackLayer('edit') ? 'edit' : 'review', closeReviewForm);
   };
 
   document.getElementById('saveBtn').onclick = async () => {

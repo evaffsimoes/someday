@@ -6,9 +6,13 @@ import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.widget.RemoteViews;
+
+import org.json.JSONArray;
 
 /** Scrollable list of upcoming events; rows come from CueWidgetService. */
 public class CueWidgetProvider extends AppWidgetProvider {
@@ -25,8 +29,24 @@ public class CueWidgetProvider extends AppWidgetProvider {
         appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetIds, R.id.widget_list);
     }
 
+    // Resizing changes the background's shape, so redraw it
+    @Override
+    public void onAppWidgetOptionsChanged(Context context, AppWidgetManager appWidgetManager, int appWidgetId, Bundle newOptions) {
+        super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions);
+        updateWidget(context, appWidgetManager, appWidgetId);
+    }
+
     static void updateWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
+
+        // Glow in the next event's poster colour, like the app
+        try {
+            SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+            int glow = WidgetStyle.nextUpColor(new JSONArray(prefs.getString(EVENTS_KEY, "[]")));
+            views.setImageViewBitmap(R.id.widget_bg, WidgetStyle.glowBackground(context, appWidgetManager, appWidgetId, glow));
+        } catch (Exception ignored) {
+            // Keeps the static violet background
+        }
 
         // Rows come from the service; a unique data URI keeps one adapter per widget
         Intent serviceIntent = new Intent(context, CueWidgetService.class);

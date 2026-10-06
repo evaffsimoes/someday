@@ -1,45 +1,72 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- List widget: header + scrollable list of upcoming events -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- List widget: poster-coloured glow behind a header and a scrollable list of upcoming events -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="@drawable/widget_background"
-    android:padding="12dp">
+    android:layout_height="match_parent">
 
-    <TextView
-        android:id="@+id/widget_header"
+    <!-- Replaced at runtime by a bitmap glowing in the next event's colour -->
+    <ImageView
+        android:id="@+id/widget_bg"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="cue ✦"
-        android:textColor="#C084FC"
-        android:textSize="13sp"
-        android:textStyle="bold"
-        android:letterSpacing="0.04"
-        android:layout_marginBottom="8dp" />
+        android:layout_height="match_parent"
+        android:src="@drawable/widget_glow_static"
+        android:scaleType="fitXY"
+        android:importantForAccessibility="no" />
 
-    <FrameLayout
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="12dp">
 
-        <ListView
-            android:id="@+id/widget_list"
+        <LinearLayout
+            android:id="@+id/widget_header"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:divider="@android:color/transparent"
-            android:dividerHeight="6dp"
-            android:scrollbars="none" />
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="8dp">
+            <TextView
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="cue ✦"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.02" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Upcoming"
+                android:textColor="#A6FFFFFF"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
 
-        <TextView
-            android:id="@+id/widget_empty"
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="center"
-            android:text="No upcoming events\nTap to add one in cue"
-            android:textColor="#858B97"
-            android:textSize="12sp"
-            android:visibility="gone" />
-    </FrameLayout>
-</LinearLayout>
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <ListView
+                android:id="@+id/widget_list"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:divider="@android:color/transparent"
+                android:dividerHeight="6dp"
+                android:scrollbars="none" />
+
+            <TextView
+                android:id="@+id/widget_empty"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:text="No upcoming events\nTap to add one in cue"
+                android:textColor="#A6FFFFFF"
+                android:textSize="12sp"
+                android:visibility="gone" />
+        </FrameLayout>
+    </LinearLayout>
+</FrameLayout>

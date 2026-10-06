@@ -2,7 +2,16 @@
  * cue — Rendering: tabs, event list, detail modal, calendar and calendar exports.
  */
 
-function switchTab(tabName) {
+// fromBack: called while handling the back gesture, so history is already right
+function switchTab(tabName, { fromBack = false } = {}) {
+  if (!fromBack) {
+    // The main tab is the bottom of the stack; other tabs can be left with the back gesture
+    if (tabName === 'queue') clearBackLayers();
+    else if (!backLayers.some(layer => layer.name === 'tab' || layer.name === 'edit')) {
+      pushBackLayer('tab', () => switchTab('queue', { fromBack: true }));
+    }
+  }
+
   document.querySelectorAll('.nav-btn').forEach(button => {
     button.classList.toggle('active', button.getAttribute('data-tab') === tabName);
   });
@@ -461,19 +470,29 @@ function openDetailModal(event) {
   };
 
   const bindActions = () => {
-    document.getElementById('closeModalBtn').onclick = closeModal;
+    document.getElementById('closeModalBtn').onclick = () => closeBackLayer('detail', closeModal);
+    // Tapping anywhere outside the sheet closes it
     overlay.onclick = e => {
-      if (e.target === overlay) closeModal();
+      if (!e.target.closest('.detail-sheet') && !e.target.closest('button')) closeBackLayer('detail', closeModal);
     };
 
     document.getElementById('btnDelFromModal').onclick = async () => {
       hide();
+      const layer = topBackLayer('detail');
+      if (layer) layer.close = () => {};
+      closeBackLayer('detail');
       await deleteEvent(event.id);
     };
 
     document.getElementById('editFromModalBtn').onclick = () => {
       hide();
-      switchTab('add');
+      // Back from the edit form returns to the list, where the detail was opened
+      replaceBackLayer('edit', () => {
+        elements.reviewSlot.innerHTML = '';
+        restoreAddOptions();
+        switchTab('queue', { fromBack: true });
+      });
+      switchTab('add', { fromBack: true });
       openReview(event);
     };
 
@@ -483,6 +502,7 @@ function openDetailModal(event) {
   };
 
   withPosterTransition(render, { from: findVisiblePoster(event.id), to: modalPoster });
+  pushBackLayer('detail', closeModal);
 }
 
 function renderCalendar() {

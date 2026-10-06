@@ -2071,10 +2071,12 @@
       color: #fff;
     }
 
+    /* Plain label over the glow: a sticky, filled header showed as a dark band */
     .month-header {
-      background: rgba(8, 7, 13, 0.6);
-      -webkit-backdrop-filter: var(--glass-blur);
-      backdrop-filter: var(--glass-blur);
+      position: static;
+      background: none;
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
     }
 
     /* Bottom navigation: fixed, edge to edge */
@@ -2309,11 +2311,13 @@
     }
 
     /* Event detail: the content is the glass sheet itself */
+    /* No rounded corners on the scroll container: they clipped the ✕ in the top corner */
     #eventModalContent {
       background: none;
       border: 0;
+      border-radius: 0;
       box-shadow: none;
-      padding: 0;
+      padding: 4px;
       -webkit-backdrop-filter: none;
       backdrop-filter: none;
     }

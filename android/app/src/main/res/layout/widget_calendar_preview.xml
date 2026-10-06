@@ -1,10 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Generated preview for the widget picker; mirrors widget_calendar_layout.xml -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Calendar widget: glow in the next event's colour behind a Monday-first month grid -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- Replaced at runtime by a bitmap glowing in the next event's colour -->
+    <ImageView
+        
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/widget_glow_static"
+        android:scaleType="fitXY"
+        android:importantForAccessibility="no" />
+
+<LinearLayout
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@drawable/widget_background"
+    
     android:padding="12dp">
 
     <!-- Header: Arrows and Month Title -->
@@ -448,3 +461,4 @@
         </FrameLayout>
     </LinearLayout>
 </LinearLayout>
+</FrameLayout>

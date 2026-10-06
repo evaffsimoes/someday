@@ -38,7 +38,15 @@ window.CueAuth = (() => {
       }
       auth = firebase.auth();
       db = firebase.firestore();
+      // Some Android WebViews block Firestore's default streaming connection and every read then
+      // fails as "client is offline"; let the SDK fall back to long polling when that happens
+      db.settings({ experimentalAutoDetectLongPolling: true, merge: true });
       isConfigured = true;
+
+      // Retry the initial sync once the connection comes back
+      window.addEventListener('online', () => {
+        if (currentUser) syncCloudEvents();
+      });
 
       // Enable offline persistence for Firestore if supported
       db.enablePersistence({ synchronizeTabs: true }).catch(() => {
@@ -236,6 +244,8 @@ window.CueAuth = (() => {
    *   users/{uid}                 -> { events: [...] } text fields only
    *   users/{uid}/media/{eventId} -> { image, ticketFile, ticketFileName }
    */
+  const TRANSIENT_SYNC_ERRORS = ['unavailable', 'deadline-exceeded', 'resource-exhausted'];
+  let syncRetries = 0;
   const MEDIA_SYNCED_KEY = 'cue-media-synced-v1';
   const MAX_MEDIA_DOC_CHARS = 900 * 1024;
   const shownSyncWarnings = new Set();
@@ -312,8 +322,15 @@ window.CueAuth = (() => {
     try {
       const doc = await userRef.get();
       if (doc.exists && Array.isArray(doc.data().events)) cloudEvents = doc.data().events;
+      syncRetries = 0;
     } catch (err) {
-      warnSyncOnce('read', 'Couldn\'t load your events from the cloud. They\'re still saved on this device.', err);
+      // Network hiccups at start-up are common on phones: retry quietly before warning
+      if (TRANSIENT_SYNC_ERRORS.includes(err.code) && syncRetries < 3) {
+        syncRetries++;
+        setTimeout(syncCloudEvents, 3000 * syncRetries);
+        return;
+      }
+      warnSyncOnce('read', `Couldn't load your events from the cloud (${err.code || 'unknown error'}). They're still saved on this device.`, err);
       return;
     }
 

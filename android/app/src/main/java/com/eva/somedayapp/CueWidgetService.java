@@ -85,6 +85,9 @@ public class CueWidgetService extends RemoteViewsService {
                 where.append(venue);
             }
 
+            // Date badge in this event's poster colour
+            row.setInt(R.id.item_badge_bg, "setColorFilter", WidgetStyle.eventColor(ev));
+            row.setInt(R.id.item_badge_bg, "setImageAlpha", 170);
             row.setTextViewText(R.id.item_day, badgeDay);
             row.setTextViewText(R.id.item_month, badgeMonth);
             row.setTextViewText(R.id.item_artist, ev.optString("artist", ev.optString("name", "Event")));

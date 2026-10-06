@@ -4,15 +4,15 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@drawable/widget_background"
+    android:background="@drawable/widget_glow_static"
     android:padding="12dp">
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="cue ✦"
-        android:textColor="#C084FC"
-        android:textSize="13sp"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
         android:textStyle="bold"
         android:letterSpacing="0.04"
         android:layout_marginBottom="8dp" />
@@ -22,39 +22,46 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:background="@drawable/cal_cell_bg_empty"
-    android:padding="10dp"
+    android:background="@drawable/widget_row_glass"
+    android:padding="9dp"
     android:gravity="center_vertical"
     android:baselineAligned="false">
 
-    <LinearLayout
-        android:layout_width="54dp"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:background="@drawable/badge_background"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp"
-        android:paddingStart="2dp"
-        android:paddingEnd="2dp"
+    <FrameLayout
+        android:layout_width="50dp"
+        android:layout_height="50dp"
         android:layout_marginEnd="10dp">
-        <TextView android:text="8"
+        <ImageView
+            
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:textColor="#C084FC"
-            android:textSize="13sp"
-            android:textStyle="bold"
-            android:singleLine="true" />
-        <TextView android:text="Oct"
+            android:layout_height="match_parent"
+            android:src="@drawable/badge_shape" android:tint="#AA7C3AED"
+            android:scaleType="fitXY"
+            android:importantForAccessibility="no" />
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:textColor="#858B97"
-            android:textSize="9sp"
-            android:textAllCaps="true"
-            android:singleLine="true" />
-    </LinearLayout>
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center">
+            <TextView android:text="8"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:singleLine="true" />
+            <TextView android:text="Oct"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="#D9FFFFFF"
+                android:textSize="9sp"
+                android:textStyle="bold"
+                android:textAllCaps="true"
+                android:singleLine="true" />
+        </LinearLayout>
+    </FrameLayout>
 
     <LinearLayout
         android:layout_width="0dp"
@@ -72,34 +79,28 @@
         <TextView android:text="Thu 8 Oct · 21:00"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="#858B97"
+            android:textColor="#CCFFFFFF"
             android:textSize="11sp"
             android:maxLines="1"
             android:ellipsize="end"
-            android:drawableStart="@drawable/ic_widget_calendar"
-            android:drawablePadding="5dp"
-            android:gravity="center_vertical"
-            android:layout_marginTop="2dp" />
+            android:layout_marginTop="1dp" />
         <TextView android:text="Lisboa · Altice Arena"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="#858B97"
+            android:textColor="#99FFFFFF"
             android:textSize="11sp"
             android:maxLines="1"
             android:ellipsize="end"
-            android:drawableStart="@drawable/ic_widget_location"
-            android:drawablePadding="5dp"
-            android:gravity="center_vertical"
-            android:layout_marginTop="2dp" />
+            android:layout_marginTop="1dp" />
         <TextView android:text="In 3 days"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="#C084FC"
+            android:textColor="#FDBA74"
             android:textSize="10sp"
             android:textStyle="bold"
             android:maxLines="1"
             android:ellipsize="end"
-            android:layout_marginTop="3dp"
+            android:layout_marginTop="2dp"
             android:visibility="visible" />
     </LinearLayout>
 </LinearLayout>
@@ -109,39 +110,46 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:background="@drawable/cal_cell_bg_empty"
-    android:padding="10dp"
+    android:background="@drawable/widget_row_glass"
+    android:padding="9dp"
     android:gravity="center_vertical"
     android:baselineAligned="false">
 
-    <LinearLayout
-        android:layout_width="54dp"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:background="@drawable/badge_background"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp"
-        android:paddingStart="2dp"
-        android:paddingEnd="2dp"
+    <FrameLayout
+        android:layout_width="50dp"
+        android:layout_height="50dp"
         android:layout_marginEnd="10dp">
-        <TextView android:text="17–19"
+        <ImageView
+            
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:textColor="#C084FC"
-            android:textSize="13sp"
-            android:textStyle="bold"
-            android:singleLine="true" />
-        <TextView android:text="Oct"
+            android:layout_height="match_parent"
+            android:src="@drawable/badge_shape" android:tint="#AAEA580C"
+            android:scaleType="fitXY"
+            android:importantForAccessibility="no" />
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:textColor="#858B97"
-            android:textSize="9sp"
-            android:textAllCaps="true"
-            android:singleLine="true" />
-    </LinearLayout>
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center">
+            <TextView android:text="17–19"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:singleLine="true" />
+            <TextView android:text="Oct"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="#D9FFFFFF"
+                android:textSize="9sp"
+                android:textStyle="bold"
+                android:textAllCaps="true"
+                android:singleLine="true" />
+        </LinearLayout>
+    </FrameLayout>
 
     <LinearLayout
         android:layout_width="0dp"
@@ -159,34 +167,28 @@
         <TextView android:text="17–19 Oct"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="#858B97"
+            android:textColor="#CCFFFFFF"
             android:textSize="11sp"
             android:maxLines="1"
             android:ellipsize="end"
-            android:drawableStart="@drawable/ic_widget_calendar"
-            android:drawablePadding="5dp"
-            android:gravity="center_vertical"
-            android:layout_marginTop="2dp" />
+            android:layout_marginTop="1dp" />
         <TextView android:text="Oeiras · Passeio Marítimo"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="#858B97"
+            android:textColor="#99FFFFFF"
             android:textSize="11sp"
             android:maxLines="1"
             android:ellipsize="end"
-            android:drawableStart="@drawable/ic_widget_location"
-            android:drawablePadding="5dp"
-            android:gravity="center_vertical"
-            android:layout_marginTop="2dp" />
+            android:layout_marginTop="1dp" />
         <TextView android:text="In 12 days · Need ticket"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="#C084FC"
+            android:textColor="#FDBA74"
             android:textSize="10sp"
             android:textStyle="bold"
             android:maxLines="1"
             android:ellipsize="end"
-            android:layout_marginTop="3dp"
+            android:layout_marginTop="2dp"
             android:visibility="visible" />
     </LinearLayout>
 </LinearLayout>
@@ -196,39 +198,46 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:background="@drawable/cal_cell_bg_empty"
-    android:padding="10dp"
+    android:background="@drawable/widget_row_glass"
+    android:padding="9dp"
     android:gravity="center_vertical"
     android:baselineAligned="false">
 
-    <LinearLayout
-        android:layout_width="54dp"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:background="@drawable/badge_background"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp"
-        android:paddingStart="2dp"
-        android:paddingEnd="2dp"
+    <FrameLayout
+        android:layout_width="50dp"
+        android:layout_height="50dp"
         android:layout_marginEnd="10dp">
-        <TextView android:text="30"
+        <ImageView
+            
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:textColor="#C084FC"
-            android:textSize="13sp"
-            android:textStyle="bold"
-            android:singleLine="true" />
-        <TextView android:text="Oct"
+            android:layout_height="match_parent"
+            android:src="@drawable/badge_shape" android:tint="#AA0D9488"
+            android:scaleType="fitXY"
+            android:importantForAccessibility="no" />
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:textColor="#858B97"
-            android:textSize="9sp"
-            android:textAllCaps="true"
-            android:singleLine="true" />
-    </LinearLayout>
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:gravity="center">
+            <TextView android:text="30"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:singleLine="true" />
+            <TextView android:text="Oct"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="#D9FFFFFF"
+                android:textSize="9sp"
+                android:textStyle="bold"
+                android:textAllCaps="true"
+                android:singleLine="true" />
+        </LinearLayout>
+    </FrameLayout>
 
     <LinearLayout
         android:layout_width="0dp"
@@ -246,34 +255,28 @@
         <TextView android:text="Fri 30 Oct · 21:30"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="#858B97"
+            android:textColor="#CCFFFFFF"
             android:textSize="11sp"
             android:maxLines="1"
             android:ellipsize="end"
-            android:drawableStart="@drawable/ic_widget_calendar"
-            android:drawablePadding="5dp"
-            android:gravity="center_vertical"
-            android:layout_marginTop="2dp" />
+            android:layout_marginTop="1dp" />
         <TextView android:text="Porto · Coliseu do Porto"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="#858B97"
+            android:textColor="#99FFFFFF"
             android:textSize="11sp"
             android:maxLines="1"
             android:ellipsize="end"
-            android:drawableStart="@drawable/ic_widget_location"
-            android:drawablePadding="5dp"
-            android:gravity="center_vertical"
-            android:layout_marginTop="2dp" />
+            android:layout_marginTop="1dp" />
         <TextView android:text="In 3 weeks"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="#C084FC"
+            android:textColor="#FDBA74"
             android:textSize="10sp"
             android:textStyle="bold"
             android:maxLines="1"
             android:ellipsize="end"
-            android:layout_marginTop="3dp"
+            android:layout_marginTop="2dp"
             android:visibility="visible" />
     </LinearLayout>
 </LinearLayout>

@@ -91,7 +91,7 @@ function bindBackupHandlers() {
       await saveEvents();
       render();
       renderCalendar();
-      document.getElementById('settingsModalOverlay').classList.remove('active');
+      closeSettingsModal();
       customAlert(added > 0
         ? `✓ Restored ${added} new event${added === 1 ? '' : 's'} (${importedEvents.length - added} already existed).`
         : '✓ All events in this backup already exist.');

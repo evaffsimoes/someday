@@ -6,6 +6,9 @@ import android.appwidget.AppWidgetProvider;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.ColorStateList;
+import android.os.Build;
+import android.os.Bundle;
 import android.view.View;
 import android.widget.RemoteViews;
 
@@ -61,6 +64,13 @@ public class CueCalendarWidgetProvider extends AppWidgetProvider {
         }
     }
 
+    // Resizing changes the background's shape, so redraw it
+    @Override
+    public void onAppWidgetOptionsChanged(Context context, AppWidgetManager appWidgetManager, int appWidgetId, Bundle newOptions) {
+        super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions);
+        updateWidget(context, appWidgetManager, appWidgetId);
+    }
+
     static void updateWidget(Context context, AppWidgetManager appWidgetManager, int appWidgetId) {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_calendar_layout);
 
@@ -91,6 +101,14 @@ public class CueCalendarWidgetProvider extends AppWidgetProvider {
         
         String eventsJson = prefs.getString(EVENTS_KEY, "[]");
         views.setTextViewText(R.id.cal_month_title, titleStr);
+
+        // Glow in the next event's poster colour, like the app
+        try {
+            int glow = WidgetStyle.nextUpColor(new JSONArray(eventsJson));
+            views.setImageViewBitmap(R.id.cal_bg, WidgetStyle.glowBackground(context, appWidgetManager, appWidgetId, glow));
+        } catch (Exception ignored) {
+            // Keeps the static violet background
+        }
 
         java.util.HashMap<Integer, java.util.List<JSONObject>> dayEvents = new java.util.HashMap<>();
 
@@ -214,7 +232,7 @@ public class CueCalendarWidgetProvider extends AppWidgetProvider {
                         
                         if (eIdx == 2 && evs.size() > 3) {
                             views.setTextViewText(targetEvId, "+" + (evs.size() - 2) + " more");
-                            views.setTextColor(targetEvId, 0xFFC084FC);
+                            views.setTextColor(targetEvId, 0xCCFFFFFF);
                             views.setInt(targetEvId, "setBackgroundResource", 0);
                             views.setViewVisibility(targetEvId, View.VISIBLE);
                         } else {
@@ -239,17 +257,26 @@ public class CueCalendarWidgetProvider extends AppWidgetProvider {
                                 piece = isStart ? (isEnd ? "" : "_start") : (isEnd ? "_end" : "_mid");
                                 if (!isStart && column != 0) label = " ";
                             }
-                            int bgRes = context.getResources().getIdentifier("bg_cat_" + catKey + piece, "drawable", context.getPackageName());
-
                             views.setTextViewText(targetEvId, label);
-                            views.setTextColor(targetEvId, textClr);
-                            views.setInt(targetEvId, "setBackgroundResource", bgRes);
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                                // Android 12+: a white pill tinted with this event's poster colour
+                                int pillRes = context.getResources().getIdentifier("bg_pill" + piece, "drawable", context.getPackageName());
+                                views.setInt(targetEvId, "setBackgroundResource", pillRes);
+                                views.setColorStateList(targetEvId, "setBackgroundTintList",
+                                    ColorStateList.valueOf(WidgetStyle.withAlpha(WidgetStyle.eventColor(ev), 0xD9)));
+                                views.setTextColor(targetEvId, 0xFFFFFFFF);
+                            } else {
+                                // Older Android can't tint remotely: use the category colours
+                                int bgRes = context.getResources().getIdentifier("bg_cat_" + catKey + piece, "drawable", context.getPackageName());
+                                views.setInt(targetEvId, "setBackgroundResource", bgRes);
+                                views.setTextColor(targetEvId, textClr);
+                            }
                             views.setViewVisibility(targetEvId, View.VISIBLE);
                         }
                     }
-                    views.setTextColor(numId, 0xFFF5F5F5);
+                    views.setTextColor(numId, 0xFFFFFFFF);
                 } else {
-                    views.setTextColor(numId, isToday ? 0xFFC084FC : 0xFF858B97);
+                    views.setTextColor(numId, isToday ? 0xFFFFFFFF : 0x99FFFFFF);
                 }
                 
                 dayCounter++;

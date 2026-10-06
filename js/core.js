@@ -406,6 +406,53 @@ function iconSvg(name) {
   return `<svg class="cue-icon" viewBox="0 0 24 24" aria-hidden="true">${icons[name] || icons.ticket}</svg>`;
 }
 
+// ---------- Back navigation ----------
+// Android's back gesture walks the WebView history. Every layer opened over the main screen
+// (event detail, settings, the event form, another tab) adds a history entry, so going back
+// closes that layer instead of leaving the app.
+const backLayers = [];
+
+function pushBackLayer(name, close) {
+  backLayers.push({ name, close });
+  history.pushState({ cueDepth: backLayers.length }, '');
+}
+
+function topBackLayer(name) {
+  const top = backLayers[backLayers.length - 1];
+  return top && (!name || top.name === name) ? top : null;
+}
+
+// Swaps the top layer for another without touching history (e.g. detail -> edit form)
+function replaceBackLayer(name, close) {
+  if (!backLayers.length) {
+    pushBackLayer(name, close);
+    return;
+  }
+  backLayers[backLayers.length - 1] = { name, close };
+}
+
+// Closing from the UI (✕, Cancel, tapping outside) goes back one step so the entry is used up;
+// the popstate handler then runs the layer's close. Without a matching layer, close directly.
+function closeBackLayer(name, fallbackClose) {
+  if (topBackLayer(name)) history.back();
+  else if (fallbackClose) fallbackClose();
+}
+
+// Back to the main screen: drop every layer without running their close handlers
+function clearBackLayers() {
+  if (!backLayers.length) return;
+  backLayers.forEach(layer => { layer.dropped = true; });
+  history.go(-backLayers.length);
+}
+
+window.addEventListener('popstate', event => {
+  const depth = (event.state && event.state.cueDepth) || 0;
+  while (backLayers.length > depth) {
+    const layer = backLayers.pop();
+    if (!layer.dropped) layer.close();
+  }
+});
+
 function customAlert(message) {
   let box = document.getElementById('debugAlertBox');
   if (!box) {

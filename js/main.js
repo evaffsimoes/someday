@@ -139,9 +139,11 @@ function bindStaticEventHandlers() {
     };
   }
 
-  document.getElementById('closeSettingsBtn').onclick = () => {
-    document.getElementById('settingsModalOverlay').classList.remove('active');
-  };
+  document.getElementById('closeSettingsBtn').onclick = closeSettingsModal;
+  // Tapping the dimmed area around the settings sheet closes it
+  document.getElementById('settingsModalOverlay').addEventListener('click', event => {
+    if (event.target.id === 'settingsModalOverlay') closeSettingsModal();
+  });
 
   bindNotificationSettingsHandlers();
   bindBackupHandlers();

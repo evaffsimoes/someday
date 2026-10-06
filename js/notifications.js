@@ -90,7 +90,20 @@ async function openSettingsModal() {
   if (customNum) customNum.value = prefs.customValue || 30;
   if (customUnit) customUnit.value = prefs.customUnit || 'm';
 
-  document.getElementById('settingsModalOverlay').classList.add('active');
+  const overlay = document.getElementById('settingsModalOverlay');
+  if (!overlay.classList.contains('active')) {
+    overlay.classList.add('active');
+    pushBackLayer('settings', hideSettingsModal);
+  }
+}
+
+function hideSettingsModal() {
+  document.getElementById('settingsModalOverlay').classList.remove('active');
+}
+
+// ✕, tapping outside and the back gesture all close settings the same way
+function closeSettingsModal() {
+  closeBackLayer('settings', hideSettingsModal);
 }
 
 async function triggerNotification(title, options) {
