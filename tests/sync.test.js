@@ -39,7 +39,7 @@ function collectionRef(collectionPath) {
     get: async () => {
       if (denyMedia && collectionPath.endsWith('/media')) throw denied();
       const docs = [...store].filter(([key]) => key.startsWith(`${collectionPath}/`) && !key.slice(collectionPath.length + 1).includes('/'));
-      return { forEach: callback => docs.forEach(([key, value]) => callback({ id: key.split('/').pop(), data: () => value })) };
+      return { forEach: callback => docs.forEach(([key, value]) => callback({ id: key.split('/').pop(), ref: docRef(key), data: () => value })) };
     }
   };
 }
@@ -73,7 +73,7 @@ function makeDevice(events) {
   context.firebase = {
     apps: [],
     initializeApp() {},
-    auth: Object.assign(() => auth, { Auth: { Persistence: { LOCAL: 'local' } } }),
+    auth: Object.assign(() => auth, { Auth: { Persistence: { LOCAL: 'local' } }, GoogleAuthProvider: function GoogleAuthProvider() {} }),
     firestore: Object.assign(() => ({ collection: collectionRef, settings() {}, enablePersistence: () => Promise.resolve() }), { FieldValue: { serverTimestamp: () => 'now' } })
   };
   context.window = context;
@@ -84,8 +84,17 @@ function makeDevice(events) {
     toasts,
     get events() { return context.cueAppState.events; },
     set events(value) { context.cueAppState.events = value; },
-    login: () => onAuth({ uid: 'u1', email: 'a@b.c', displayName: 'A' }),
-    save: () => context.CueAuth.saveEventToCloud()
+    user: null,
+    login() {
+      this.user = {
+        uid: 'u1', email: 'a@b.c', displayName: 'A', reauthenticated: false, deleted: false,
+        reauthenticateWithPopup: async () => { this.user.reauthenticated = true; },
+        delete: async () => { this.user.deleted = true; }
+      };
+      return onAuth(this.user);
+    },
+    save: () => context.CueAuth.saveEventToCloud(),
+    deleteAccount: () => context.CueAuth.deleteAccount()
   };
 }
 
@@ -164,5 +173,15 @@ test('cloud sync', async t => {
     denyMedia = false;
     assert.ok(mainDoc().events.some(event => event.id === 'e4'));
     assert.equal(laptop.toasts.filter(message => message.includes('images')).length, 1);
+  });
+
+  await t.test('deleting the account removes all cloud data, then the account, but keeps local events', async () => {
+    assert.ok([...store.keys()].some(key => key.startsWith('users/u1/media/')), 'there is media to delete');
+    const localBefore = phone.events.length;
+    await phone.deleteAccount();
+    assert.equal(phone.user.reauthenticated, true, 'Google confirms the account first');
+    assert.deepEqual([...store.keys()].filter(key => key.startsWith('users/u1')), []);
+    assert.equal(phone.user.deleted, true);
+    assert.equal(phone.events.length, localBefore);
   });
 });

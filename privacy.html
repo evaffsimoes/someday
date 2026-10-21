@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>cue privacy policy</title>
+  <link rel="stylesheet" href="vendor/fonts/fonts.css">
+  <link rel="stylesheet" href="legal.css">
+</head>
+<body>
+  <main class="legal">
+    <a class="legal-logo" href="/">cue<span class="legal-gem" aria-hidden="true">✦</span></a>
+    <h1>Privacy policy</h1>
+    <p class="legal-date">Last updated: 22 October 2026</p>
+
+    <p>cue is an app for saving the concerts and festivals you want to go to, getting reminders before them and keeping them in your calendar. This policy explains what data cue handles, where it goes and how you can delete it.</p>
+
+    <h2>Data kept on your phone</h2>
+    <p>The events you save stay on your phone: artist or event name, dates and times, venue and city, category, ticket status, the friends you list under "Going with", your notes, event posters and any ticket files you attach. Your reminder preferences are also kept on the phone. This data stays on your device unless you sign in (see below), export a backup, share an event or add events to your calendar.</p>
+
+    <h2>Signing in with Google</h2>
+    <p>Signing in is optional. If you sign in, cue uses Google Firebase Authentication and receives your Google account's name, email address, profile photo and a user ID. Your events, posters and ticket files are then copied to Google Cloud Firestore (part of Firebase), linked to your account, so they can sync between your devices and be restored if you reinstall. Access rules allow only your signed-in account to read or change this data.</p>
+
+    <h2>Importing events from a poster or an Instagram post</h2>
+    <p>When you import an event from an image or share an Instagram post with cue, the image or the post's link is sent to cue's server, hosted by Vercel, which reads the public post's caption and image from Instagram and sends them to Google's Gemini API to work out the event details. The server checks that you are signed in, does not store the image or the post, and returns only the event details and poster to your phone. Google processes this content under the Gemini API terms; on the free tier those terms allow Google to use it to improve its products. Your sign-in is checked with Google on each import.</p>
+
+    <h2>Things you choose to do</h2>
+    <p>When you share an event, export a backup or add events to your calendar, cue creates the message or file and hands it to the app you pick (for example WhatsApp, Files or your calendar). What happens next is governed by that app.</p>
+
+    <h2>What cue does not do</h2>
+    <p>cue has no ads, no analytics and no tracking. It does not sell your data or share it with anyone other than the service providers named above (Google Firebase, Google Gemini and Vercel), and only to run the features you use.</p>
+
+    <h2>How long data is kept and how to delete it</h2>
+    <p>Data on your phone stays until you delete events or uninstall the app. Data in the cloud stays until you delete your account. You can delete your account and all of its cloud data at any time in the app, under Settings → Account → Delete account. Deletion happens straight away. See <a href="/delete-account.html">Delete your cue account</a> for other ways to ask for deletion.</p>
+
+    <h2>Security</h2>
+    <p>All data sent between the app, Firebase, the import server and Gemini travels over encrypted connections (HTTPS).</p>
+
+    <h2>Children</h2>
+    <p>cue is not directed at children under 13 and does not knowingly collect their data.</p>
+
+    <h2>Changes</h2>
+    <p>If this policy changes, the new version will be published on this page with a new date.</p>
+
+    <h2>Contact</h2>
+    <p>Questions about privacy or your data: <a href="mailto:hellocue@gmail.com">hellocue@gmail.com</a></p>
+  </main>
+</body>
+</html>

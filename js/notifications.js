@@ -90,11 +90,51 @@ async function openSettingsModal() {
   if (customNum) customNum.value = prefs.customValue || 30;
   if (customUnit) customUnit.value = prefs.customUnit || 'm';
 
+  refreshExactAlarmRow();
+
   const overlay = document.getElementById('settingsModalOverlay');
   if (!overlay.classList.contains('active')) {
     overlay.classList.add('active');
     pushBackLayer('settings', hideSettingsModal);
   }
+}
+
+// Android 12+: exact alarms need the user's permission ("Alarms & reminders"). Without it
+// reminders still fire, just possibly a few minutes late, so Settings offers to allow it.
+async function refreshExactAlarmRow() {
+  const row = document.getElementById('exactAlarmRow');
+  if (!row) return;
+  const LN = getLocalNotifications();
+  if (!LN || typeof LN.checkExactNotificationSetting !== 'function') {
+    row.hidden = true;
+    return;
+  }
+  try {
+    const { exact_alarm: exactAlarm } = await LN.checkExactNotificationSetting();
+    row.hidden = exactAlarm === 'granted';
+  } catch (error) {
+    row.hidden = true;
+  }
+}
+
+function bindExactAlarmSetting() {
+  const button = document.getElementById('exactAlarmBtn');
+  if (!button) return;
+  button.onclick = async () => {
+    try {
+      // Opens Android's "Alarms & reminders" screen for cue
+      await getLocalNotifications()?.changeExactNotificationSetting();
+    } catch (error) {
+      console.warn('Could not open the alarm setting', error);
+    }
+  };
+  // Back from Android's settings: update the row and reschedule so reminders use exact timing
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    refreshExactAlarmRow();
+    lastScheduleSignature = '';
+    checkEventNotifications();
+  });
 }
 
 // Tapping a reminder opens its event. The plugin holds on to the tap that launched the app until a

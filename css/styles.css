@@ -35,6 +35,11 @@
       -webkit-tap-highlight-color: transparent;
     }
 
+    /* `hidden` always wins, even over components that set their own display */
+    [hidden] {
+      display: none !important;
+    }
+
     html {
       background: var(--bg);
       overflow-x: hidden;
@@ -84,8 +89,8 @@
 
     .cue-logo .cue-gem {
       color: var(--accent-strong);
-      font-size: 26px;
-      margin-left: 1px;
+      font-size: 0.75em;
+      margin-left: 2px;
     }
 
     .notification-btn {
@@ -1538,6 +1543,70 @@
 
     #accountLogoutBtn {
       display: none;
+    }
+
+    .exact-alarm-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 8px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-size: var(--fs-sm);
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .settings-legal {
+      margin: 28px 0 0;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      font-size: var(--fs-sm);
+      text-align: center;
+    }
+
+    .settings-legal a {
+      color: rgba(255, 255, 255, 0.65);
+      text-underline-offset: 3px;
+    }
+
+    .account-delete {
+      margin-top: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .text-btn.account-delete-link {
+      padding: 4px 0;
+      color: #f87171;
+    }
+
+    .account-delete-confirm {
+      border-radius: 14px;
+      padding: 14px;
+      border-color: rgba(248, 113, 113, 0.35);
+    }
+
+    .account-delete-confirm p {
+      margin: 0 0 8px;
+      font-size: var(--fs-sm);
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .account-delete-confirm .btn-row {
+      margin-top: 12px;
+    }
+
+    .btn-danger {
+      background: #dc2626;
+      color: #fff;
+    }
+
+    .btn-danger:disabled {
+      opacity: 0.6;
+      cursor: progress;
     }
 
     .notification-btn.is-active {

@@ -171,6 +171,9 @@ function bindStaticEventHandlers() {
   document.getElementById('calExportBtn').onclick = exportEventsToCalendar;
   document.getElementById('settingsCalExportBtn').onclick = exportEventsToCalendar;
 
+  bindDeleteAccount();
+  bindExactAlarmSetting();
+
   document.getElementById('closeSettingsBtn').onclick = closeSettingsModal;
   // Tapping the dimmed area around the settings sheet closes it
   document.getElementById('settingsModalOverlay').addEventListener('click', event => {
@@ -182,6 +185,35 @@ function bindStaticEventHandlers() {
 
   updateNotificationBtn();
   setInterval(checkEventNotifications, 60 * 1000);
+}
+
+// Settings → Account → Delete account: ask for confirmation, then delete cloud data and the account
+function bindDeleteAccount() {
+  const confirmPanel = document.getElementById('accountDeleteConfirm');
+  const confirmButton = document.getElementById('accountDeleteConfirmBtn');
+
+  document.getElementById('accountDeleteBtn').onclick = () => {
+    confirmPanel.hidden = false;
+    confirmPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+  document.getElementById('accountDeleteCancel').onclick = () => {
+    confirmPanel.hidden = true;
+  };
+  confirmButton.onclick = async () => {
+    confirmButton.disabled = true;
+    confirmButton.textContent = 'Deleting…';
+    try {
+      await window.CueAuth.deleteAccount();
+      confirmPanel.hidden = true;
+      customAlert('Your account and everything saved in the cloud were deleted.');
+    } catch (error) {
+      const cancelled = /cancel|popup-closed/i.test(`${error?.code} ${error?.message}`);
+      customAlert(cancelled ? 'Account not deleted: Google sign-in was cancelled.' : `Couldn't delete your account: ${error.message}`);
+    } finally {
+      confirmButton.disabled = false;
+      confirmButton.textContent = 'Delete account';
+    }
+  };
 }
 
 function initializeApp() {

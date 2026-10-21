@@ -32,7 +32,7 @@
   <div class="app-aura" aria-hidden="true"></div>
   <div class="wrap">
     <header class="cue-header">
-      <div class="cue-logo">cue</div>
+      <div class="cue-logo">cue<span class="cue-gem" aria-hidden="true">✦</span></div>
       <div class="cue-header-actions">
         <button class="notification-btn" id="settingsBtn" aria-label="Settings">
           <svg class="cue-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -243,6 +243,11 @@
         </label>
       </div>
 
+      <div class="exact-alarm-row glass" id="exactAlarmRow" hidden>
+        <span>Reminders may arrive a few minutes late</span>
+        <button class="btn btn-ghost btn-small" id="exactAlarmBtn" type="button">Allow on time</button>
+      </div>
+
       <div id="customReminderSection" class="settings-panel">
         <div class="custom-reminder-row">
           <input type="number" id="pref-custom-num" class="settings-input settings-input-num" min="1" max="999" value="30" placeholder="30">
@@ -287,6 +292,18 @@
             Sign out
           </button>
         </div>
+
+        <div class="account-delete" id="accountDeleteArea" hidden>
+          <button class="text-btn account-delete-link" id="accountDeleteBtn" type="button">Delete account</button>
+          <div class="account-delete-confirm glass" id="accountDeleteConfirm" hidden>
+            <p>This permanently deletes your cue account and everything saved in the cloud: your events, posters and tickets. Events saved on this phone stay here.</p>
+            <p>Google will ask you to confirm your account first.</p>
+            <div class="btn-row">
+              <button class="btn btn-ghost" id="accountDeleteCancel" type="button">Cancel</button>
+              <button class="btn btn-danger" id="accountDeleteConfirmBtn" type="button">Delete account</button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="settings-section">
@@ -307,6 +324,10 @@
           <input type="file" id="fileInputBackup" class="hidden-input" accept=".json,application/json,text/plain" />
         </div>
       </div>
+
+      <p class="settings-legal">
+        <a href="https://cue-events.vercel.app/privacy.html" target="_blank" rel="noopener">Privacy policy</a>
+      </p>
     </div>
   </div>
 

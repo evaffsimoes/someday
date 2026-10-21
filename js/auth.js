@@ -217,6 +217,50 @@ window.CueAuth = (() => {
     }
   }
 
+  // A fresh Google credential from the native account picker; null on the web (popup used instead)
+  async function freshGoogleCredential() {
+    const plugin = window.Capacitor?.Plugins?.GoogleAuth;
+    if (!plugin || !window.Capacitor?.isNativePlatform?.()) return null;
+    try {
+      await plugin.initialize({ clientId: GOOGLE_CLIENT_ID, scopes: ['profile', 'email'], grantOfflineAccess: true });
+    } catch (_) {
+      // Already initialised
+    }
+    const googleUser = await plugin.signIn();
+    const idToken = googleUser?.authentication?.idToken || googleUser?.idToken;
+    if (!idToken) throw new Error('Google sign-in was cancelled.');
+    return firebase.auth.GoogleAuthProvider.credential(idToken);
+  }
+
+  // Deletes everything this account has in the cloud (events, posters, tickets), then the account.
+  // Events saved on this device stay. Firebase only deletes accounts with a recent sign-in, so
+  // Google is asked to confirm the account first.
+  async function deleteAccount() {
+    if (!currentUser || !db) throw new Error('Sign in first.');
+    const user = currentUser;
+
+    const credential = await freshGoogleCredential();
+    if (credential) await user.reauthenticateWithCredential(credential);
+    else await user.reauthenticateWithPopup(new firebase.auth.GoogleAuthProvider());
+
+    const userRef = db.collection('users').doc(user.uid);
+    const media = await userRef.collection('media').get();
+    const deletions = [];
+    media.forEach(doc => deletions.push(doc.ref.delete()));
+    await Promise.all(deletions);
+    await userRef.delete();
+    localStorage.removeItem(`${MEDIA_SYNCED_KEY}-${user.uid}`);
+
+    await user.delete();
+    currentUser = null;
+    updateAuthUI(null);
+    try {
+      await window.Capacitor?.Plugins?.GoogleAuth?.signOut();
+    } catch (_) {
+      // Already signed out of Google on this device
+    }
+  }
+
   function signOutUser() {
     currentUser = null;
     updateAuthUI(null);
@@ -478,6 +522,9 @@ window.CueAuth = (() => {
       }
       if (accountLoginBtn) accountLoginBtn.style.display = 'none';
       if (accountLogoutBtn) accountLogoutBtn.style.display = 'inline-flex';
+      // Deleting the account is only offered while signed in
+      const deleteArea = document.getElementById('accountDeleteArea');
+      if (deleteArea) deleteArea.hidden = false;
     } else {
       if (avatarImg) {
         avatarImg.style.display = 'none';
@@ -490,6 +537,8 @@ window.CueAuth = (() => {
       }
       if (accountLoginBtn) accountLoginBtn.style.display = isConfigured ? 'inline-flex' : 'block';
       if (accountLogoutBtn) accountLogoutBtn.style.display = 'none';
+      const deleteArea = document.getElementById('accountDeleteArea');
+      if (deleteArea) deleteArea.hidden = true;
     }
   }
 
@@ -497,6 +546,7 @@ window.CueAuth = (() => {
     init,
     signInWithGoogle,
     signOutUser,
+    deleteAccount,
     syncCloudEvents,
     saveEventToCloud,
     getUser: () => currentUser,

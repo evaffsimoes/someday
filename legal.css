@@ -1,0 +1,99 @@
+/* cue — Privacy policy and account deletion pages (same palette and type as the app) */
+:root {
+  --bg: #08070d;
+  --text: #f2f0f7;
+  --muted: #a7a3b5;
+  --line: rgba(255, 255, 255, 0.12);
+  --accent: #c4b5fd;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at 20% -10%, rgba(124, 58, 237, 0.35), transparent 45%),
+    var(--bg);
+  color: var(--text);
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.legal {
+  max-width: 68ch;
+  margin: 0 auto;
+  padding: 40px 20px 64px;
+}
+
+.legal-logo {
+  display: inline-block;
+  margin-bottom: 28px;
+  font-family: 'Unbounded', 'Manrope', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.legal-gem {
+  color: #c084fc;
+  font-size: 0.75em;
+  margin-left: 2px;
+}
+
+h1 {
+  margin: 0 0 6px;
+  font-family: 'Unbounded', 'Manrope', sans-serif;
+  font-size: clamp(26px, 6vw, 34px);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+h2 {
+  margin: 32px 0 8px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+p,
+li {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+ol,
+ul {
+  padding-left: 22px;
+}
+
+li + li {
+  margin-top: 6px;
+}
+
+a {
+  color: var(--accent);
+  text-underline-offset: 3px;
+}
+
+a:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+
+.legal-date {
+  margin: 0 0 24px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.legal-footer {
+  margin-top: 40px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+}

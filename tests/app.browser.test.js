@@ -93,6 +93,11 @@ test('web app', { skip }, async t => {
     assert.ok(!ics.includes('Old Gig'));
   });
 
+  await t.test('"Delete account" is only offered when signed in', async () => {
+    assert.equal(await app.ev(`document.getElementById('accountDeleteArea').hidden`), true);
+    assert.equal(await app.ev(`getComputedStyle(document.getElementById('accountDeleteArea')).display`), 'none');
+  });
+
   await t.test('no page errors', () => {
     assert.deepEqual(app.errors, []);
   });
@@ -129,6 +134,8 @@ const NATIVE_MOCKS = `
       addListener: (name, fn) => { window.__calls.listeners[name] = fn; return { remove() {} }; },
       checkPermissions: async () => ({ display: 'granted' }),
       requestPermissions: async () => ({ display: 'granted' }),
+      checkExactNotificationSetting: async () => ({ exact_alarm: window.__exactAlarm || 'denied' }),
+      changeExactNotificationSetting: async () => { window.__calls.exactOpened = true; window.__exactAlarm = 'granted'; return { exact_alarm: 'granted' }; },
       getPending: async () => ({ notifications: [] }), cancel: async () => {}, schedule: async () => {}
     },
     Filesystem: { writeFile: async ({ path }) => { window.__calls.files.push(path); return { uri: 'file:///cache/' + path }; } },
@@ -202,6 +209,21 @@ test('android app (simulated)', { skip }, async t => {
     await app.sleep(600);
     assert.equal(await app.ev(`document.getElementById('eventModalOverlay').classList.contains('active')`), true);
     assert.equal(await app.ev(`document.querySelector('.event-detail-title').textContent`), 'Arctic Monkeys');
+  });
+
+  await t.test('Settings offers on-time reminders when Android blocks exact alarms', async () => {
+    await app.ev(`closeBackLayer('detail', () => {}); document.getElementById('settingsBtn').click()`);
+    await app.waitFor(async () => (await app.ev(`document.getElementById('exactAlarmRow').hidden`)) === false);
+    await app.ev(`document.getElementById('exactAlarmBtn').click()`);
+    await app.sleep(200);
+    assert.equal(await app.ev('window.__calls.exactOpened'), true, "opens Android's Alarms & reminders setting");
+    // Back in the app with the permission granted: the row goes away
+    await app.ev(`document.dispatchEvent(new Event('visibilitychange'))`);
+    await app.waitFor(async () => (await app.ev(`document.getElementById('exactAlarmRow').hidden`)) === true);
+    await app.ev('closeSettingsModal()');
+    await app.sleep(300);
+    await app.ev(`openDetailModal(cueAppState.events.find(e => e.id === 'a'))`);
+    await app.sleep(500);
   });
 
   await t.test('Share sends the event as plain text with a map and ticket link', async () => {
