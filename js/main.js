@@ -174,7 +174,9 @@ function initializeApp() {
     }
   };
   bindStaticEventHandlers();
-  loadEvents();
+  // Once events are loaded, pick up anything handed over at launch: a post shared from
+  // Instagram, or an event/day tapped in a widget
+  loadEvents().then(checkForSharedData);
 
   if (window.CueAuth && typeof window.CueAuth.init === 'function') {
     window.CueAuth.init();
