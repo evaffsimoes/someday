@@ -291,11 +291,11 @@ function eventShareText(event) {
   const info = String(event.ticketInfo || '').trim();
   const ticketLink = /^https?:\/\//i.test(info) ? info : (/^www\./i.test(info) ? `https://${info}` : '');
   return [
-    `🎶 ${event.artist || 'Event'}`,
-    `📅 ${fmtEventWhen(event)}`,
-    where ? `📍 ${where}` : '',
+    event.artist || 'Event',
+    fmtEventWhen(event),
+    where,
     where ? `https://maps.google.com/?q=${encodeURIComponent(where)}` : '',
-    ticketLink ? `🎟️ Tickets: ${ticketLink}` : '',
+    ticketLink ? `Tickets: ${ticketLink}` : '',
     event.description ? `\n${event.description}` : ''
   ].filter(Boolean).join('\n');
 }
@@ -594,7 +594,7 @@ function openDetailModal(event) {
 
         <div class="detail-actions">
           <button class="detail-action" id="gcalFromModalBtn" type="button">
-            <span class="detail-action-circle primary">${iconSvg('calendar')}</span>Calendar
+            <span class="detail-action-circle glass">${iconSvg('calendar')}</span>Calendar
           </button>
           <button class="detail-action" id="shareFromModalBtn" type="button">
             <span class="detail-action-circle glass">${iconSvg('share')}</span>Share

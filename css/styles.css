@@ -2377,7 +2377,7 @@
       border-radius: 14px;
     }
 
-    /* Round actions: Calendar (event colour), Share, Edit, Delete */
+    /* Round glass actions: Calendar, Share, Edit, Delete */
     .detail-sheet .detail-actions {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -2413,11 +2413,6 @@
     .detail-action-circle .cue-icon {
       width: 20px;
       height: 20px;
-    }
-
-    .detail-action-circle.primary {
-      background: rgb(var(--ev));
-      box-shadow: 0 8px 22px -6px rgba(var(--ev), 0.9);
     }
 
     .detail-action.danger,
