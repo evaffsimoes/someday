@@ -2,10 +2,6 @@
   "appId": "com.eva.somedayapp",
   "appName": "cue",
   "webDir": "www",
-  "server": {
-    "url": "https://cue-events.vercel.app",
-    "cleartext": true
-  },
   "plugins": {
     "GoogleAuth": {
       "scopes": ["profile", "email"],

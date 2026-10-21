@@ -116,15 +116,16 @@ async function startApp({ api, nativeMocks = '' } = {}) {
   await send('Emulation.setDeviceMetricsOverride', { width: 400, height: 860, deviceScaleFactor: 1, mobile: true });
   if (nativeMocks) await send('Page.addScriptToEvaluateOnNewDocument', { source: nativeMocks });
 
-  // Loads the app with these events in storage (and an optional page set-up script)
-  const load = async (events = [], setup = '') => {
+  // Loads the app with these events in storage (and an optional page set-up script); waits until
+  // the app holds expectedCount events (defaults to the ones stored)
+  const load = async (events = [], setup = '', expectedCount = events.length) => {
     await send('Page.navigate', { url: appUrl });
     await sleep(800);
     await ev(`localStorage.clear(); localStorage.setItem('cue-events-v12', ${JSON.stringify(JSON.stringify(events))}); ${setup}`);
     errors.length = 0;
     apiCalls.length = 0;
     await send('Page.reload');
-    await waitFor(() => ev(`typeof cueAppState !== 'undefined' && cueAppState.events.length === ${events.length}`));
+    await waitFor(() => ev(`typeof cueAppState !== 'undefined' && cueAppState.events.length === ${expectedCount}`));
   };
 
   const waitFor = async (check, timeoutMs = 8000) => {

@@ -96,12 +96,26 @@ test('web app', { skip }, async t => {
   await t.test('no page errors', () => {
     assert.deepEqual(app.errors, []);
   });
+
+  await t.test('opens and shows the events without internet', async () => {
+    // Everything outside the local server (Google, CDNs, Firebase) is unreachable
+    await app.send('Network.enable');
+    await app.send('Network.setBlockedURLs', { urls: ['https://*'] });
+    await app.load(EVENTS);
+    await app.waitFor(async () => (await app.ev(`document.body.innerText.includes('Arctic Monkeys')`)) === true);
+    assert.equal(await app.ev(`typeof flatpickr`), 'function', 'the date picker ships with the app');
+    assert.equal(await app.ev(`typeof firebase`), 'object', 'Firebase ships with the app');
+    assert.equal(await app.ev(`getComputedStyle(document.querySelector('.cue-logo')).fontFamily.includes('Unbounded')`), true);
+    assert.deepEqual(app.errors, []);
+    await app.send('Network.setBlockedURLs', { urls: [] });
+  });
 });
 
 // ---------- Android build (simulated plugins): shares, widgets, notifications ----------
 
 const POST_HTML = '<meta property="og:description" content="2,374 likes - marinaherlop on July 31, 2026: &quot;Dawn of Dja Dja tour.&quot;" /><meta property="og:image" content="https://cdn.example/poster.jpg" />';
 const NATIVE_MOCKS = `
+  window.CUE_API_ORIGIN = location.origin;
   window.__prefs = JSON.parse(localStorage.getItem('__testPrefs') || '{}');
   window.__calls = { share: [], files: [], http: [], listeners: {} };
   const savePrefs = () => localStorage.setItem('__testPrefs', JSON.stringify(window.__prefs));
@@ -146,6 +160,18 @@ async function fakeApi(payload) {
 test('android app (simulated)', { skip }, async t => {
   const app = await startApp({ api: fakeApi, nativeMocks: NATIVE_MOCKS });
   t.after(() => app.close());
+
+  await t.test('the first launch from the APK brings back the events from the widget copy', async () => {
+    const widgetCopy = [
+      { id: 'w1', artist: 'Capitão Fausto', startDate: daysFromNow(20), endDate: daysFromNow(20), city: 'Porto', category: 'Concert', company: 'Rita, João' },
+      { id: 'w2', artist: 'NOS Alive', startDate: daysFromNow(40), endDate: daysFromNow(42), city: 'Oeiras', category: 'Festival', company: 'Rita' }
+    ];
+    // A fresh bundled install: nothing in the app's own storage, the widget copy still on the phone
+    await app.load([], `localStorage.removeItem('cue-events-v12'); localStorage.setItem('__testPrefs', JSON.stringify({ 'shared-events': ${JSON.stringify(JSON.stringify(widgetCopy))} }))`, 2);
+    assert.equal(await app.ev(`JSON.parse(localStorage.getItem('cue-events-v12')).length`), 2, 'saved into the app storage');
+    assert.deepEqual(JSON.parse(await app.ev(`JSON.stringify(state.savedFriends)`)), ['Rita', 'João']);
+    assert.match(await app.ev(`document.getElementById('debugAlertBox')?.textContent || ''`), /moved into the app/);
+  });
 
   await t.test('a post shared from Instagram at launch opens the filled-in form', async () => {
     await app.load(EVENTS, `localStorage.setItem('__testPrefs', JSON.stringify({ 'pending-share-intent': 'https://www.instagram.com/p/DbdCDovqqdx/?dlrf=x' }))`);

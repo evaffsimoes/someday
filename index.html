@@ -14,15 +14,15 @@
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="shortcut icon" type="image/png" href="icon-192.png">
   <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <!-- Libraries and fonts ship inside the app (vendor/) so it opens without internet -->
+  <link rel="stylesheet" href="vendor/fonts/fonts.css">
+  <link rel="stylesheet" href="vendor/flatpickr.min.css">
+  <link rel="stylesheet" href="vendor/flatpickr-dark.css">
+  <script src="vendor/flatpickr.min.js"></script>
+  <script src="vendor/firebase-app-compat.js"></script>
+  <script src="vendor/firebase-auth-compat.js"></script>
+  <script src="vendor/firebase-firestore-compat.js"></script>
+  <!-- Web sign-in only; the Android app signs in with the native Google plugin -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <link rel="stylesheet" href="css/styles.css">
 </head>

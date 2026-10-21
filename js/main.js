@@ -15,10 +15,39 @@ window.cueDedupeEvents = dedupeEvents;
 window.cueShrinkEventImages = shrinkEventImages;
 window.cueToast = message => customAlert(message);
 
+// The app used to run from cue-events.vercel.app, whose browser storage the bundled app (served from
+// https://localhost) can't see. Android keeps a copy of every event for the widgets (text only), so
+// on the first bundled launch the events come back from there; posters return with cloud sync.
+async function restoreEventsFromWidgetCopy() {
+  try {
+    const Preferences = window.Capacitor?.Plugins?.Preferences;
+    if (!Preferences) return null;
+    const { value } = await Preferences.get({ key: 'shared-events' });
+    const events = value ? JSON.parse(value) : [];
+    return Array.isArray(events) && events.length ? events : null;
+  } catch (error) {
+    return null;
+  }
+}
+
 async function loadEvents() {
   try {
     const raw = await getStorageItem(STORE_KEY) || await getStorageItem('someday-events');
     state.events = raw ? JSON.parse(raw) : [];
+
+    if (!raw && !localStorage.getItem('cue-moved-into-app')) {
+      const restored = await restoreEventsFromWidgetCopy();
+      if (restored) {
+        state.events = restored;
+        await setStorageItem(STORE_KEY, JSON.stringify(restored));
+        // Friends picked for past events, so the "Going with" suggestions survive too
+        const friends = restored.flatMap(event => String(event.company || '').split(',').map(name => name.trim()).filter(Boolean));
+        state.savedFriends = [...new Set(friends)];
+        await setStorageItem(FRIENDS_KEY, JSON.stringify(state.savedFriends));
+        customAlert('Your events moved into the app. Sign in with Google in Settings to bring back the posters.');
+      }
+      localStorage.setItem('cue-moved-into-app', '1');
+    }
 
     state.events = dedupeEvents(state.events.map(event => {
       if (!event.id) event.id = uid();

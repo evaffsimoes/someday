@@ -47,7 +47,7 @@ const filesToCopy = [
   'capacitor.config.json'
 ];
 
-const dirsToCopy = ['css', 'js', 'icons'];
+const dirsToCopy = ['css', 'js', 'icons', 'vendor'];
 
 const wwwDir = path.join(rootDir, 'www');
 if (!fs.existsSync(wwwDir)) {

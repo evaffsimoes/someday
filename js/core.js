@@ -347,11 +347,14 @@ function selectOptionsHTML(datalistId, selectedValue, placeholder) {
   `).join('');
 }
 
+// The import API lives on Vercel. The Android app runs from https://localhost inside the APK, so
+// it calls the API by its full address; the website (and local test servers) use the relative path.
+const API_ORIGIN = 'https://cue-events.vercel.app';
+
 function getApiEndpoint() {
-  if (window.location.hostname === 'localhost' || window.location.protocol === 'file:') {
-    return 'https://someday-nu.vercel.app/api/gemini';
-  }
-  return '/api/gemini';
+  if (!window.Capacitor?.isNativePlatform?.()) return '/api/gemini';
+  // Tests point the simulated Android app at their fake API
+  return `${window.CUE_API_ORIGIN || API_ORIGIN}/api/gemini`;
 }
 
 // The import endpoint only serves signed-in users
