@@ -181,23 +181,90 @@ function markFieldsAiMissed(parsed) {
   });
 }
 
+// Reads a public Instagram post from the phone itself (native HTTP, so no CORS and a phone IP that
+// Instagram doesn't treat as a server). Used when the server couldn't open the post.
+// Resolves to { text, image: { mimeType, data } | null } or null.
+async function readInstagramPostOnDevice(sharedText) {
+  const http = window.Capacitor?.Plugins?.CapacitorHttp;
+  const link = (sharedText.match(/https?:\/\/(?:www\.)?instagram\.com\/[^\s"'<>]+/i) || [])[0];
+  const code = link && (link.match(/instagram\.com\/(?:[\w.]+\/)?(?:p|reels?|tv)\/([\w-]+)/i) || [])[1];
+  if (!http || !code) return null;
+
+  const decode = value => {
+    const area = document.createElement('textarea');
+    area.innerHTML = value;
+    return area.value;
+  };
+  const meta = (html, property) => {
+    const match = html.match(new RegExp(`<meta[^>]+property=["']${property}["'][^>]+content=["']([^"']*)["']`, 'i'));
+    return match ? decode(match[1]) : '';
+  };
+
+  try {
+    const page = await http.request({
+      url: `https://www.instagram.com/p/${code}/`,
+      method: 'GET',
+      headers: { 'User-Agent': 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)' },
+      responseType: 'text',
+      connectTimeout: 8000,
+      readTimeout: 8000
+    });
+    const html = typeof page.data === 'string' ? page.data : '';
+    const description = meta(html, 'og:description');
+    if (!description) return null;
+
+    const header = description.match(/^(.*?)\s-\s([\w.]+) on ([^:]+):\s*/);
+    const caption = (header ? description.slice(header[0].length) : description).trim().replace(/^"|"\.?$/g, '').trim();
+    const text = [header ? `Posted by @${header[2]} on ${header[3]}` : '', `Caption: ${caption}`, `Link: ${link}`].filter(Boolean).join('\n');
+
+    let image = null;
+    const imageUrl = meta(html, 'og:image');
+    if (imageUrl) {
+      const picture = await http.request({ url: imageUrl, method: 'GET', responseType: 'blob', connectTimeout: 8000, readTimeout: 8000 });
+      const type = String(picture.headers?.['Content-Type'] || picture.headers?.['content-type'] || 'image/jpeg').split(';')[0];
+      if (typeof picture.data === 'string' && /^image\/(jpeg|png|webp)$/i.test(type) && picture.data.length < 3_000_000) {
+        image = { mimeType: type, data: picture.data };
+      }
+    }
+    return { text, image };
+  } catch (error) {
+    console.warn('Reading the Instagram post on the device failed', error);
+    return null;
+  }
+}
+
+async function requestSharedPost(payload) {
+  const response = await fetch(getApiEndpoint(), {
+    method: 'POST',
+    headers: await apiHeaders(),
+    body: JSON.stringify(payload)
+  });
+  const textResult = await response.text();
+  let data;
+  try {
+    data = JSON.parse(textResult);
+  } catch (error) {
+    // Not JSON; handled by the caller
+  }
+  return { response, data, textResult };
+}
+
 async function handleSharedText(sharedText) {
   switchTab('add');
   renderAiParsingState();
 
   try {
-    const response = await fetch(getApiEndpoint(), {
-      method: 'POST',
-      headers: await apiHeaders(),
-      body: JSON.stringify({ sharedUrl: sharedText })
-    });
+    let { response, data, textResult } = await requestSharedPost({ sharedUrl: sharedText });
 
-    const textResult = await response.text();
-    let data;
-    try {
-      data = JSON.parse(textResult);
-    } catch (error) {
-      // Not JSON; handled later.
+    // 422: the server couldn't open the post; try reading it on the phone and send what it finds
+    if (response.status === 422) {
+      const post = await readInstagramPostOnDevice(sharedText);
+      if (post) {
+        ({ response, data, textResult } = await requestSharedPost({
+          sharedUrl: post.text,
+          ...(post.image ? { contents: [{ parts: [{ inlineData: post.image }] }] } : {})
+        }));
+      }
     }
 
     if (!response.ok) {
@@ -206,7 +273,7 @@ async function handleSharedText(sharedText) {
 
     const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
     const parsed = parseGeminiJson(text);
-    if (data._extractedImage) {
+    if (data?._extractedImage) {
       parsed.image = data._extractedImage;
     }
 
@@ -247,14 +314,24 @@ async function checkForSharedData() {
     return;
   }
 
-  window.checkForSharedDataNative = async function () {
-    if (!window.Capacitor?.Plugins?.Preferences) return;
-    const { value } = await window.Capacitor.Plugins.Preferences.get({ key: 'pending-share-intent' });
-    if (value) {
-      await window.Capacitor.Plugins.Preferences.remove({ key: 'pending-share-intent' });
-      switchTab('add');
-      handleSharedText(value);
-    }
+  // Reads and clears the share left by MainActivity. A run already in progress is reused, so a
+  // share is never handled twice when start-up and the native side ask at the same moment.
+  window.checkForSharedDataNative = function () {
+    if (!window.Capacitor?.Plugins?.Preferences) return Promise.resolve();
+    if (window.checkForSharedDataNative.running) return window.checkForSharedDataNative.running;
+    window.checkForSharedDataNative.running = (async () => {
+      try {
+        const { value } = await window.Capacitor.Plugins.Preferences.get({ key: 'pending-share-intent' });
+        if (value) {
+          await window.Capacitor.Plugins.Preferences.remove({ key: 'pending-share-intent' });
+          switchTab('add');
+          handleSharedText(value);
+        }
+      } finally {
+        window.checkForSharedDataNative.running = null;
+      }
+    })();
+    return window.checkForSharedDataNative.running;
   };
 
   // Call immediately on app startup in case app was launched via share intent
@@ -287,7 +364,6 @@ async function checkForSharedData() {
   };
 
   if (window.Capacitor?.isNative) {
-    window.checkForSharedDataNative();
     window.checkForWidgetOpenIntentNative();
   }
 

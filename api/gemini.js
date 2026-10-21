@@ -55,6 +55,8 @@ function isEmailAllowed(email) {
 // Instagram serves a post's caption and image (Open Graph tags) to link-preview crawlers without a
 // login, so the post is read the way a chat app builds its link preview.
 const PREVIEW_UA = 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)';
+const GOOGLEBOT_UA = 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)';
+const TWITTERBOT_UA = 'Twitterbot/1.0';
 const BROWSER_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36';
 const SCRAPE_TIMEOUT_MS = 6000;
 
@@ -86,13 +88,18 @@ function metaContent(html, property) {
   return match ? decodeEntities(match[1]) : '';
 }
 
+// Never throws: a timeout or network error comes back as { ok: false, status: 'error' }
 async function fetchText(url, userAgent) {
-  const res = await fetch(url, {
-    headers: { 'User-Agent': userAgent, 'Accept': 'text/html', 'Accept-Language': 'en-GB,en;q=0.9,pt;q=0.8' },
-    redirect: 'follow',
-    signal: AbortSignal.timeout(SCRAPE_TIMEOUT_MS)
-  });
-  return { ok: res.ok, url: res.url, html: res.ok ? await res.text() : '' };
+  try {
+    const res = await fetch(url, {
+      headers: { 'User-Agent': userAgent, 'Accept': 'text/html', 'Accept-Language': 'en-GB,en;q=0.9,pt;q=0.8' },
+      redirect: 'follow',
+      signal: AbortSignal.timeout(SCRAPE_TIMEOUT_MS)
+    });
+    return { ok: res.ok, status: res.status, url: res.url, html: res.ok ? await res.text() : '' };
+  } catch (error) {
+    return { ok: false, status: error.name === 'TimeoutError' ? 'timeout' : 'error', url, html: '' };
+  }
 }
 
 // Downloads the poster so Gemini can read it and the app can keep it; null if too big or not an image
@@ -124,8 +131,12 @@ async function scrapeInstagramMetadata(sharedText) {
     let posted = '';
     let imageUrl = '';
 
-    const page = await fetchText(`https://www.instagram.com/p/${code}/`, PREVIEW_UA);
-    if (page.ok) {
+    // Instagram now and then serves server requests an empty page; other crawlers often still get it
+    const attempts = [];
+    for (const userAgent of [PREVIEW_UA, GOOGLEBOT_UA, TWITTERBOT_UA]) {
+      const page = await fetchText(`https://www.instagram.com/p/${code}/`, userAgent);
+      attempts.push(page.status);
+      if (!page.ok) continue;
       // og:description looks like: 21K likes, 363 comments - nos_alive on October 19, 2026: "caption"
       const description = metaContent(page.html, 'og:description');
       const header = description.match(/^(.*?)\s-\s([\w.]+) on ([^:]+):\s*/);
@@ -133,6 +144,7 @@ async function scrapeInstagramMetadata(sharedText) {
       caption = (header ? description.slice(header[0].length) : description).trim().replace(/^"|"\.?$/g, '').trim();
       if (!caption) caption = metaContent(page.html, 'og:title').replace(/^.*? on Instagram:\s*/, '').replace(/^"|"$/g, '');
       imageUrl = metaContent(page.html, 'og:image');
+      if (caption || imageUrl) break;
     }
 
     // Fallback: the public embed page has the caption and image too
@@ -152,7 +164,10 @@ async function scrapeInstagramMetadata(sharedText) {
 
     const posterImageDataUrl = imageUrl ? await fetchImageAsDataUrl(imageUrl) : null;
     const text = [posted, caption ? `Caption: ${caption}` : '', `Link: ${instaUrl}`].filter(Boolean).join('\n');
-    return { text, posterImageDataUrl, isInstagram: true, readable: !!(caption || posterImageDataUrl) };
+    const readable = !!(caption || posterImageDataUrl);
+    // Visible in the Vercel logs, to tell blocks from private posts
+    if (!readable) console.warn(`Instagram post ${code} unreadable; page statuses: ${attempts.join(', ')}`);
+    return { text, posterImageDataUrl, isInstagram: true, readable };
   } catch (_) {
     return { text: sharedText, posterImageDataUrl: null, isInstagram: true, readable: false };
   }
@@ -219,7 +234,10 @@ export default async function handler(req, res) {
       if (post.isInstagram && !post.readable && onlyALink) {
         return res.status(422).json({ error: 'Couldn\'t open this Instagram post (it may be private). Share a screenshot of the poster instead.' });
       }
-      const posterImageDataUrl = post.posterImageDataUrl;
+      // When the server couldn't open the post, the app may have read it on the phone and sent the poster
+      const deviceImage = input.contents?.[0]?.parts?.find(part => part.inlineData)?.inlineData;
+      const posterImageDataUrl = post.posterImageDataUrl
+        || (deviceImage ? `data:${deviceImage.mimeType};base64,${deviceImage.data}` : null);
       if (posterImageDataUrl) extractedImageDataUrl = posterImageDataUrl;
 
       const parts = [];
@@ -307,3 +325,4 @@ If the year isn't shown, assume the next upcoming occurrence after today (${toda
     return res.status(500).json({ error: error.message });
   }
 }
+
