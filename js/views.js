@@ -283,46 +283,146 @@ function gcalUrl(event) {
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
 
-function downloadIcs(event) {
-  const start = toGCalDate(event.startDate, event.time) || new Date().toISOString().replace(/[-:]/g, '').split('.')[0];
-  const dtStart = start.includes('T') ? start : `${start}T210000`;
-  const startDate = new Date(
-    dtStart.slice(0, 4),
-    Number(dtStart.slice(4, 6)) - 1,
-    dtStart.slice(6, 8),
-    dtStart.slice(9, 11) || 21,
-    dtStart.slice(11, 13) || 0
-  );
-  const endDate = new Date(startDate.getTime() + 3 * 60 * 60 * 1000);
+// ---------- Calendar export (.ics) ----------
 
-  const formatIcsDate = date => date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-  const escapeIcs = value => String(value || '')
+function icsEscape(value) {
+  return String(value || '')
     .replace(/\\/g, '\\\\')
     .replace(/;/g, '\\;')
     .replace(/,/g, '\\,')
     .replace(/\r?\n/g, '\\n');
+}
 
-  const calendarEntry = [
+// iCalendar lines must be folded at 75 bytes; continuation lines start with a space
+function icsFold(line) {
+  const encoder = new TextEncoder();
+  const parts = [];
+  let current = '';
+  for (const char of line) {
+    const limit = parts.length ? 74 : 75;
+    if (encoder.encode(current + char).length > limit) {
+      parts.push(current);
+      current = char;
+    } else {
+      current += char;
+    }
+  }
+  parts.push(current);
+  return parts.join('\r\n ');
+}
+
+const icsUtc = date => date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+const icsDay = date => `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}`;
+
+function icsEvent(event, stamp) {
+  const start = parseLocalDate(event.startDate);
+  if (!start) return [];
+  const lastDay = parseLocalDate(event.endDate) || start;
+  const timeMatch = /^(\d{1,2}):(\d{2})/.exec(event.time || '');
+
+  let when;
+  if (timeMatch) {
+    // Timed: from the start time; ends 3h later, or at the end of the last day for multi-day events
+    const startAt = new Date(start.getFullYear(), start.getMonth(), start.getDate(), Number(timeMatch[1]), Number(timeMatch[2]));
+    const endAt = lastDay > start
+      ? new Date(lastDay.getFullYear(), lastDay.getMonth(), lastDay.getDate(), 23, 59)
+      : new Date(startAt.getTime() + 3 * 60 * 60 * 1000);
+    when = [`DTSTART:${icsUtc(startAt)}`, `DTEND:${icsUtc(endAt)}`];
+  } else {
+    // No time: all-day across every day of the event (DTEND is exclusive)
+    const dayAfter = new Date(lastDay.getFullYear(), lastDay.getMonth(), lastDay.getDate() + 1);
+    when = [`DTSTART;VALUE=DATE:${icsDay(start)}`, `DTEND;VALUE=DATE:${icsDay(dayAfter)}`];
+  }
+
+  const notes = [
+    event.company ? `With ${event.company}` : '',
+    ticketLabel(event.ticketStatus) ? `Ticket: ${ticketLabel(event.ticketStatus)}` : '',
+    event.description || '',
+    'Saved in cue'
+  ].filter(Boolean).join('\n');
+
+  return [
+    'BEGIN:VEVENT',
+    // A stable UID lets calendar apps recognise the same event when it's exported again
+    `UID:${event.id}@cue-app`,
+    `DTSTAMP:${stamp}`,
+    ...when,
+    `SUMMARY:${icsEscape(event.artist || 'Event')}`,
+    [event.venue, event.city].some(Boolean) ? `LOCATION:${icsEscape([event.venue, event.city].filter(Boolean).join(', '))}` : '',
+    `DESCRIPTION:${icsEscape(notes)}`,
+    'END:VEVENT'
+  ].filter(Boolean);
+}
+
+function buildIcs(events) {
+  const stamp = icsUtc(new Date());
+  return [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//cue//EN',
-    'BEGIN:VEVENT',
-    `UID:${event.id}@cue-app`,
-    `DTSTAMP:${formatIcsDate(new Date())}`,
-    `DTSTART:${formatIcsDate(startDate)}`,
-    `DTEND:${formatIcsDate(endDate)}`,
-    `SUMMARY:${escapeIcs(event.artist || 'Event')}`,
-    event.venue ? `LOCATION:${escapeIcs([event.venue, event.city].filter(Boolean).join(', '))}` : '',
-    event.description ? `DESCRIPTION:${escapeIcs(event.description)}` : '',
-    'END:VEVENT',
+    'PRODID:-//cue//events//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+    'X-WR-CALNAME:cue',
+    ...events.flatMap(event => icsEvent(event, stamp)),
     'END:VCALENDAR'
-  ].filter(Boolean).join('\r\n');
+  ].map(icsFold).join('\r\n') + '\r\n';
+}
 
-  const blob = new Blob([calendarEntry], { type: 'text/calendar' });
-  const anchor = document.createElement('a');
-  anchor.href = URL.createObjectURL(blob);
-  anchor.download = (event.artist || 'event').replace(/[^a-z0-9]+/gi, '_') + '.ics';
-  anchor.click();
+// Adds every upcoming event to the phone's calendar: opens the .ics in the calendar app when the
+// app build supports it, otherwise offers the share sheet; on the web it downloads the file
+async function exportEventsToCalendar() {
+  const events = state.events
+    .filter(event => event.startDate && !isPast(event))
+    .sort((a, b) => a.startDate.localeCompare(b.startDate));
+  if (!events.length) {
+    customAlert('There are no upcoming events to add.');
+    return;
+  }
+
+  const ics = buildIcs(events);
+  const filename = 'cue-events.ics';
+  const countText = `${events.length} event${events.length === 1 ? '' : 's'}`;
+
+  try {
+    const { Filesystem, Share, CueCalendar } = window.Capacitor?.Plugins || {};
+    if (window.Capacitor?.isNativePlatform?.()) {
+      if (!Filesystem) {
+        customAlert('Please update the app to export to your calendar.');
+        return;
+      }
+      const { uri } = await Filesystem.writeFile({ path: filename, data: ics, directory: 'CACHE', encoding: 'utf8' });
+      if (CueCalendar) {
+        try {
+          await CueCalendar.openIcs({ uri });
+          return;
+        } catch (error) {
+          // No app opens .ics files directly: fall back to the share sheet
+        }
+      }
+      if (!Share) {
+        customAlert('Please update the app to export to your calendar.');
+        return;
+      }
+      try {
+        await Share.share({ title: `cue · ${countText}`, files: [uri], dialogTitle: 'Add to calendar' });
+      } catch (shareErr) {
+        if (!/cancel/i.test(shareErr?.message || '')) throw shareErr;
+      }
+      return;
+    }
+
+    const url = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' }));
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    customAlert(`✓ Open ${filename} to add ${countText} to your calendar.`);
+  } catch (error) {
+    customAlert('Couldn\'t export to your calendar: ' + error.message);
+  }
 }
 
 function showCalendarToast(event) {

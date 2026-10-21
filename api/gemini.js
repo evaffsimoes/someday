@@ -52,71 +52,110 @@ function isEmailAllowed(email) {
   return allowed.length === 0 || allowed.includes(email);
 }
 
+// Instagram serves a post's caption and image (Open Graph tags) to link-preview crawlers without a
+// login, so the post is read the way a chat app builds its link preview.
+const PREVIEW_UA = 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)';
+const BROWSER_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36';
+const SCRAPE_TIMEOUT_MS = 6000;
+
 function extractInstagramUrl(sharedText) {
   if (!sharedText) return null;
-  const match = sharedText.match(/https?:\/\/(?:www\.)?instagram\.com\/(?:p|reel|reels|tv|share\/p)\/[\w.-]+/i);
+  const match = sharedText.match(/https?:\/\/(?:www\.)?(?:instagram\.com|instagr\.am)\/[^\s"'<>]+/i);
   return match ? match[0] : null;
 }
 
+function postCodeFrom(url) {
+  const match = String(url).match(/instagram\.com\/(?:[\w.]+\/)?(?:p|reels?|tv)\/([\w-]+)/i);
+  return match ? match[1] : null;
+}
+
+function decodeEntities(text) {
+  return String(text || '')
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCodePoint(Number(dec)))
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;|&#039;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&');
+}
+
+function metaContent(html, property) {
+  const match = html.match(new RegExp(`<meta[^>]+property=["']${property}["'][^>]+content=["']([^"']*)["']`, 'i'))
+    || html.match(new RegExp(`<meta[^>]+content=["']([^"']*)["'][^>]+property=["']${property}["']`, 'i'));
+  return match ? decodeEntities(match[1]) : '';
+}
+
+async function fetchText(url, userAgent) {
+  const res = await fetch(url, {
+    headers: { 'User-Agent': userAgent, 'Accept': 'text/html', 'Accept-Language': 'en-GB,en;q=0.9,pt;q=0.8' },
+    redirect: 'follow',
+    signal: AbortSignal.timeout(SCRAPE_TIMEOUT_MS)
+  });
+  return { ok: res.ok, url: res.url, html: res.ok ? await res.text() : '' };
+}
+
+// Downloads the poster so Gemini can read it and the app can keep it; null if too big or not an image
+async function fetchImageAsDataUrl(url) {
+  try {
+    const res = await fetch(url, { headers: { 'User-Agent': BROWSER_UA }, signal: AbortSignal.timeout(SCRAPE_TIMEOUT_MS) });
+    const type = (res.headers.get('content-type') || '').split(';')[0].trim();
+    if (!res.ok || !/^image\/(jpeg|png|webp)$/i.test(type)) return null;
+    const bytes = Buffer.from(await res.arrayBuffer());
+    if (bytes.length > MAX_POSTER_BYTES) return null;
+    return `data:${type};base64,${bytes.toString('base64')}`;
+  } catch (_) {
+    return null;
+  }
+}
+
+// Resolves to { text, posterImageDataUrl, isInstagram, readable }
 async function scrapeInstagramMetadata(sharedText) {
-  let enrichedText = sharedText;
-  let posterImageDataUrl = null;
-
   const instaUrl = extractInstagramUrl(sharedText);
-  if (!instaUrl) return { enrichedText, posterImageDataUrl };
+  if (!instaUrl) return { text: sharedText, posterImageDataUrl: null, isInstagram: false, readable: false };
 
-  const matchCode = instaUrl.match(/(?:p|reel|reels|tv|share\/p)\/([\w.-]+)/i);
-  const code = matchCode ? matchCode[1] : null;
+  try {
+    // Share links (instagram.com/share/...) redirect to the post; follow them to get its code
+    let code = postCodeFrom(instaUrl);
+    if (!code) code = postCodeFrom((await fetchText(instaUrl, PREVIEW_UA)).url);
+    if (!code) return { text: sharedText, posterImageDataUrl: null, isInstagram: true, readable: false };
 
-  if (code) {
-    const cleanUrl = `https://www.instagram.com/p/${code}/`;
-    const targetUrls = [
-      `https://api.instagram.com/oembed/?url=${encodeURIComponent(cleanUrl)}`,
-      `https://ddinstagram.com/p/${code}`
-    ];
+    let caption = '';
+    let posted = '';
+    let imageUrl = '';
 
-    try {
-      const results = await Promise.allSettled(
-        targetUrls.map(async fetchUrl => {
-          const isJsonApi = fetchUrl.includes('api.instagram.com');
-          const res = await fetch(fetchUrl, {
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
-              'Accept': isJsonApi ? 'application/json' : 'text/html'
-            },
-            signal: AbortSignal.timeout(1200)
-          });
-          if (!res.ok) return null;
+    const page = await fetchText(`https://www.instagram.com/p/${code}/`, PREVIEW_UA);
+    if (page.ok) {
+      // og:description looks like: 21K likes, 363 comments - nos_alive on October 19, 2026: "caption"
+      const description = metaContent(page.html, 'og:description');
+      const header = description.match(/^(.*?)\s-\s([\w.]+) on ([^:]+):\s*/);
+      if (header) posted = `Posted by @${header[2]} on ${header[3]}`;
+      caption = (header ? description.slice(header[0].length) : description).trim().replace(/^"|"\.?$/g, '').trim();
+      if (!caption) caption = metaContent(page.html, 'og:title').replace(/^.*? on Instagram:\s*/, '').replace(/^"|"$/g, '');
+      imageUrl = metaContent(page.html, 'og:image');
+    }
 
-          if (isJsonApi) {
-            const oembedData = await res.json();
-            return {
-              text: [oembedData.author_name ? `Post by @${oembedData.author_name}` : '', oembedData.title, sharedText].filter(Boolean).join(' | '),
-              img: oembedData.thumbnail_url || null
-            };
-          } else {
-            const html = await res.text();
-            const ogTitle = (html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i) || [])[1] || '';
-            const ogDesc = (html.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i) || [])[1] || '';
-            let imgUrl = (html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) || [])[1] || '';
-            return {
-              text: [ogTitle, ogDesc, sharedText].filter(Boolean).join(' | '),
-              img: imgUrl ? imgUrl.replace(/&amp;/g, '&') : null
-            };
-          }
-        })
-      );
-
-      for (const res of results) {
-        if (res.status === 'fulfilled' && res.value) {
-          if (res.value.text && enrichedText === sharedText) enrichedText = res.value.text;
-          if (res.value.img && !posterImageDataUrl) posterImageDataUrl = res.value.img;
+    // Fallback: the public embed page has the caption and image too
+    if (!caption || !imageUrl) {
+      const embed = await fetchText(`https://www.instagram.com/p/${code}/embed/captioned/`, BROWSER_UA);
+      if (embed.ok) {
+        if (!caption) {
+          const block = embed.html.match(/class="Caption"[^>]*>([\s\S]*?)<div class="CaptionComments"/i);
+          if (block) caption = decodeEntities(block[1].replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim();
+        }
+        if (!imageUrl) {
+          const img = embed.html.match(/class="EmbeddedMediaImage"[^>]*src="([^"]+)"/i);
+          if (img) imageUrl = decodeEntities(img[1]);
         }
       }
-    } catch (_) {}
-  }
+    }
 
-  return { enrichedText, posterImageDataUrl };
+    const posterImageDataUrl = imageUrl ? await fetchImageAsDataUrl(imageUrl) : null;
+    const text = [posted, caption ? `Caption: ${caption}` : '', `Link: ${instaUrl}`].filter(Boolean).join('\n');
+    return { text, posterImageDataUrl, isInstagram: true, readable: !!(caption || posterImageDataUrl) };
+  } catch (_) {
+    return { text: sharedText, posterImageDataUrl: null, isInstagram: true, readable: false };
+  }
 }
 
 function validatePayload(body) {
@@ -174,11 +213,17 @@ export default async function handler(req, res) {
     if (input.sharedUrl) {
       const sharedUrlStr = input.sharedUrl;
 
-      const { enrichedText, posterImageDataUrl } = await scrapeInstagramMetadata(sharedUrlStr);
+      const post = await scrapeInstagramMetadata(sharedUrlStr);
+      // Only a bare link to a post we couldn't open: don't let the model guess from the URL
+      const onlyALink = sharedUrlStr.replace(/https?:\/\/\S+/g, '').trim().length < 3;
+      if (post.isInstagram && !post.readable && onlyALink) {
+        return res.status(422).json({ error: 'Couldn\'t open this Instagram post (it may be private). Share a screenshot of the poster instead.' });
+      }
+      const posterImageDataUrl = post.posterImageDataUrl;
       if (posterImageDataUrl) extractedImageDataUrl = posterImageDataUrl;
 
       const parts = [];
-      if (posterImageDataUrl && posterImageDataUrl.startsWith('data:image')) {
+      if (posterImageDataUrl) {
         const [meta, base64Data] = posterImageDataUrl.split(',');
         const mimeType = meta.match(/data:(.*?);/)?.[1] || 'image/jpeg';
         parts.push({
@@ -187,8 +232,11 @@ export default async function handler(req, res) {
       }
 
       parts.push({
-        text: `Today's date is ${today}. A user shared this Instagram event post link or caption: "${enrichedText}".
-Extract the music/event details in Portugal.
+        text: `Today's date is ${today}. A user shared an Instagram event post.${posterImageDataUrl ? ' The post image (usually the event poster) is attached: read dates, times, venue and lineup from it.' : ''}
+Post details:
+${post.text}
+
+Extract the music/event details in Portugal. Use the date the post was published to work out the year when it isn't written.
 
 Respond ONLY with a JSON object in this exact shape (no markdown):
 {"artist": "Artist or Event Name", "startDate": "YYYY-MM-DD or empty string", "endDate": "YYYY-MM-DD or empty string", "time": "HH:MM in 24h format or empty string", "venue": "Venue name or empty string", "city": "City in Portugal or empty string", "category": "Concert or Festival or Other", "description": "Comma-separated list of extra artists/lineup, or an empty string '' if no extra notes or lineup are found. Do NOT write generic placeholder text."}

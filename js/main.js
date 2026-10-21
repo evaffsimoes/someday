@@ -139,6 +139,9 @@ function bindStaticEventHandlers() {
     };
   }
 
+  document.getElementById('calExportBtn').onclick = exportEventsToCalendar;
+  document.getElementById('settingsCalExportBtn').onclick = exportEventsToCalendar;
+
   document.getElementById('closeSettingsBtn').onclick = closeSettingsModal;
   // Tapping the dimmed area around the settings sheet closes it
   document.getElementById('settingsModalOverlay').addEventListener('click', event => {

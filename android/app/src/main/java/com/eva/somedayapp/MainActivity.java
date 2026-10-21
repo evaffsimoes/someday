@@ -15,6 +15,8 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // App-specific native plugins must be registered before the bridge starts
+        registerPlugin(CueCalendarPlugin.class);
         super.onCreate(savedInstanceState);
 
         // Enable Android WebView Download Listener

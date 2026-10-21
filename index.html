@@ -126,6 +126,10 @@
         <div class="cal-day-label">Sun</div>
       </div>
       <div class="cal-grid cal-grid-days" id="calGrid"></div>
+      <button class="cal-export-btn glass" id="calExportBtn" type="button">
+        <svg class="cue-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5V7M17 4.5V7M5.5 9.5h13M6 6.5h12a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 18 18.5H6A1.5 1.5 0 0 1 4.5 17V8A1.5 1.5 0 0 1 6 6.5ZM12 12v4M10 14h4" /></svg>
+        Add all to my calendar
+      </button>
 
       <div class="section-title section-title-spaced" id="calSelectedTitle">Your events</div>
       <div id="calSelectedList"></div>
@@ -282,6 +286,14 @@
           <button class="btn btn-ghost btn-danger-ghost" id="accountLogoutBtn" type="button" onclick="CueAuth.signOutUser()">
             Sign out
           </button>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3 class="settings-section-title">Calendar</h3>
+        <p class="settings-hint settings-hint-spaced">Add all your upcoming events to your phone's calendar app.</p>
+        <div class="btn-row">
+          <button class="btn btn-ghost" id="settingsCalExportBtn" type="button">Add all to my calendar</button>
         </div>
       </div>
 
