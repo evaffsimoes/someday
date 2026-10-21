@@ -1,0 +1,5 @@
+# Not part of the web app: keep them out of the Vercel deployment
+tests/
+android/
+www/
+scripts/

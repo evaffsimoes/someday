@@ -13,7 +13,25 @@ function run(cmd) {
   }
 }
 
+// Usage: node scripts/deploy.js "commit message" [--skip-tests]
+const args = process.argv.slice(2);
+const skipTests = args.includes('--skip-tests');
+const commitArg = args.find(arg => !arg.startsWith('--'));
+
 console.log('=== DEPLOYING TO ANDROID, GIT & VERCEL ===');
+
+// 0. Tests: nothing is synced, committed or published if any fail
+if (skipTests) {
+  console.log('\n0. Skipping tests (--skip-tests)');
+} else {
+  console.log('\n0. Running tests...');
+  try {
+    execSync('npm test', { stdio: 'inherit', cwd: rootDir });
+  } catch (err) {
+    console.error('\n❌ Tests failed: nothing was deployed. Fix them, or rerun with --skip-tests.');
+    process.exit(1);
+  }
+}
 
 // 1. Generate / Copy assets to www/
 console.log('\n1. Syncing assets to www/...');
@@ -60,7 +78,7 @@ run('npx cap sync android');
 
 // 3. Git commit & push
 console.log('\n3. Pushing to Git...');
-const commitMsg = process.argv[2] || 'Feat: Update app, icons and widgets';
+const commitMsg = commitArg || 'Feat: Update app, icons and widgets';
 run('git add -A');
 try {
   run(`git commit -m "${commitMsg}"`);
