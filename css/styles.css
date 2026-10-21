@@ -2377,10 +2377,10 @@
       border-radius: 14px;
     }
 
-    /* Three round actions: Calendar (event colour), Edit, Delete */
+    /* Round actions: Calendar (event colour), Share, Edit, Delete */
     .detail-sheet .detail-actions {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 8px;
       margin-top: 18px;
       padding-top: 16px;

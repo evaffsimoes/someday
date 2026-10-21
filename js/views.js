@@ -283,6 +283,54 @@ function gcalUrl(event) {
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
 
+// ---------- Sharing an event ----------
+
+// Message for friends: what, when, where (with a map link) and the ticket link when there is one
+function eventShareText(event) {
+  const where = [event.venue, event.city].filter(Boolean).join(', ');
+  const info = String(event.ticketInfo || '').trim();
+  const ticketLink = /^https?:\/\//i.test(info) ? info : (/^www\./i.test(info) ? `https://${info}` : '');
+  return [
+    `🎶 ${event.artist || 'Event'}`,
+    `📅 ${fmtEventWhen(event)}`,
+    where ? `📍 ${where}` : '',
+    where ? `https://maps.google.com/?q=${encodeURIComponent(where)}` : '',
+    ticketLink ? `🎟️ Tickets: ${ticketLink}` : '',
+    event.description ? `\n${event.description}` : ''
+  ].filter(Boolean).join('\n');
+}
+
+// Phone: the share sheet with the poster attached; browser: system share, or copy the text
+async function shareEvent(event) {
+  const text = eventShareText(event);
+  const title = event.artist || 'Event';
+  try {
+    const { Share, Filesystem } = window.Capacitor?.Plugins || {};
+    if (window.Capacitor?.isNativePlatform?.() && Share) {
+      let files;
+      const image = safeImageUrl(event.image);
+      if (Filesystem && image.startsWith('data:image/')) {
+        const [meta, data] = image.split(',');
+        const extension = meta.includes('png') ? 'png' : meta.includes('webp') ? 'webp' : 'jpg';
+        // No encoding: Filesystem decodes the base64 into the image file
+        const { uri } = await Filesystem.writeFile({ path: `cue-share.${extension}`, data, directory: 'CACHE' });
+        files = [uri];
+      }
+      await Share.share({ title, text, ...(files ? { files } : {}), dialogTitle: 'Share event' });
+      return;
+    }
+    if (navigator.share) {
+      await navigator.share({ title, text });
+      return;
+    }
+    await navigator.clipboard.writeText(text);
+    customAlert('✓ Event details copied. Paste them in a message.');
+  } catch (error) {
+    if (/cancel|abort/i.test(`${error?.name} ${error?.message}`)) return;
+    customAlert('Couldn\'t share this event: ' + error.message);
+  }
+}
+
 // ---------- Calendar export (.ics) ----------
 
 function icsEscape(value) {
@@ -548,6 +596,9 @@ function openDetailModal(event) {
           <button class="detail-action" id="gcalFromModalBtn" type="button">
             <span class="detail-action-circle primary">${iconSvg('calendar')}</span>Calendar
           </button>
+          <button class="detail-action" id="shareFromModalBtn" type="button">
+            <span class="detail-action-circle glass">${iconSvg('share')}</span>Share
+          </button>
           <button class="detail-action" id="editFromModalBtn" type="button">
             <span class="detail-action-circle glass">${iconSvg('edit')}</span>Edit
           </button>
@@ -595,6 +646,8 @@ function openDetailModal(event) {
       switchTab('add', { fromBack: true });
       openReview(event);
     };
+
+    document.getElementById('shareFromModalBtn').onclick = () => shareEvent(event);
 
     document.getElementById('gcalFromModalBtn').onclick = () => {
       window.open(gcalUrl(event), '_blank', 'noopener,noreferrer');

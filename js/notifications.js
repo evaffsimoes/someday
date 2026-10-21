@@ -97,6 +97,24 @@ async function openSettingsModal() {
   }
 }
 
+// Tapping a reminder opens its event. The plugin holds on to the tap that launched the app until a
+// listener is added, so this also works when the app was closed.
+function bindNotificationTaps() {
+  const LN = getLocalNotifications();
+  if (!LN || typeof LN.addListener !== 'function') return;
+  LN.addListener('localNotificationActionPerformed', action => {
+    openEventFromNotification(action?.notification?.extra?.eventId);
+  });
+}
+
+function openEventFromNotification(eventId) {
+  const event = eventId && state.events.find(item => String(item.id) === String(eventId));
+  if (!event) return;
+  hideSettingsModal();
+  switchTab('queue');
+  openDetailModal(event);
+}
+
 function hideSettingsModal() {
   document.getElementById('settingsModalOverlay').classList.remove('active');
 }
@@ -126,22 +144,16 @@ async function triggerNotification(title, options) {
       return true;
     }
 
+    // Browser: the app unregisters its service worker at start-up, so notify directly
+    // (waiting on serviceWorker.ready here would never resolve)
     if ('Notification' in window && Notification.permission === 'granted') {
       try {
-        if ('serviceWorker' in navigator) {
-          let reg = await navigator.serviceWorker.getRegistration();
-          if (!reg) reg = await navigator.serviceWorker.ready;
-          if (reg && reg.showNotification) {
-            await reg.showNotification(title, options);
-            return true;
-          }
-        }
-      } catch (err) {
-        console.warn('ServiceWorker showNotification error, falling back:', err);
-      }
-
-      try {
-        new Notification(title, options);
+        const notification = new Notification(title, options);
+        notification.onclick = () => {
+          window.focus();
+          openEventFromNotification(options.data?.eventId);
+          notification.close();
+        };
         return true;
       } catch (err) {
         console.warn('new Notification fallback error:', err);

@@ -401,7 +401,8 @@ function iconSvg(name) {
     upload: '<path d="M12 16V6m0 0 3.5 3.5M12 6 8.5 9.5M5 18.5h14"/>',
     close: '<path d="m7 7 10 10M17 7 7 17"/>',
     ticket: '<path d="M7 8.5h10M7 12h10M7 15.5h6M6 4.5h12a1.5 1.5 0 0 1 1.5 1.5v12A1.5 1.5 0 0 1 18 19.5H6A1.5 1.5 0 0 1 4.5 18V6A1.5 1.5 0 0 1 6 4.5Z"/>',
-    back: '<path d="m15 6-6 6 6 6"/>'
+    back: '<path d="m15 6-6 6 6 6"/>',
+    share: '<path d="M12 15V4m0 0L8 8m4-4 4 4M6 12v6.5A1.5 1.5 0 0 0 7.5 20h9a1.5 1.5 0 0 0 1.5-1.5V12"/>'
   };
   return `<svg class="cue-icon" viewBox="0 0 24 24" aria-hidden="true">${icons[name] || icons.ticket}</svg>`;
 }
