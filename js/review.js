@@ -76,13 +76,13 @@ function openReview(prefill, focusField = '') {
         <div class="field"><label>Time</label><input id="f_time" type="time" value="${escapeAttr(prefill.time || '')}"></div>
         <div class="field">
           <label>City</label>
-          <input id="f_city" type="text" list="pt-cities" value="${escapeAttr(prefill.city || '')}" placeholder="e.g. Porto, Coimbra" autocomplete="off">
+          <input id="f_city" type="text" value="${escapeAttr(prefill.city || '')}" placeholder="e.g. Porto, Coimbra" autocomplete="off">
         </div>
       </div>
 
       <div class="field">
         <label>Venue</label>
-        <input id="f_venue" type="text" list="pt-venues" value="${escapeAttr(prefill.venue || '')}" placeholder="e.g. Hard Club, LAV" autocomplete="off">
+        <input id="f_venue" type="text" value="${escapeAttr(prefill.venue || '')}" placeholder="e.g. Hard Club, LAV" autocomplete="off">
       </div>
 
       <div class="form-section-title">3. Tickets, Friends & Notes</div>
@@ -236,6 +236,20 @@ function openReview(prefill, focusField = '') {
       }
     });
   }
+
+  const cityInput = document.getElementById('f_city');
+  const venueInput = document.getElementById('f_venue');
+  attachPlaceSuggestions(cityInput, { options: () => suggestPlaces('city', cityInput.value) });
+  attachPlaceSuggestions(venueInput, {
+    options: () => suggestPlaces('venue', venueInput.value, cityInput.value),
+    // A venue knows its city: fill it in unless a different one is already there
+    onPick: option => {
+      if (option.detail && !cityInput.value.trim()) {
+        cityInput.value = option.detail;
+        cityInput.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    }
+  });
 
   const statusChips = document.querySelectorAll('#ticketStatusChips .status-chip');
   const ticketStatusInput = document.getElementById('f_ticket_status');

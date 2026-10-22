@@ -98,6 +98,62 @@ test('web app', { skip }, async t => {
     assert.equal(await app.ev(`getComputedStyle(document.getElementById('accountDeleteArea')).display`), 'none');
   });
 
+  await t.test('city and venue suggestions: accents ignored, a picked venue fills the city', async () => {
+    await app.ev(`document.querySelector('[data-tab="add"]').click()`);
+    await app.ev(`document.getElementById('btnOptionManual').click()`);
+    await app.sleep(300);
+    const type = (id, text) => app.ev(`(() => {
+      const input = document.getElementById('${id}');
+      input.focus();
+      input.value = ${JSON.stringify(text)};
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      return JSON.stringify([...input.closest('.field').querySelectorAll('.place-option span')].map(span => span.textContent));
+    })()`).then(JSON.parse);
+    const pickFirst = id => app.ev(`document.querySelector('#${id} ~ .place-suggestions .place-option')
+      .dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true }))`);
+
+    assert.equal((await type('f_city', 'evora'))[0], 'Évora');
+    assert.equal((await type('f_venue', 'casa da mus'))[0], 'Casa da Música');
+    await pickFirst('f_venue');
+    assert.equal(await app.ev(`document.getElementById('f_venue').value`), 'Casa da Música');
+    assert.equal(await app.ev(`document.querySelector('#f_venue ~ .place-suggestions').hidden`), true);
+    // A city was already typed, so the venue's city doesn't overwrite it
+    assert.equal(await app.ev(`document.getElementById('f_city').value`), 'evora');
+
+    await app.ev(`document.getElementById('f_city').value = ''`);
+    await type('f_venue', 'hard cl');
+    await pickFirst('f_venue');
+    assert.equal(await app.ev(`document.getElementById('f_city').value`), 'Porto');
+    await app.sleep(200);
+    assert.equal(await app.ev(`document.querySelector('#f_city ~ .place-suggestions').hidden`), true);
+    await app.ev('history.back()');
+    await app.sleep(400);
+    await app.ev('history.back()');
+    await app.sleep(400);
+  });
+
+  await t.test('a poster with a known venue but no city gets the city, without a "Not found" flag', async () => {
+    const imported = async parsed => {
+      await app.ev(`renderAiParsedSuccess(${JSON.stringify(parsed)})`);
+      await app.sleep(200);
+      return JSON.parse(await app.ev(`JSON.stringify({
+        city: document.getElementById('f_city').value,
+        flagged: document.getElementById('f_city').closest('.field').classList.contains('ai-missing')
+      })`));
+    };
+    await app.ev(`document.querySelector('[data-tab="add"]').click()`);
+    assert.deepEqual(await imported({ artist: 'Slowdive', venue: 'Hard Club' }), { city: 'Porto', flagged: false });
+    // Old names and any case work too: "altice arena" is MEO Arena, in Lisboa
+    assert.deepEqual(await imported({ artist: 'Muse', venue: 'altice arena' }), { city: 'Lisboa', flagged: false });
+    // The poster's own city always wins, and unknown venues leave the city to you
+    assert.deepEqual(await imported({ artist: 'Muse', venue: 'Hard Club', city: 'Braga' }), { city: 'Braga', flagged: false });
+    assert.deepEqual(await imported({ artist: 'Band', venue: 'Somewhere New' }), { city: '', flagged: true });
+    await app.ev('history.back()');
+    await app.sleep(400);
+    await app.ev('history.back()');
+    await app.sleep(400);
+  });
+
   await t.test('no page errors', () => {
     assert.deepEqual(app.errors, []);
   });

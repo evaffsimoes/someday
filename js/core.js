@@ -308,45 +308,6 @@ async function saveEvents(skipCloud = false) {
   }
 }
 
-function updateDynamicDatalists() {
-  const cityDatalist = document.getElementById('pt-cities');
-  const knownCities = new Set([
-    'Porto', 'Lisboa', 'Vila Nova de Gaia', 'Braga', 'Coimbra', 'Faro', 'Aveiro',
-    'Cascais', 'Guimarães', 'Leiria', 'Setúbal', 'Viseu', 'Évora', 'Funchal'
-  ]);
-
-  state.events.forEach(event => {
-    if (event.city) knownCities.add(event.city.trim());
-  });
-
-  cityDatalist.innerHTML = Array.from(knownCities).sort().map(city => `<option value="${escapeAttr(city)}">`).join('');
-  const venueDatalist = document.getElementById('pt-venues');
-  const knownVenues = new Set([
-    'NOS Alive', 'Super Bock Super Rock', 'Rock in Rio Lisboa', 'Coliseu do Porto',
-    'Coliseu de Lisboa', 'Altice Arena', 'MEO Arena', 'Primavera Sound Porto',
-    'Parque da Cidade', 'Palácio do Cristal', 'Hard Club', 'Casa da Música',
-    'Pavilhão Rosa Mota', 'Lisboa ao Vivo', 'Parque Eduardo VII', 'Queijo Dunas',
-    'Meo Marés Vivas', 'Vodafone Paredes de Coura', 'RCA', 'Hotel Mouco', 'Maus Hábitos'
-  ]);
-
-  state.events.forEach(event => {
-    if (event.venue) knownVenues.add(event.venue.trim());
-  });
-
-  venueDatalist.innerHTML = Array.from(knownVenues).sort().map(venue => `<option value="${escapeAttr(venue)}">`).join('');
-}
-
-function selectOptionsHTML(datalistId, selectedValue, placeholder) {
-  const datalist = document.getElementById(datalistId);
-  const values = Array.from(datalist?.options || []).map(option => option.value).filter(Boolean);
-  const selected = String(selectedValue || '').trim();
-  if (selected && !values.includes(selected)) values.unshift(selected);
-
-  return `<option value="">${placeholder}</option>` + values.map(value => `
-    <option value="${escapeAttr(value)}"${value === selected ? ' selected' : ''}>${escapeHtml(value)}</option>
-  `).join('');
-}
-
 // The import API lives on Vercel. The Android app runs from https://localhost inside the APK, so
 // it calls the API by its full address; the website (and local test servers) use the relative path.
 const API_ORIGIN = 'https://cue-events.vercel.app';

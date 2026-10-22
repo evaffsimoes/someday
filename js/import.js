@@ -24,6 +24,11 @@ function renderAiParsingState() {
 
 function renderAiParsedSuccess(parsed) {
   elements.aiParsingSlot.innerHTML = '';
+  // Posters often name the venue but not the city; a venue we know tells it
+  if (!String(parsed.city || '').trim() && parsed.venue) {
+    const city = cityOfVenue(parsed.venue);
+    if (city) parsed = { ...parsed, city };
+  }
   openReview(parsed);
   markFieldsAiMissed(parsed);
   setTimeout(() => {

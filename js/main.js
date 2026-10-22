@@ -8,7 +8,6 @@ window.cueRenderApp = () => {
   if (typeof renderSpotlight === 'function') renderSpotlight();
   if (typeof render === 'function') render();
   if (typeof renderCalendar === 'function') renderCalendar();
-  if (typeof updateDynamicDatalists === 'function') updateDynamicDatalists();
 };
 // Used by auth.js for cloud sync
 window.cueDedupeEvents = dedupeEvents;
@@ -64,7 +63,6 @@ async function loadEvents() {
     state.savedFriends = [];
   }
 
-  updateDynamicDatalists();
   checkEventNotifications();
   render();
   renderCalendar();

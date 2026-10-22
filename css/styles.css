@@ -2619,4 +2619,69 @@
       .modal-overlay.active .detail-sheet {
         animation: none;
       }
-    }
+    }
+
+    /* City and venue suggestions: a dark list under the field (solid: blur can't reach through
+       the form's own glass) */
+    .field.has-suggestions {
+      position: relative;
+    }
+
+    .place-suggestions {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      z-index: 30;
+      margin-top: 4px;
+      padding: 4px;
+      max-height: 264px;
+      overflow-y: auto;
+      border-radius: 14px;
+      background: #16141f;
+      border: 1px solid var(--border);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+      -webkit-backdrop-filter: var(--glass-blur);
+      backdrop-filter: var(--glass-blur);
+    }
+
+    .place-option {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      width: 100%;
+      min-height: 44px;
+      padding: 10px 12px;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      color: var(--text-main);
+      font: inherit;
+      font-size: var(--fs-md);
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .place-option span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .place-option small {
+      flex-shrink: 0;
+      color: var(--text-muted);
+      font-size: var(--fs-sm);
+    }
+
+    .place-option:hover,
+    .place-option.active {
+      background: var(--surface-strong);
+    }
+
+    .place-option:focus-visible {
+      outline: 2px solid rgba(168, 85, 247, 0.6);
+      outline-offset: -2px;
+    }
